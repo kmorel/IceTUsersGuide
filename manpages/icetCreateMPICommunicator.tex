@@ -1,0 +1,88 @@
+% -*- latex -*-
+
+
+\setDate{April 20, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetCreateMPICommunicator}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetCreateMPICommunicator} -- Converts an MPI communicator to an \IceT communicator.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t\_mpi.h>}
+
+  \begin{Table}{3}
+    \CType{IceTCommunicator}\textC{ }\CFunc{icetCreateMPICommunicator}\textC{(} \\
+    \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+    \CTypeExternal{MPI\_Comm}\quad\CArg{mpi\_comm}\quad\textC{);}
+  \end{Table}
+
+
+  \mansection{Description}
+
+  \IceT requires a communicator in order to perform correctly.  An
+  application is free to build its own communicator, but many will simply
+  prefer to use MPI, which is a well established parallel communication
+  tool.  Thus, \IceT comes with an implementation of
+  \CType{IceTCommunicator} that uses the MPI communication layer
+  underneath.
+
+  \CFunc{icetCreateMPICommunicator} is used to create an
+  \CType{IceTCommunicator} that uses the \CArg{mpi\_comm} MPI communication
+  object.  The resulting \CType{IceTCommunicator} shares the same process
+  group and process rank as the original \CTypeExternal{MPI\_Comm}
+  communicator.
+
+  \CArg{mpi\_comm} is duplicated, which has two consiquences.  First, all
+  process in \CArg{mpi\_comm}'s group may need to call
+  \CFunc{icetCreateMPICommunicator} in order for any of them to proceed
+  (depending on the MPI implementation).  Second, \CArg{mpi\_comm} and the
+  resulting \CType{IceTCommunicator} are decoupled from each other.
+  Communications in one cannot affect another.  Also, one communicator may
+  be destroyed without affecting the other.
+
+
+  \mansection{Return Value}
+
+  An \CType{IceTCommunicator} with the same process group and rank as
+  \CArg{mpi\_comm}.  The communicator may be destroyed with a call to
+  \CFunc{icetDestroyMPICommunicator}.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  All MPI errors are ignored.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetDestroyMPICommunicator},
+  \CFuncSeeAlso{icetCreateContext}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

@@ -1,0 +1,72 @@
+% -*- latex -*-
+
+
+\setDate{December  1, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetResetTiles}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetResetTiles} -- clears out all tile definitions.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetResetTiles}\textC{(}&\textC{void}&\textC{)}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  \IceT defines its display as a set of tiles.  \CFunc{icetResetTiles} will
+  empty this set.  The set of tiles is filled again with calls to
+  \CFunc{icetAddTile}.
+
+  As a side effect, \CFunc{icetResetTiles} will also zero out the
+  renderable window size.  The size will be reset with calls to
+  \CFunc{icetAddTile}.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  As a rule, a call to \CFunc{icetResetTiles} should always be followed
+  with one or more calls to \CFunc{icetAddTile}.  \CFunc{icetDrawFrame}
+  will not work properly if no tiles are in existence.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetAddTile}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

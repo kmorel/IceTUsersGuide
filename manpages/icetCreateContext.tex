@@ -1,0 +1,89 @@
+% -*- latex -*-
+
+
+\setDate{January 31, 2007}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetCreateContext}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetCreateContext} -- creates a new context.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \CType{IceTContext}\textC{ }\CFunc{icetCreateContext}\textC{(}&\CType{IceTCommunicator}&\CArg{comm}\quad\textC{);}
+  \end{Table}
+
+
+  \mansection{Description}
+
+  The \CFunc{icetCreateContext} function creates a new
+  \index{context!\IceT}\IceT context, makes it current, and returns a
+  handle to the new context.  The handle returned is of type
+  \CType{IceTContext}.  This is an opaque type that should not be handled
+  directly, but rather simply passed to other \IceT functions.
+
+  Like \OpenGL, the \IceT engine behaves like a large state machine.  The
+  parameters for engine operation is held in the current state.  The entire
+  state is encapsulated in a context.  Each new context contains its own
+  state.
+
+  It is therefore possible to change the entire current state of \IceT by
+  simply switch contexts.  Switching contexts is much faster, and often
+  more convenient, than trying to change many state parameters.
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  It may be tempting to use contexts to run different \IceT operations on
+  separate program threads.  Although certainly possible, great care must
+  be taken.  First of all, all threads will share the same context.  Second
+  of all, \IceT is not thread safe.  Therefore, a multi-threaded program
+  would have to run all \IceT commands in `critical sections' to ensure
+  that the correct context is being used, and the methods execute safely in
+  general.
+
+
+  \mansection{Notes}
+
+  \CFunc{icetCreateContext} duplicates the communicator \CArg{comm}.  Thus,
+  to avoid deadlocks on certain implementations (such as MPI), the user
+  level program should call \CFunc{icetCreateContext} on all processes with
+  the same \CArg{comm} object at about the same time.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetDestroyContext},
+  \CFuncSeeAlso{icetGetContext},
+  \CFuncSeeAlso{icetSetContext},
+  \CFuncSeeAlso{icetCopyState},
+  \CFuncSeeAlso{icetGet}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

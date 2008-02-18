@@ -1,0 +1,90 @@
+% -*- latex -*-
+
+
+\setDate{April 20, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDataReplicationGroup}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDataReplicationGroup} -- define data replication.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDataReplicationGroup}\textC{(}&\textC{GLint}&\CArg{size}\textC{,} \\
+      &\textC{const GLint *}&\CArg{processes}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  \IceT has the ability to take advantage of geometric data that is
+  replicated among processes.  If a group of processes share the same
+  geometry data, then \IceT will split the region of the display that the
+  data projects onto among the processes, thereby reducing the total amount
+  of image composition work that needs to be done.
+
+  Each group can be declared by calling \CFunc{icetDataReplicationGroup}
+  and defining the group of processes that share the geometry with the
+  local process.  \CArg{size} indicates how many processes belong to the
+  group, and \CArg{processes} is an array of ids of processes that belong
+  to the group.  Each process that belongs to a particular group must call
+  \CFunc{icetDataReplicationGroup} with the exact same list of processes in
+  the same order.
+
+  You can alternately use \CFunc{icetDataReplicationGroupColor} to select
+  data replication groups.
+
+  By default, each process belongs to a group of size one containing just
+  the local processes (i.e. there is no data replication).
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
+    \CArg{processes} does not contain the local process rank.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  \IceT assumes that \CFunc{icetDataReplicationGroup} is called with the
+  exact same parameters on all processes belonging to a given group.
+  Likewise, \IceT also assumes that all processes have called
+  \CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox} with the exact
+  same parameters on all processes belonging to a given group.  These
+  requirements are not strictly enforced, but failing to do so may cause
+  some of the geometry to not be rendered.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetDataReplicationGroupColor},
+  \CFuncSeeAlso{icetDrawFunc},
+  \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetBoundingBox}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

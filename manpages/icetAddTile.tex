@@ -1,0 +1,103 @@
+% -*- latex -*-
+
+
+\setDate{December  1, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetAddTile}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetAddTile} -- add a tile to the logical display.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{int }\CFunc{icetAddTile}\textC{(}&\textC{GLint}&\CArg{x}\textC{,} \\
+      &\textC{GLint}&\CArg{y}\textC{,} \\
+      &\textC{GLsizei}&\CArg{width}\textC{,} \\
+      &\textC{GLsizei}&\CArg{height}\textC{,} \\
+      &\textC{int}&\CArg{display\_rank}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Adds a tile to the tiled display.  Every process, whether actually
+  displaying a tile or not, must declare the tiles in the display and which
+  processes drive them with \CFunc{icetResetTiles} and \CFunc{icetAddTile}.
+  Thus, each process calls \CFunc{icetAddTile} once for each tile in the
+  display, and all processes must declare them in the same order.
+
+  The parameters \CArg{x}, \CArg{y}, \CArg{width}, and \CArg{height} define
+  the tiles viewport in the logical global display much in the same way
+  \CFuncExternal{glViewport} declares a region in a physical display.
+  \IceT places no limits on the extents of the logical global display.
+  That is, there are no limits on the values of \CArg{x} and \CArg{y}.
+  They can extend as far as they want in both the positive and negative
+  directions.
+
+  \IceT will project its images onto the region of the logical global
+  display that just covers all of the tiles.  Therefore, shifting all the
+  tiles in the logical global display by the same amount will have no real
+  overall effect.
+
+  The \CArg{display\_rank} parameter identifies the rank of the process
+  that will be displaying the given tile.  It is assumed that the output of
+  the rendering window of the given process is projected onto the space in
+  a tiled display given by \CArg{x}, \CArg{y}, \CArg{width}, and
+  \CArg{height}.  Each tile must have a valid rank (between $0$ and
+  $\CEnum{ICET\_NUM\_PROCESSES} - 1$).  Furthermore, no process may be
+  displaying more than one tile.
+
+
+  \mansection{Return Value}
+
+  Returns the index of the tile created.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
+    Raised if \CArg{display\_rank} is not a valid process rank or
+    \CArg{display\_rank} is already assigned to another tile.  If this
+    error is raised, nothing is done and -1 is returned.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  \CFunc{icetAddTile} will let you add tiles of different sizes, but the
+  use of different sized tiles is not yet supported.  The user should try
+  to make sure that all tiles are of the same size.
+
+  All processes must specify the same tiles in the same order.  \IceT
+  will assume this even though it is not explicitly detected or enforced.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetResetTiles}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

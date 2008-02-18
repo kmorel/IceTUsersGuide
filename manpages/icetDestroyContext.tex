@@ -1,0 +1,71 @@
+% -*- latex -*-
+
+
+\setDate{April 20, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDestroyContext}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDestroyContext} -- delete a context.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDestroyContext}\textC{(}&\CType{IceTContext}&\CArg{context}\quad\textC{;}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Frees the memory required to hold the state of \CArg{context} and removes
+  \CArg{context} from existence.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  \CFunc{icetDestroyContext} will happily delete the current context for
+  you, but subsequent calls to most other \IceT functions will probably
+  result in seg-faults unless you make another context current with
+  \CFunc{icetCreateContext} or \CFunc{icetSetContext}.  The most notable
+  execptions are the functions with names matching \textCF{icet*Context},
+  which will work correctly without a proper current context.
+
+
+  \mansection{Notes}
+
+  Behavior is undefined if \CArg{context} has never been created or has
+  already been destroyed.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetCreateContext}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

@@ -1,0 +1,88 @@
+% -*- latex -*-
+
+
+\setDate{April 20, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDataReplicationGroupColor}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDataReplicationGroupColor} -- define data replication.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDataReplicationGroupColor}\textC{(}&\textC{GLint}&\CArg{color}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  \IceT has the ability to take advantage of geometric data that is
+  replicated among processes.  If a group of processes share the same
+  geometry data, then \IceT will split the region of the display that the
+  data projects onto among the processes, thereby reducing the total amount
+  of image composition work that needs to be done.
+
+  Despite the name of the function, \CFunc{icetDataReplicationGroupColor}
+  has nothing to do the color of the data being replicated.  Instead,
+  \CArg{color} is used to mark the local process as part of a given group.
+  When \CFunc{icetDataReplicationGroupColor} is called, it finds all other
+  processes that have the same color and builds a group based on this
+  information.
+
+  \CFunc{icetDataReplicationGroupColor} must be called on every processes
+  before the function will return.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  \IceT assumes that \CFunc{icetDataReplicationGroup} is called with the
+  exact same parameters on all processes belonging to a given group.
+  Likewise, \IceT also assumes that all processes have called
+  \CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox} with the exact
+  same parameters on all processes belonging to a given group.  These
+  requirements are not strictly enforced, but failing to do so may cause
+  some of the geometry to not be rendered.
+
+
+  \mansection{Notes}
+
+  This man page should never be installed.  It should just be used to help
+  make other man pages.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetDataReplicationGroup},
+  \CFuncSeeAlso{icetDrawFunc},
+  \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetBoundingBox}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

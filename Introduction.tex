@@ -1,0 +1,58 @@
+% -*- latex -*-
+
+
+\chapter{Introduction}
+\label{chap:Introduction}
+
+The Image Composition Engine for Tiles (\IceT) is an API designed to enable
+OpenGL applications to perform Sort-Last parallel rendering on very large
+displays.  The displays are assumed to be tile displays.  The overall
+resolution of the display may be several times larger than any viewport
+that may be rendered by a single machine.  It is also assumed that several
+processes in the parallel application are
+\index{display~process}\keyterm{display processes}.  That is, their entire
+display window makes up part of the display.
+
+The design philosophy behind \IceT is to allow very large sets of polygons
+to be displayed on very high resolution displays.  As such, fast frame
+rates are sacrificed in lieu of very scalable and very high polygon/second
+rendering rates.  That said, there are many features in \IceT that allow an
+application to achieve interactive rates.  These include image inflation,
+floating viewports, active pixel encoding, and data replication.  Together,
+these features make \IceT a versatile parallel rendering application that
+provides near optimal parallel rendering under most data size and image
+size combinations.  As an example, the ParaView
+application\footnote{\href{http://www.paraview.org}{http://www.paraview.org}}
+is using \IceT for all of its parallel rendering needs ranging from a
+desktop sized image to the world's largest tile displays and from polygon
+counts ranging from 1 to 1 million (and growing).
+
+\IceT is designed to take advantage of
+\index{spatial~decomposition}\keyterm{spatial decomposition} of the
+geometry being rendered.  That is, it works best if all the geometry on
+each process is located in as small a region of space as possible.  When
+this is true, each process usually projects geometry on only a small
+section of the screen.  This results in less work for the compositing
+engine.  This is of particular importance for displays with a large number
+of pixels.
+
+\IceT can also be used to perform sort-last parallel rendering to a single
+display.  Such \index{single-tile~rendering}\keyterm{single-tile rendering}
+is simply a special case of the multi-tile display \IceT was designed for.
+Many of the optimizations done by \IceT apply to the single-tile mode.
+Using \IceT for this purpose is quite worthwhile.  \IceT's performance
+should rival that of other such software image compositors.
+
+The rest of this document describes the use of the
+\IceT
+API.  There are also separate manual pages for each of the functions
+described here.  For more details on
+\IceT's
+algorithms, see:
+
+\begin{quote}
+  Moreland, Wylie, and Pavlakos.  ``Sort-last parallel rendering for
+  viewing extremely large data sets on tile displays,'' In
+  \emph{Proceedings of IEEE Symposium on Parallel and Large-Data
+    Visualization and Graphics}, October 2001, pp. 85--154.
+\end{quote}

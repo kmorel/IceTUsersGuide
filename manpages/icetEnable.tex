@@ -1,0 +1,115 @@
+% -*- latex -*-
+
+
+\setDate{May 23, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetEnable}{Kenneth Moreland}{\IceT Reference}{\icetEnable, \icetDisable --  enable/disable an \IceT feature.}
+
+  \label{manpage:icetDisable}
+  \index{icetDisable|(textbf}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{4}
+    \textC{void }\icetEnable&\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}\\
+    \textC{void }\icetDisable&\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \icetEnable and \icetDisable functions turn various \IceT features on
+  and off.  \CArg{pname} is a symbolic constant representing the feature to
+  be turned on or off.  Valid values for \CArg{pname} are:
+
+  \begin{Description}[xxxxxxxx]
+  \item[\CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND}] Colored backgrounds are
+    problematic when performing color blended compositing in that the
+    background color will be additively blended from each image.  Enabling
+    this flag will internally cause the color to be reset to black and then
+    cause the color to be blended back into the resulting images.  This
+    flag is disabled by default.
+  \item[\CEnum{ICET\_DISPLAY}] If enabled, the final, composited image for
+    each tile is written back to the frame buffer before the return of
+    \CFunc{icetDrawFrame}.  This flag is enabled by default.
+  \item[\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND}] If this and
+    \CEnum{ICET\_DISPLAY} are enabled, uses \OpenGL blending to ensure that
+    all background is set to the correct color.  This flag is disabled by
+    default.  This option does not affect the images returned from
+    \icetGetColorBuffer or \icetGetDepthBuffer; it only affects the image
+    in the \OpenGL color buffer.
+  \item[\CEnum{ICET\_DISPLAY\_INFLATE}] If this and \CEnum{ICET\_DISPLAY}
+    are enabled and the renderable window is larger then the displayed tile
+    (as determined by the current \OpenGL viewport), then resample the
+    image to fit within the renderable window before writing back to frame
+    buffer.  This flag is disabled by default.  This option does not affect
+    the images returned from \icetGetColorBuffer or \icetGetDepthBuffer; it
+    only affects the image in the OpenGL color buffer.
+  \item[\CEnum{ICET\_DISPLAY\_INFLATE\_WITH\_HARDWARE}] This option
+    determines how images are inflated.  When enabled (the default), images
+    are inflated by creating a texture and allowing the hardware the
+    inflate the image.  When disabled, images are inflated on the CPU.
+    This option has no effect unless both \CEnum{ICET\_DISPLAY} and
+    \CEnum{ICET\_DISPLAY\_INFLATE} are also enabled.
+  \item[\CEnum{ICET\_FLOATING\_VIEWPORT}] If enabled, the projection will
+    be shifted such that the geometry will be rendered in one shot whenever
+    possible, even if the geometry straddles up to four tiles.  This flag
+    is enabled by default.
+  \item[\CEnum{ICET\_ORDERED\_COMPOSITE}] If enabled, the image composition
+    will be performed in the order specified by the last call to
+    \CFunc{icetCompositeOrder}, assuming the current strategy (specified by
+    a call to \CFunc{icetStrategy}) supports ordered composition.
+    Generally, you want to enable ordered compositing if doing color
+    blending and disable if you are doing z-buffer comparisons.  If
+    enabled, you should call \CFunc{icetCompositeOrder} between each frame
+    to update the image order as camera angles change.  This flag is
+    disabled by default.
+  \end{Description}
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}] If \CArg{pname} is not a feature
+    to be enabled or disabled.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  The check for a valid \CArg{pname} is not thorough, and thus the
+  \CEnum{ICET\_INVALID\_VALUE} error may not always be raised.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetIsEnabled}
+
+  \index{icetDisable|)textbf}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

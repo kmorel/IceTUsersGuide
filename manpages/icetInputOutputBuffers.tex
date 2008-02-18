@@ -1,0 +1,100 @@
+% -*- latex -*-
+
+
+\setDate{February 14, 2008}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetInputOutputBuffers}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetInputOutputBuffers} -- set \IceT composition mode.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetInputOutputBuffers}\textC{(}&\textC{GLenum}&\CArg{inputs}\textC{,} \\
+      &\textC{GLenum}&\CArg{outputs}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  \CFunc{icetInputOutputBuffers} sets what OpenGL frame buffers \IceT reads
+  and generates.  During a call to \CFunc{icetDrawFrame}, \IceT reads the
+  input buffers directly from OpenGL after it performs a callback to the
+  draw function (set by \CFunc{icetDrawFunc}).  Output buffers are stored
+  internally after the call to \CFunc{icetDrawFrame} finishes.  The output
+  buffers can be retrieved with calls to the \CFunc{icetGetColorBuffer} and
+  \CFunc{icetGetDepthBuffer} functions.  In addition, if the color buffer
+  output is on and \CEnum{ICET\_DISPLAY} is enabled, the color buffer is
+  also written back to the OpenGL frame buffer before \CFunc{icetDrawFrame}
+  returns.
+
+  Both \CArg{inputs} and \CArg{outputs} are or'ed values of one or more
+  of the following flags:
+  \begin{Description}
+  \item[\CEnum{ICET\_COLOR\_BUFFER\_BIT}] Reads/generates color data.
+    Color data is stored in RGBA or BGRA format.  Each channel is 8-bits,
+    resulting in a 32-bit word when combined together.  Each 32-bit color
+    value is always aligned on 32-bit word boundaries for faster
+    computation.
+  \item[\CEnum{ICET\_DEPTH\_BUFFER\_BIT}] Reads/generates depth data.
+    Depth data is stored as 32-bit unsigned integers.
+  \end{Description}
+
+  The current values of the input and output buffers are stored in the
+  \CEnum{ICET\_INPUT\_BUFFERS} and \CEnum{ICET\_OUTPUT\_BUFFERS} state
+  variables.  By default, the \CEnum{ICET\_INPUT\_BUFFERS} value is set to
+  $(\CEnum{ICET\_COLOR\_BUFFER\_BIT} | \CEnum{ICET\_DEPTH\_BUFFER\_BIT})$,
+  and the \CEnum{ICET\_OUTPUT\_BUFFERS} value is set to
+  $\CEnum{ICET\_COLOR\_BUFFER\_BIT}$.
+
+  The composition operator \IceT uses is defined by the inputs.  If the
+  depth buffer is an input, then Z comparison is performed.  If the depth
+  buffer is not an input, alpha blending is performed.  Note that in the
+  latter case, order of composition may matter and therefore not all
+  composition strategies will work.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}] An output was selected that is
+    not also an input or no outputs were selected at all.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  Blending of colors cannot be used in conjunction with depth testing.
+  Even with depth testing, the order of operation for color blending is
+  important, so such a combination is not likely to be useful.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetGetColorBuffer}, \CFuncSeeAlso{icetGetDepthBuffer},
+  \CFuncSeeAlso{icetDrawFrame}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

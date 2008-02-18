@@ -1,0 +1,68 @@
+# -*- perl -*-
+
+#############################################################################
+# latex2man translation file for IceT man pages.
+#
+
+$manMacro{'IceT'} = '\fBIceT \fP';
+$manMacro{'ICET'} = '\fBIceT \fP';
+
+$manMacro1a{'IceT'} = '\fBIceT\fP';
+$manMacro1b{'IceT'} = '';
+$manMacro1a{'ICET'} = '\fBIceT\fP';
+$manMacro1b{'ICET'} = '';
+
+$manMacro{'OpenGL'} = '\fbOpenGL \fP';
+
+$manMacro1a{'mansection'} = $manMacro1a{'section'};
+$manMacro1b{'mansection'} = $manMacro1b{'section'};
+
+$manMacro1a{'textC'}            = '';
+$manMacro1b{'textC'}            = '';
+$manMacro1a{'textCF'}           = '\fB';
+$manMacro1b{'textCF'}           = '\fP';
+$manMacro1a{'CType'}            = '\fB';
+$manMacro1b{'CType'}            = '\fP';
+$manMacro1a{'CTypeExternal'}    = $manMacro1a{'CType'};
+$manMacro1b{'CTypeExternal'}    = $manMacro1b{'CType'};
+$manMacro1a{'CFunc'}            = '\fB';
+$manMacro1b{'CFunc'}            = '\fP';
+$manMacro1a{'CFuncExternal'}    = $manMacro1a{'CFunc'};
+$manMacro1b{'CFuncExternal'}    = $manMacro1b{'CFunc'};
+$manMacro1a{'CArg'}             = '\fI';
+$manMacro1b{'CArg'}             = '\fP';
+$manMacro1a{'CFuncSeeAlso'}     = $manMacro2a{'Cmd'};
+$manMacro1b{'CFuncSeeAlso'}     = $manMacro2b{'Cmd'} . "3" . $manMacro2c{'Cmd'};
+$manMacro1a{'CEnum'}            = '\fB';
+$manMacro1b{'CEnum'}            = '\fP';
+$manMacro1a{'CErrorEnum'}       = '\fB';
+$manMacro1b{'CErrorEnum'}       = '\fP';
+
+$manMacro1a{'label'}            = '.ig';
+$manMacro1b{'label'}            = '';
+$manMacro1a{'index'}            = '.ig';
+$manMacro1b{'index'}            = '';
+
+$manMacro{'icetBoundingBoxf'}   = '\fBicetBoundingBoxf\fP';
+$manMacro{'icetBoundingBoxd'}   = '\fBicetBoundingBoxd\fP';
+$manMacro{'icetEnable'}         = '\fBicetEnable\fP';
+$manMacro{'icetDisable'}        = '\fBicetDisable\fP';
+$manMacro{'icetGetBooleanv'}    = '\fBicetGetBooleanv\fP';
+$manMacro{'icetGetDoublev'}     = '\fBicetGetDoublev\fP';
+$manMacro{'icetGetFloatv'}      = '\fBicetGetFloatv\fP';
+$manMacro{'icetGetIntegerv'}    = '\fBicetGetIntegerv\fP';
+$manMacro{'icetGetPointerv'}    = '\fBicetGetPointerv\fP';
+$manMacro{'icetGetColorBuffer'} = '\fBicetGetColorBuffer\fP';
+$manMacro{'icetGetDepthBuffer'} = '\fBicetGetDepthBuffer\fP';
+
+$manMacro{'quad'} = '  ';
+$manMacro{'qquad'} = '   ';
+
+$manMacro{'langle'} = '<';
+$manMacro{'rangle'} = '>';
+
+$manMacro1a{'mathrm'}           = '';
+$manMacro1b{'mathrm'}           = '';
+$manMacro{'langle'}             = '<';
+$manMacro{'rangle'}             = '>';
+$manMacro{'times'}              = '*';

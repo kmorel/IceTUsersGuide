@@ -1,0 +1,367 @@
+% -*- latex -*-
+
+%\documentclass[pdf,ps2pdf,12pt,report,strict]{SANDreport}
+\documentclass[12pt,report,strict]{SANDreport}
+\usepackage{pslatex}
+\usepackage[fancyhdr]{latex2man}
+\usepackage{ifthen}
+\usepackage{xspace}
+\usepackage{fancyvrb}
+
+\usepackage{color}
+\definecolor{yellow}{rgb}{1,1,0}
+\definecolor{black}{rgb}{0,0,0}
+\definecolor{ltcyan}{rgb}{.75,1,1}
+\definecolor{red}{rgb}{1,0,0}
+
+% This wonderful package allows hyphenation in tt fonts and hyphenation of
+% words with underscores in them.
+\usepackage[htt]{hyphenat}
+
+\usepackage{makeidx}
+\makeindex
+
+\usepackage{hyperref}
+\hypersetup{pdftitle={@TITLE@}}
+\hypersetup{pdfauthor={Kenneth Moreland}}
+% \hypersetup{colorlinks}
+% \hypersetup{linkcolor=blue}
+% \hypersetup{linkcolor=blue}
+\hypersetup{breaklinks}
+\hypersetup{pagebackref}
+\hypersetup{pdfstartpage=3}
+
+% -----------------------------------------------------------------------------
+%
+% Set the title, author, and date
+%
+
+\title{@TITLE@}
+\author{Kenneth~Moreland \\
+  Data Analysis and Visualization \\
+  Sandia National Laboratories \\
+  P.O. Box 5800  MS 0822 \\
+  Albuquerque, NM  87185-0822 \\
+  kmorel@sandia.gov
+}
+
+% There is a "Printed" date on the title page of a SAND report, so
+% the generic \date should generally be empty.
+\date{}
+
+% -----------------------------------------------------------------------------
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2007-xxxx}
+\SANDprintDate{XXX 2007}
+\SANDauthor{Kenneth~Moreland, Sandia}
+
+% -----------------------------------------------------------------------------
+% Include the markings required for the SAND report.  These are actually
+% the default and not strictly necessary.
+\SANDreleaseType{Unlimited Release}
+\SANDmarkCover{Approved for public release; further dissemination unlimited.}
+
+%-----------------------------------------------------------------------------
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%\SANDsupersed{SAND1901-0001}{January 1901}
+
+%-----------------------------------------------------------------------------
+% Commands for inserting common words.
+\newcommand{\IceT}{IceT\xspace}
+\newcommand{\OpenGL}{\index{OpenGL}OpenGL\xspace}
+
+% Commands for words with special meanings.
+\newcommand*{\keyterm}[1]{\textbf{#1}}
+
+\newcommand{\sticky}[1]{{\color{red}\textsc{[#1]}}}
+
+\CustomVerbatimEnvironment{code}{Verbatim}{fontsize=\small}
+\newcommand*{\codeinput}[2][]{%
+  \VerbatimInput[fontsize=\small,#1]{#2}%
+}
+
+% A special section for man pages.  We don't really want these to show up
+% in the table of contents.
+% \newcommand{\mansection}[1]{
+%   \\[\baselineskip]
+%   \textbf{\textsc{\large #1}} \\[0.5\baselineskip]
+% }
+\makeatletter
+\renewcommand{\subsection}{\@startsection
+  {subsection}
+  {2}
+  {0mm}
+  {-\baselineskip}
+  {0.5\baselineskip}
+  {\normalfont\large\bfseries\scshape}
+}
+\makeatother
+\newcommand*{\mansection}[1]{\subsection*{#1}}  
+
+% The latex2man Name environment does not mesh well with the SAND
+% environment, nor is it designed to have several man pages in the same
+% document.  Thus, we change it to fit.
+\newcommand*{\currentmansection}{none}
+\renewenvironment{Name}[5]{
+  % #1 Man Chapter
+  % #2 Name
+  % #3 Author
+  % #4 Tool
+  % #5 Title
+  \clearpage
+  \renewcommand{\currentmansection}{#2}
+  \index{\currentmansection|(textbf}
+  \lhead[#2]{}
+  \rhead[]{#2}
+  \phantomsection
+  \addcontentsline{toc}{section}{\currentmansection}
+  \label{manpage:#2}
+  \mansection{Name}
+  #5
+}{
+  \index{\currentmansection|)}
+}
+
+% Commands for typesetting C identifiers.
+\newcommand{\textC}[1]{\texttt{#1}}                     % Basic C code.
+\newcommand{\textCF}[1]{\textbf{\textC{#1}}}
+\newcommand{\textCT}[1]{\textbf{\textC{#1}}}
+
+\newcommand{\CType}[1]{\index{#1}\textCT{#1}}           % A documented type.
+\newcommand{\CFunc}[2][!*!]{%                           % A documented function.
+  % Only reference if not in that man section.
+  \ifthenelse%
+      {\equal{#1}{!*!}}%
+      {\ifthenelse%
+        {\equal{#2}{\currentmansection}}%
+        {\textCF{#2}}%
+        {\index{#2}\hyperref[manpage:#2]{\textCF{#2}}}%
+      }%
+      {\ifthenelse%
+        {\equal{#1}{\currentmansection}}%
+        {\textCF{#2}}%
+        {\index{#1}\hyperref[manpage:#1]{\textCF{#2}}}%
+      }%
+}
+\newcommand*{\CFuncExternal}[1]{%                       % An external function.
+  \index{#1}%
+  \textCF{#1}%
+}
+\newcommand*{\CFuncSeeAlso}[1]{%                        % A see also reference.
+  \hyperref[manpage:#1]{\textCF{#1}}%
+}
+\newcommand*{\CTypeExternal}[1]{\CType{#1}}             % An external type.
+
+\newcommand*{\CArg}[1]{\emph{\textC{#1}}}               % A function argument.
+\newcommand*{\CEnum}[1]{\index{#1}\textbf{\textC{#1}}}  % A const enumeration.
+\newcommand*{\CErrorEnum}[1]{\textbf{\textC{#1}}}       % An error constant.
+
+% Functions that have aliases for cross referencing and indexing.
+\newcommand{\icetBoundingBoxf}{\CFunc[icetBoundingBox]{icetBoundingBoxf}\xspace}
+\newcommand{\icetBoundingBoxd}{\CFunc[icetBoundingBox]{icetBoundingBoxd}\xspace}
+\newcommand{\icetEnable}{\CFunc[icetEnable]{icetEnable}\xspace}
+\newcommand{\icetDisable}{\CFunc[icetEnable]{icetDisable}\xspace}
+\newcommand{\icetGetBooleanv}{\CFunc[icetGet]{icetGetBooleanv}\xspace}
+\newcommand{\icetGetDoublev}{\CFunc[icetGet]{icetGetDoublev}\xspace}
+\newcommand{\icetGetFloatv}{\CFunc[icetGet]{icetGetFloatv}\xspace}
+\newcommand{\icetGetIntegerv}{\CFunc[icetGet]{icetGetIntegerv}\xspace}
+\newcommand{\icetGetPointerv}{\CFunc[icetGet]{icetGetPointerv}\xspace}
+\newcommand{\icetGetColorBuffer}{\CFunc{icetGetColorBuffer}\xspace}
+\newcommand{\icetGetDepthBuffer}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetGetColorBuffer}}%
+    {\CFunc[icetGetColorBuffer]{icetGetDepthBuffer}}%
+    {\CFunc{icetGetDepthBuffer}}%
+    \xspace%
+}
+
+%-----------------------------------------------------------------------------
+% The actual document.
+
+\begin{document}
+
+\sloppy
+\maketitle
+
+% An abstract is required for SAND reports.
+
+\begin{abstract}
+  The Image Composition Engine for Tiles (\IceT) is a high-performance
+  sort-last parallel rendering library.  In addition to providing
+  accelerated rendering for a standard display, \IceT provides the unique
+  ability to generate images for tiled displays.  The overall resolution of
+  the display may be several times larger than any viewport that may be
+  rendered by a single machine.  This document is an overview of the user
+  interface to \IceT.
+\end{abstract}
+
+%-----------------------------------------------------------------------------
+% In case we every need an acknowledgement section.
+% \clearpage
+% \chapter*{Acknowledgement}
+% I'd like to thank my agent, my wife, and the rest of the world.
+
+% -----------------------------------------------------------------------------
+% The table of contents and list of figures and tables
+% Comment out \listoffigures and \listoftables if there are no
+% figures or tables. Make sure this starts on an odd numbered page
+\cleardoublepage                % TOC needs to start on an odd page
+\tableofcontents
+% \listoffigures
+% \listoftables
+
+% -----------------------------------------------------------------------------
+% This is where the body of the report begins.
+\SANDmain       % Start the main part of the report.
+
+\input{Introduction.tex}
+
+\input{Tutorial.tex}
+
+\input{BasicUsage.tex}
+
+\chapter{Strategies}
+\label{chap:Strategies}
+
+\index{strategy|(}
+
+\section{Reduce Strategy}
+\label{sec:Strategies:Reduce}
+
+\index{strategy!reduce|(}
+\index{reduce~strategy|see{strategy, reduce}}
+
+\index{strategy!reduce|)}
+
+\section{Split Strategy}
+\label{sec:Strategies:Split}
+
+\index{strategy!split|(}
+\index{split~strategy|see{strategy, split}}
+
+\index{strategy!split|)}
+
+\section{Virtual Trees Strategy}
+\label{sec:Strategies:Vertial_Trees}
+
+\index{strategy!virtual~trees|(}
+\index{virtual~trees|see{strategy, virtual trees}}
+
+\index{strategy!virtual~trees|)}
+
+\section{Serial Strategy}
+\label{sec:Strategies:Serial}
+
+\index{strategy!serial|(}
+\index{serial~strategy|see{strategy, serial}}
+
+\index{strategy!serial|)}
+
+\section{Direct Strategy}
+\label{sec:Strategies:Direct}
+
+\index{strategy!direct|(}
+\index{direct~strategy|see{strategy, direct}}
+
+\index{strategy!direct|)}
+
+\index{strategy|)}
+
+
+\chapter{Communicators}
+\label{chap:Communicators}
+
+\section{MPI Communicators}
+\label{sec:Communicators:MPI_Communicators}
+
+\section{User Defined Communicators}
+\label{sec:Communicators:User_Defined_Communicators}
+
+
+\chapter{Customizing Compositing}
+\label{chap:Customizing_Compositing}
+
+\section{Z-Buffer Compositing}
+\label{sec:Customizing_Compositing:User_Defined_Communicators}
+\index{z-buffer|see{compositing, z-buffer}}
+\index{compositing!z-buffer|(}
+\index{compositing!z-buffer|)}
+
+\section{Volume Rendering (and Other Transparent Objects)}
+\label{sec:Customizing_Compositing:Volume_Rendering}
+\index{blending|see{compositing, blended}}
+\index{compositing!blended|(}
+
+Turning on blending (via icetInputOutputBuffers).
+Ordered Compositing.
+Blending into background.
+
+\index{compositing!blended|)}
+
+\section{Image Inflation}
+\label{sec:Customizing_Compositing:Image_Inflation}
+\index{image~inflation|(}
+\index{image~inflation|)}
+
+\section{Floating Viewport}
+\label{sec:Customizing_Compositing:Floating_Viewport}
+\index{floating~viewport|(}
+\index{floating~viewport|)}
+
+\section{Active Pixel Encoding}
+\label{sec:Customizing_Compositing:Active_Pixel_Encoding}
+\index{active~pixel~encoding|(}
+\index{active~pixel~encoding|)}
+
+\section{Data Replication}
+\label{sec:Customizing_Compositing:Data_Replication}
+\index{data~replication|(}
+\index{data~replication|)}
+
+\section{Timing (and Other Metrics)}
+\label{sec:Customizing_Compositing:Timing}
+\index{timing|(}
+
+Time metrics.
+Message metrics.
+
+\index{timing|)}
+
+
+\chapter{Future Work}
+
+Stuff that would be good to change.
+
+\begin{itemize}
+\item Pass context into functions (as an object).  Help to maintain
+  thread safety.
+\item Render aborts.
+\item Allow higher precision color buffers.
+\item Decouple from OpenGL.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+% This chapter contains all of the man pages.
+\chapter{Man Pages}
+\label{chap:Man_Pages}
+
+In this chapter you will find a man page for each of the functions
+available in the \IceT API.
+
+\renewcommand{\headrulewidth}{0.5pt}
+
+\input{manpages/manpages.tex}
+
+% -----------------------------------------------------------------------------
+% Here is where the index goes.
+%
+\clearpage
+\lhead[]{}
+\rhead[]{}
+\phantomsection
+\addcontentsline{toc}{chapter}{Index}
+\printindex
+
+\end{document}

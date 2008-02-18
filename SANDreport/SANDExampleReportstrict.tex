@@ -1,0 +1,459 @@
+%
+% $Id$
+%
+% This is an example LaTeX file which uses the SANDreport class file.
+% It shows how a SAND report should be formatted, what sections and
+% elements it should contain, and how to use the SANDreport class.
+% It uses the LaTeX report class and the strict option.
+%
+% Get the latest version of the class file and more at
+%    http://www.cs.sandia.gov/~rolf/SANDreport
+%
+% This file and the SANDreport.cls file are based on information
+% contained in "Guide to Preparing {SAND} Reports", Sand98-0730, edited
+% by Tamara K. Locke, and the newer "Guide to Preparing SAND Reports and
+% Other Communication Products", SAND2002-2068P.
+% Please send corrections and suggestions for improvements to
+% Rolf Riesen, Org. 9223, MS 1110, rolf@cs.sandia.gov
+%
+\documentclass[pdf,ps2pdf,12pt,report,strict]{SANDreport}
+\usepackage{pslatex}
+\usepackage{mathptmx}	% Use the Postscript Times font
+\usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
+
+% If you want to relax some of the SAND98-0730 requirements, use the "relax"
+% option. It adds spaces and boldface in the table of contents, and does not
+% force the page layout sizes.
+% e.g. \documentclass[relax,12pt]{SANDreport}
+%
+% You can also use the "strict" option, which applies even more of the
+% SAND98-0730 guidelines. It gets rid of section numbers which are often
+% useful; e.g. \documentclass[strict]{SANDreport}
+
+
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+    \title{On the Use of Magic at National Laboratories (Report style, strict)}
+
+    \author{Harry E. Potter \\
+	  Special Projects Department \\
+	  Sandia National Laboratories\\
+	  P.O. Box 5800\\
+	  Albuquerque, NM 87185-9999 \\
+	  hpotter@sandia.gov \\
+	  \\
+	  \and
+	  Hermoine S. Granger \\
+	  Hogwarts \\
+	  Hogsmeade, North of London, Great Britain\\
+	  granger@hogwarts.edu
+	 }
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{}
+
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2002-xxxx}
+\SANDprintDate{June 2002}
+\SANDrePrintDate{January 2006}
+\SANDrePrintDate{February 2006}
+\SANDrePrintDate{March 2006}
+\SANDauthor{Harry E. Potter, Hermoine S. Granger}
+
+
+% ---------------------------------------------------------------------------- %
+% Include the markings required for your SAND report. The default is "Unlimited
+% Release". You may have to edit the file included here, or create your own
+% (see the examples provided).
+%
+% \include{MarkUR} % Not needed for unlimted release reports
+
+
+% ---------------------------------------------------------------------------- %
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%
+\SANDsupersed{SAND1901-0001}{January 1901}
+
+
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
+\begin{document}
+    \maketitle
+
+    % ------------------------------------------------------------------------ %
+    % An Abstract is required for SAND reports
+    %
+    \begin{abstract}
+	It would appear that many projects carried out at the
+	national DOE laboratories could benefit from some magic. This
+	report examines the requirements for the use of magic and
+	gives a few specific examples on how magic can be used to
+	advance the state of the art.
+    \end{abstract}
+
+
+    % ------------------------------------------------------------------------ %
+    % An Acknowledgement section is optional but important, if someone made
+    % contributions or helped beyond the normal part of a work assignment.
+    % Use \section* since we don't want it in the table of context
+    %
+    \clearpage
+    \chapter*{Acknowledgment}
+	Thanks to Ron Weasly for valuable discussions and helping
+	us finding new uses of magic.
+
+	The format of this report is based on information found
+	in~\cite{Sand98-0730}.
+
+
+    % ------------------------------------------------------------------------ %
+    % The table of contents and list of figures and tables
+    % Comment out \listoffigures and \listoftables if there are no
+    % figures or tables. Make sure this starts on an odd numbered page
+    %
+    \cleardoublepage		% TOC needs to start on an odd page
+    \tableofcontents
+    \listoffigures
+    \listoftables
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional preface or Foreword
+    \clearpage
+    \chapter*{Preface}
+    \addcontentsline{toc}{chapter}{Preface}
+	Although muggles usually have only limited experience with
+	magic, and many even dispute its existence, it is worthwhile
+	to be open minded and explore the possibilities.
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional executive summary
+    \clearpage
+    \chapter*{Summary}
+    \addcontentsline{toc}{chapter}{Summary}
+	Once a certain level of mistrust and skepticism has
+	been overcome, magic finds many uses in todays science
+	and engineering. In this report we explain some of the
+	fundamental spells and instruments of magic and wizardry. We
+	then conclude with a few examples on how they can be used
+	in daily activities at national Laboratories.
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional glossary. We don't want it to be numbered
+    \clearpage
+    \chapter*{Nomenclature}
+    \addcontentsline{toc}{chapter}{Nomenclature}
+    \begin{description}
+	\item[alohomora]
+	    spell to open locked doors and containers
+	\item[leviosa]
+	    spell to levitate objects
+	\item[remembrall]
+	    device to alert you that you have forgotten something
+	\item[wand]
+	    device to execute spells
+    \end{description}
+
+
+    % ---------------------------------------------------------------------- %
+    % This is where the body of the report begins; usually with an Introduction
+    %
+    \SANDmain		% Start the main part of the report
+
+    \chapter{Introduction}
+	\label{Intro}
+	In~\cite{Potter} we have shown that magic has a use in
+	muggle science. In this report we address the use of magic
+	specifically to the science and engineering performed at the
+	DOE national laboratories. Let us begin with a description
+	of a couple of basic magical shapes. We use the circle and
+	the square to make our point.
+
+	\section{The Circle}
+	    Figure~\ref{fig1} shows one of the basic magical shapes. It
+	    appears in many spells and has many important properties.
+
+	    \begin{figure}[ht]
+		\centering
+		\begin{picture}(50,50)(0,0)
+		    \put(25,25){\circle{50}}
+		    \put(25,25){\circle{1}}
+		\end{picture}
+		\caption[The circle]{A circle is one of basic magical shapes.
+		    It has many important properties. Note, for example, that
+		    every point along its circumference is at exactly the same
+		    distance from the center. A truly magical property.}
+		\label{fig1}
+	    \end{figure}
+
+	    Whole books have been written about the circle and
+	    similar, lesser shapes. So, it would be presumptuous to
+	    attempt to even list some of its properties and magical
+	    uses. Simply admire the shape in Figure~\ref{fig1} and
+	    its power will soon engulf you in ideas and beautiful
+	    feelings of completeness.
+
+
+	\subsection{Small Circles}
+	    We also need an example of a subsection to make
+	    sure tiles and table of content entries work for those.
+
+	    And while we are at it, we might as well check paragraph
+	    spacing. Although, we will do that again in the bla section.
+
+	\section{The Square}
+	    Figure~\ref{fig2} illustrates another famous magical shape.
+	    We will show some of its uses in later chapters, but we
+	    wanted to introduce it here because this is a good place
+	    for another figure.
+
+	    \begin{figure}[ht]
+		\centering
+		\begin{picture}(50,50)(0,0)
+		    \put(0,0){\framebox(50,50){}}
+		    \put(25,25){\circle{1}}
+		\end{picture}
+		\caption[The square]{A square is another of the basic magical
+		    shapes. It is not quite as powerful as the circle. It
+		    has some similarities (note that the four corners all have
+		    the same distance to the center), and has many fine
+		    uses in everyday magic.}
+		\label{fig2}
+	    \end{figure}
+
+	\section{The Dot}
+	    We also need a figure with a short caption. In order to do this,
+	    we introduce the dot. Figure~\ref{fig3} shows the shape of a dot.
+
+	    \begin{figure}[ht]
+		\centering
+		\begin{picture}(50,50)(0,0)
+		    \put(25,25){\circle{1}}
+		\end{picture}
+		\caption[The dot]{A simple dot}
+		\label{fig3}
+	    \end{figure}
+
+	\section{Tables and Such}
+	    In order to test our class file, we also need to
+	    have some tables. One should be enough for our purposes,
+	    so here it is: Table~\ref{tab1}. On second thought, we
+	    need another one to test the list of tables with multiple
+	    entries. So, we introduce Table~\ref{tab2}.
+
+	    \begin{table}[ht]
+		\centering
+		\caption[Magical shapes]{This superb table lists a few
+		    of the more important magical shapes and some of
+		    their properties. Be aware that this condensed list
+		    can by no means describe all the properties or
+		    shapes in use by modern magic.}
+		\bigskip
+
+		\begin{tabular}{|l|c|l|c|}
+		    \hline \hline
+		    Name  & Number of & Importance & Shape \\
+		          & corners   &            &       \\
+		    \hline
+		    circle & 0        & high       & $\bigcirc$ \\
+		    square & 4        & medium     & $\diamond$ \\
+		    triangle & 3      & low        & $\triangle$ \\
+		    \hline
+		\end{tabular}
+		\label{tab1}
+	    \end{table}
+
+	    \begin{table}[ht]
+		\centering
+		\caption{A magic square}
+		\bigskip
+
+		\begin{tabular}{|c|c|c|c|}
+		    \hline
+			1 & 15 & 14 & 4 \\ \hline
+			12 & 6 & 7 & 9 \\ \hline
+			8 & 10 & 11 & 5 \\ \hline
+			13 & 3 & 2 & 16 \\ \hline
+		\end{tabular}
+		\label{tab2}
+	    \end{table}
+
+
+    \chapter{A Chapter With Subfigures}
+	The subfigure package used to cause problems until James
+	Gruetzner and Todd Pitts found out that the subfigure
+	package uses {\tt addcontentsline}, which is redefined in
+	the SANDreport class. The class uses the ifthen package,
+	but it is not loaded at the time the subfigure package
+	uses {\tt addcontentsline}.  The new code avoids using the
+	ifthen package.  Have a look at Figure~\ref{fig:creatures}
+	for an example.
+
+	\begin{figure}[ht]
+	    \centering
+	    \subfigure[A Hyppogriff]{
+		\label{fig:sub:intro:creatures:hippogriff}
+		\includegraphics[keepaspectratio=true, width=2.0in]{hippogriff.eps}
+	    }
+	    \subfigure[A Dragon]{
+		\label{fig:sub:intro:creatures:dragon}
+		\includegraphics[keepaspectratio=true, width=2.0in]{dragon.eps}
+	    }
+	    \caption{Magical Creatures.}
+	    \label{fig:creatures}
+	\end{figure}
+
+
+
+    \chapter{A Long Chapter}
+	We need a long chapter to test two-sided formatting. Therefore,
+	we introduce the concept of {\em bla}. We will discover in a
+	moment, that there are many bla's in this chapter. Without further
+	ado, here they are.
+
+	\newcommand{\myblaA}{bla bla bla bla bla bla bla bla bla bla }
+	\newcommand{\myblaB}{\myblaA \myblaA \myblaA \myblaA \myblaA
+	    \myblaA \myblaA \myblaA \myblaA \myblaA }
+
+	\myblaB \myblaB
+
+	\myblaB \myblaB \myblaB \myblaB
+
+	\myblaB \myblaB \myblaB 
+
+	\myblaB \myblaB \myblaB
+
+	\myblaB \myblaB \myblaB \myblaB \myblaB
+
+	\myblaB \myblaB
+
+    \chapter{Conclusion}
+	Of course, no report would be complete without some conclusions.
+	This chapter is where they would go, if we had some.
+
+    \nocite{*}
+
+
+    % ---------------------------------------------------------------------- %
+    % References
+    %
+    \clearpage
+    % If hyperref is included, then \phantomsection is already defined.
+    % If not, we need to define it.
+    \providecommand*{\phantomsection}{}
+    \phantomsection
+    \addcontentsline{toc}{chapter}{References}
+    \bibliographystyle{plain}
+    \bibliography{SANDExample}
+
+
+    % ---------------------------------------------------------------------- %
+    %
+    \appendix
+    \chapter{Historical Perspective}
+	This is an example of an appendix.
+
+	If we follow~\cite{Sand98-0730} strictly, we would have to
+	have a separate bibliography section for each appendix.
+	The style file doesn't provide that, but it can be done
+	using the {\tt bibunits} and {\tt chapterbib} packages.
+
+	If there are many sections in an appendix, it should also
+	have its own table of contents. Again, the SAND report class
+	file does not provide that functionality.
+
+	\section{The Past a Long Time Ago}
+	    This is where we talk about things so old nobody
+	    can verify them. We are safe.
+
+	\section{The Past More Recently}
+	    Now we have to be a little bit more careful, since
+	    records exist from that time, and some people still
+	    alive actually lived back then.
+
+
+    \chapter{Some Other Appendix}
+	Just to show what a second Appendix would look like. It contains
+	a table. Each appendix is supposed to be self-contained, so
+	tables and figures are not supposed to show up in the main
+	table of contents. There can be a separate table of contents
+	for each appendix.
+
+	We reference Table~\ref{tab3} and Figure~\ref{fig4} here to
+	make sure they are labelled properly.
+
+	\begin{table}[ht]
+	    \centering
+	    \caption{A small table}
+	    \bigskip
+
+	    \begin{tabular}{|c|c|}
+		\hline
+		    A & B  \\ \hline
+		    C & D  \\ \hline
+	    \end{tabular}
+	    \label{tab3}
+	\end{table}
+
+	\begin{figure}[ht]
+	    \centering
+	    \begin{picture}(50,50)(0,0)
+		\put(25,25){\circle{1}}
+		\put(25,25){\circle{5}}
+		\put(25,25){\circle{10}}
+		\put(25,25){\circle{15}}
+		\put(25,25){\circle{20}}
+		\put(25,25){\circle{25}}
+		\put(25,25){\circle{30}}
+		\put(25,25){\circle{35}}
+		\put(25,25){\circle{40}}
+		\put(25,25){\circle{45}}
+		\put(25,25){\circle{50}}
+	    \end{picture}
+	    \caption{Dizzy yet?}
+	    \label{fig4}
+	\end{figure}
+
+    % \printindex
+
+    \include{SANDdistribution}
+
+    % The second printing
+    \begin{SANDreDistribution}
+	% Some external Addresses
+	\SANDdistExternal{1}{An Address\\ 99 $99^{th}$ street NW\\City, State}
+	\SANDdistExternal{3}{Some Address\\ and street\\City, State}
+	\SANDdistExternal{12}{Another Address\\ On a street\\City, State\\U.S.A.}
+	\bigskip
+
+
+	% Internal Addresses
+	\SANDdistInternal{1}{1319}{Rolf Riesen}{1423}
+
+	% Example of a mail channel use (instead of a mail stop)
+	\SANDdistInternalM{1}{M9999}{Someone}{01234}
+    \end{SANDreDistribution}
+
+    % The third printing
+    \begin{SANDreDistribution}
+	\SANDdistInternal{1}{1319}{Rolf Riesen}{01423}
+    \end{SANDreDistribution}
+
+    % The fourth printing
+    \begin{SANDreDistribution}
+	\SANDdistInternal{1}{1319}{Rolf Riesen}{1423}
+    \end{SANDreDistribution}
+
+\end{document}

@@ -1,0 +1,82 @@
+% -*- latex -*-
+
+
+\setDate{April 12, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetCopyState}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetCopyState} -- copy state machine of one context to another.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetCopyState}\textC{(}&\CType{IceTContext}&\CArg{dest}\textC{,} \\
+      &\CType{IceTContext}&\CArg{src}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \CFunc{icetCopyState} function replaces the state of \CArg{dest} with
+  the current state of \CArg{src}.  This function can be used to quickly
+  duplicate a context.
+
+  The \CType{IceTCommunicator} object associated with \CArg{dest} is
+  \emph{not} changed (nor can it ever be).  Consequently, the following
+  state values are not copied either, since they refer to process ids that
+  are directly tied to the \CType{IceTCommunicator} object:
+  \CEnum{ICET\_RANK}, \CEnum{ICET\_NUM\_PROCESSES},
+  \CEnum{ICET\_DATA\_REPLICATION\_GROUP},
+  \CEnum{ICET\_DATA\_REPLICATION\_GROUP\_SIZE},
+  \CEnum{ICET\_COMPOSITE\_ORDER}, and \CEnum{ICET\_PROCESS\_ORDERS}.
+  However, every other state parameter is copied.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  The state is copied blindly.  It is therefore possible to copy states
+  that are invalid for a context's communicator.  For example, a display
+  rank may not refer to a valid process id.
+
+
+  \mansection{Notes}
+
+  Behavior is undefined if \CArg{dest} or \CArg{src} has never been created
+  or has already been destroyed.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetCreateContext},
+  \CFuncSeeAlso{icetGetContext},
+  \CFuncSeeAlso{icetSetContext}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

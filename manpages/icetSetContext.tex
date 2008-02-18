@@ -1,0 +1,77 @@
+% -*- latex -*-
+
+
+\setDate{December  1, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetSetContext}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetSetContext} -- changes the current context.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetSetContext}\textC{(}&\CType{IceTContext}&\CArg{context}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \CFunc{icetSetContext} function sets the \IceT state machine to work
+  with the context defined by \CArg{context} and the state associated with
+  it.  Further calls to \IceT functions will operate based on the state
+  encapsulated in \CArg{context}.  Changing the state of the context is a
+  fast operation.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
+    \CArg{context} is not valid.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  The behavior of \CFunc{icetSetContext} is somewhat indeterminate if
+  \CArg{context} is not valid.  Usually, an
+  \CErrorEnum{ICET\_INVALID\_VALUE} error will be raised, but it is
+  possible that the context will be set to some other context.  Under any
+  circumstances, a valid context will be current when this function
+  returns.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetGetContext}, \CFuncSeeAlso{icetCreateContext},
+  \CFuncSeeAlso{icetCopyState}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

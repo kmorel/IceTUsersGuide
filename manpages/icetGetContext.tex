@@ -1,0 +1,68 @@
+% -*- latex -*-
+
+
+\setDate{February  1, 2008}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetGetContext}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGetContext} -- retrieves the current context}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \CType{IceTContext}\textC{ }\CFunc{icetGetContext}\textC{(}&\textC{void}&\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \CFunc{icetGetContext} function retrieves the handle for the current
+  context.  This handle may be stored and set for later use with
+  \CFunc{icetSetContext} (assuming the context has not been since
+  destroyed).
+
+
+  \mansection{Return Value}
+
+  A handle for the current context.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetSetContext}, \CFuncSeeAlso{icetCreateContext},
+  \CFuncSeeAlso{icetDestroyContext}, \CFuncSeeAlso{icetCopyState}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

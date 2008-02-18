@@ -1,0 +1,106 @@
+% -*- latex -*-
+
+
+\setDate{January 31, 2007}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDrawFunc}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDrawFunc} -- set a callback for drawing.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \textC{typedef void (*}\CType{IceTCallback}\textC{)(void);}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDrawFunc}\textC{(}&\CType{IceTCallback}&\CArg{func}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \CFunc{icetDrawFunc} function sets a callback that is used to draw
+  the geometry from a given viewpoint.
+
+  \CArg{func} should be a function that issues appropriate \OpenGL calls to
+  draw geometry in the current \OpenGL context.  After \CArg{func} is
+  called, the image left in the back frame buffer will be read back for
+  compositing.
+
+  \CArg{func} should \emph{not} modify the \CEnum{GL\_PROJECTION\_MATRIX}
+  as this would cause \IceT to place image data in the wrong location in
+  the tiled display and improperly cull geometry.  It is acceptable to add
+  transformations to \CEnum{GL\_MODELVIEW\_MATRIX}, but the bounding
+  vertices given with \CFunc{icetBoundingVertices} or
+  \CFunc{icetBoundingBox} are assumed to already be transformed by any such
+  changes to the modelview matrix.  Also, \CEnum{GL\_MODELVIEW\_MATRIX}
+  must be restored before the draw function returns.  Therefore, any
+  changes to \CEnum{GL\_MODELVIEW\_MATRIX} are to be done with care and
+  should be surrounded by a pair of glPushMatrix and glPopMatrix functions.
+
+  It is also important that \CArg{func} \emph{not} attempt the change the
+  clear color.  In some composting modes, \IceT needs to read, modify, and
+  change the background color.  These operations will be lost if
+  \CArg{func} changes the background color, and severe color blending
+  artifacts may result.
+
+  \IceT may call \CArg{func} several times from within a call to
+  \CFunc{icetDrawFrame} or not at all if the current bounds lie outside the
+  current viewpoint.  This can have a subtle but important impact on the
+  behavior of \CArg{func}.  For example, counting frames by incrementing a
+  frame counter in \CArg{func} is obviously wrong (although you could count
+  how many times a render occurs).  \CArg{func} should also leave \OpenGL
+  in a state such that it will be correct for a subsequent run of
+  \CArg{func}.  Any matrices or attributes pushed in \CArg{func} should be
+  popped before \CArg{func} returns, and any state that is assumed to be
+  true on entrance to \CArg{func} should also be true on return.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  \CArg{func} is tightly coupled with the bounds set with
+  \CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox}.  If the geometry
+  drawn by \CArg{func} is dynamic (changes from frame to frame), then the
+  bounds may need to be changed as well.  Incorrect bounds may cause the
+  geometry to be culled in surprising ways.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetDrawFrame},
+  \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetBoundingBox}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

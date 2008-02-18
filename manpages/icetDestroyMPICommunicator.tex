@@ -1,0 +1,64 @@
+% -*- latex -*-
+
+
+\setDate{April 20, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDestroyMPICommunicator}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDestroyMPICommunicator} -- deletes a MPI communicator}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t\_mpi.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDestroyMPICommunicator}\textC{(}&\CType{IceTCommunicator}&\CArg{comm}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Destroys an \CType{IceTCommunicator}.  \CArg{comm} becomes invalid and
+  any memory or MPI resources held by \CArg{comm} are freed.
+
+  Communicators are copied when attached to an \IceT context, so destroying
+  an \CType{IceTCommunicator} used to create a context still in use is
+  safe.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  All MPI errors are ignored.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetCreateMPICommunicator}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

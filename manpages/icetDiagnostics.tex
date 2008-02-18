@@ -1,0 +1,84 @@
+% -*- latex -*-
+
+
+\setDate{April 21, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDiagnostics}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDiagnostics} -- change diagnostic reporting level.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDiagnostics}\textC{(}&\textC{GLbitfield}&\CArg{mask}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Sets what diagnostic message are printed to standard output.  The
+  messages to be printed out are defined by \CArg{mask}.  \CArg{mask}
+  consists of flags that are OR-ed together.  The valid flags are:
+  \begin{Description}[xxxxxxxx]
+  \item[\CEnum{ICET\_DIAG\_OFF}]
+    A zero flag used to indicate that no diagnostic messages are desired.
+  \item[\CEnum{ICET\_DIAG\_ERRORS}]
+    Print messages associated with anomalous conditions.
+  \item[\CEnum{ICET\_DIAG\_WARNINGS}]
+    Print messages associated with conditions that are unexpected or may lead
+    to errors.  Implicitly turns on \CEnum{ICET\_DIAG\_ERRORS}.
+  \item[\CEnum{ICET\_DIAG\_DEBUG}]
+    Print frequent messages concerning the status of \IceT.  Implicitly
+    turns on \CEnum{ICET\_DIAG\_ERRORS} and \CEnum{ICET\_DIAG\_WARNINGS}.
+  \item[\CEnum{ICET\_DIAG\_ROOT\_NODE}]
+    Print messages only on the node with a process rank of 0.  This is the
+    default if neither \CEnum{ICET\_DIAG\_ROOT\_NODE} nor
+    \CEnum{ICET\_DIAG\_ALL\_NODES} is set.
+  \item[\CEnum{ICET\_DIAG\_ALL\_NODES}]
+    Print messages all every nodes.
+  \item[\CEnum{ICET\_DIAG\_FULL}]
+    Turn on all diagnostic messages on all nodes.
+  \end{Description}
+
+  The default flags are \CEnum{ICET\_DIAG\_ALL\_NODES} $|$
+  \CEnum{ICET\_DIAG\_WARNINGS}.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetGetError}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

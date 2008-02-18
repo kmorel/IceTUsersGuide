@@ -1,0 +1,94 @@
+% -*- latex -*-
+
+
+\setDate{December  1, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetWallTime}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetWallTime} -- timer function}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{double }\CFunc{icetWallTime}\textC{(}&\textC{void}&\textC{)}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Retrieves the current time, in seconds.  The returned values of
+  \CFunc{icetWallTime} are only valid in relation to each other.  That is,
+  the time may or may not have anything to do with the current date or
+  time.  However, the difference of values between two calls to
+  \CFunc{icetWallTime} is the elapsed time in seconds between the two
+  calls.  Thus, \CFunc{icetWallTime} is handy for determining the running
+  time of various subprocesses.  \CFunc{icetWallTime} is used internally
+  for determining the values for the state variables
+  \CEnum{ICET\_BUFFER\_READ\_TIME}, \CEnum{ICET\_BUFFER\_WRITE\_TIME},
+  \CEnum{ICET\_COMPARE\_TIME}, \CEnum{ICET\_COMPOSITE\_TIME},
+  \CEnum{ICET\_COMPRESS\_TIME}, \CEnum{ICET\_RENDER\_TIME}, and
+  \CEnum{ICET\_TOTAL\_DRAW\_TIME}.
+
+
+  \mansection{Return Value}
+
+  The current time, in seconds.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
+    You've screwed up something a little bit.
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
+    You've screwed something up a lot.
+  \item[\CErrorEnum{ICET\_OUT\_OF\_MEMORY}]
+    You need a better computer to do what you want to do.
+  \item[\CErrorEnum{ICET\_BAD\_CAST}]
+    The argument is of the wrong format.
+  \item[\CErrorEnum{ICET\_INVALID\_ENUM}]
+    One of us does not know what he is talking about.
+  \item[\CErrorEnum{ICET\_SANITY\_CHECK\_FAIL}]
+    I've screwed something up a lot.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  This man page should never be installed.  It should just be used to help
+  make other man pages.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetGet}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

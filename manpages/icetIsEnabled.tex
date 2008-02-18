@@ -1,0 +1,70 @@
+% -*- latex -*-
+
+
+\setDate{November 15, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetIsEnabled}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetIsEnabled} -- query enabled status of an \IceT feature.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{4}
+    \textC{GLboolean }\CFunc{icetIsEnabled}\textC{(}&\textC{GLenum}&\CArg{pname}&\textC{);}
+  \end{Table}
+
+  
+  \mansection{Return Value}
+
+  Returns \CEnum{ICET\_TRUE} if the feature associated with \CArg{pname} is
+  enabled, \CEnum{ICET\_FALSE} $(= 0)$ if the feature is disabled.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}] If \CArg{pname} is not a feature
+    to be enabled or disabled.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  The check for a valid \CArg{pname} is not thorough, and thus the
+  \CErrorEnum{ICET\_INVALID\_VALUE} error may not always be raised.
+
+
+  \mansection{Notes}
+
+  A list of valid values for \CArg{pname} is given in the documentation for
+  \icetEnable.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetEnable}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

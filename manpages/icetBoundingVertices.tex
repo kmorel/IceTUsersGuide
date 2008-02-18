@@ -1,0 +1,102 @@
+% -*- latex -*-
+
+
+\setDate{April 12, 2006}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetBoundingVertices}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetBoundingVertices} -- set bounds of geometry.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetBoundingVertices}\textC{(}&\textC{GLint}&\CArg{size}\textC{,} \\
+      &\textC{GLenum}&\CArg{type}\textC{,} \\
+      &\textC{GLsizei}&\CArg{stride}\textC{,} \\
+      &\textC{GLsizei}&\CArg{count}\textC{,} \\
+      &\textC{const GLvoid *}&\CArg{pointer}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  \CFunc{icetBoundingVertices} is used to tell \IceT what the bounds of
+  the geometry drawn by the callback registered with \CFunc{icetDrawFunc}
+  are.  The bounds are assumed to be the convex hull of the vertices given.
+  The user should take care to make sure that the drawn geometry actually
+  does fit within the convex hull, or the data may be culled in unexpected
+  ways.  \IceT runs most efficiently when the bounds given are tight
+  (match the actual volume of the data well) and when the number of
+  vertices given is minimal.
+
+  The \CArg{size} parameter specifies the number of coordinates given for
+  each vertex.  Coordinates are given in X-Y-Z-W order.  Any Y or Z
+  coordinate not given (because \CArg{size} is less than 3) is assumed to
+  be $0.0$, and any W coordinate not given (because \CArg{size} is less
+  than 4) is assumed to be $1.0$.
+
+  The \CArg{type} parameter specifies in what data type the coordinates are
+  given.  Valid \CArg{type}s are \CEnum{ICET\_SHORT}, \CEnum{ICET\_INT},
+  \CEnum{ICET\_FLOAT}, and \CEnum{ICET\_DOUBLE}, which correspond to types
+  \textC{GLshort}, \textC{GLint}, \textC{GLfloat}, and \textC{GLdouble},
+  respectively.
+
+  The \CArg{stride} parameter specifies the offset between consecutive
+  vertices in bytes.  If \CArg{stride} is $0$, the array is assumed to be
+  tightly packed.
+
+  The \CArg{count} parameter specifies the number of vertices to set.
+
+  The \CArg{pointer} parameter is an array of vertices with the first
+  vertex starting at the first byte.
+
+  If data replication is being used, each process in a data replication
+  group should register the same bounding vertices that encompass the
+  entire geometry.  By default there is no data replication, so unless you
+  call \CFunc{icetDataReplicationGroup}, all process can have their own
+  bounds.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
+    Raised if \CArg{type} is not one of \CEnum{ICET\_SHORT},
+    \CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetDrawFunc}, \CFuncSeeAlso{icetBoundingBox},
+  \CFuncSeeAlso{icetDataReplicationGroup}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

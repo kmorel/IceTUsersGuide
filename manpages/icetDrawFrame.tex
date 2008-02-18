@@ -1,0 +1,111 @@
+% -*- latex -*-
+
+
+\setDate{February 14, 2008}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDrawFrame}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDrawFrame} -- renders and composites a frame}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <GL/ice-t.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDrawFrame}\textC{(void);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Initiates a frame draw using the current \OpenGL transformation matrices
+  (modelview and projection).
+
+  \IceT may render an image, the tile display needs to be defined (using
+  \CFunc{icetAddTile}) and the drawing function needs to be set (using
+  \CFunc{icetDrawFunc}).  The composite strategy may also optionally be set
+  (using \CFunc{icetStrategy}).
+
+  If \CEnum{ICET\_DISPLAY} is enabled, then the fully composited image is
+  written back to the \OpenGL framebuffer for display.  It is the
+  application's responsibility to synchronize the processes and swap front
+  and back buffers.  If the \OpenGL background color is set to something
+  other than black, \CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} should also
+  be enabled.  Displaying with \CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND}
+  disabled may be slightly faster (depending on graphics hardware) but can
+  result in black rectangles in the background.  If
+  \CEnum{ICET\_DISPLAY\_INFLATE} is enabled and the size of the renderable
+  window (determined by the current \OpenGL viewport) is greater than that
+  of the tile being displayed, then the image will first be `inflated' to
+  the size of the actual display.  If \CEnum{ICET\_DISPLAY\_INFLATE} is
+  disabled, the image is drawn at its original resolution at the lower left
+  corner of the display.
+
+  The image remaining in the frame buffer is undefined if
+  \CEnum{ICET\_DISPLAY} is disabled or the process is not displaying a
+  tile.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
+    Raised if the drawing function has not been set.  Also can be raised if
+    \CFunc{icetDrawFrame} is called recursively, probably from within the
+    drawing callback.
+  \item[\CErrorEnum{ICET\_OUT\_OF\_MEMORY}]
+    Not enough memory left to hold intermittent frame buffers and other
+    temporary data.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  If compositing with color blending on, the image returned with
+  \icetGetColorBuffer may have values of $\langle R, G, B, A \rangle =
+  \langle 0, 0, 0, 0 \rangle$ and the rest of the image may be blended with
+  black rather than the correct background color.
+
+  During compositing, image compression is employed that relies on knowing
+  the maximum possible value in the z-buffer.  Unfortunately, different
+  rendering hardware can give different results for this value.  \IceT
+  tries to dermine this value up front by clearing the screen and reading
+  the z-buffer value, but this test sometimes fails, resulting in a
+  classification of background.  The side effects of this are minimal, and
+  \IceT usually quickly fixes the problem by continually checking depth
+  values.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetResetTiles},
+  \CFuncSeeAlso{icetAddTile},
+  \CFuncSeeAlso{icetBoundingBox},
+  \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetDrawFunc},
+  \CFuncSeeAlso{icetStrategy},
+  \CFuncSeeAlso{icetGetColorBuffer},
+  \CFuncSeeAlso{icetGetDepthBuffer}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:
