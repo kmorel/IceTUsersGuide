@@ -52,8 +52,8 @@
 % -----------------------------------------------------------------------------
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2007-xxxx}
-\SANDprintDate{XXX 2007}
+\SANDnum{SAND2008-xxxx}
+\SANDprintDate{XXX 2008}
 \SANDauthor{Kenneth~Moreland, Sandia}
 
 % -----------------------------------------------------------------------------
@@ -199,9 +199,17 @@
 
 %-----------------------------------------------------------------------------
 % In case we every need an acknowledgement section.
-% \clearpage
-% \chapter*{Acknowledgement}
-% I'd like to thank my agent, my wife, and the rest of the world.
+\clearpage
+\chapter*{Acknowledgement}
+
+I would like to thank Brian Wylie.  It was his ``big ideas'' that got the
+ball rolling on the \IceT algorithms and library, and it was his continuing
+vision that pushed us on this path to parallel rendering.
+
+I would also like to thank the folks at Kitware, Inc. for adopting the
+\IceT library as the parallel rendering library for ParaView.  They also
+maintain the \IceT code repository.  Without them, \IceT would probably be
+collecting dust on a crashed RAID somewhere.
 
 % -----------------------------------------------------------------------------
 % The table of contents and list of figures and tables
@@ -363,5 +371,16 @@ available in the \IceT API.
 \phantomsection
 \addcontentsline{toc}{chapter}{Index}
 \printindex
+
+% The first printing.
+\begin{SANDdistribution}[NM]
+  % External addresses first
+  \SANDdistExternal{3}{Berk Geveci\\ Kitware, Inc.\\ 28 Corporate Drive\\
+    Clifton Park, NY 12065}
+  \bigskip
+
+   % Internal addresses next
+  \SANDdistInternal{8}{1323}{Kenneth Moreland}{1424}
+\end{SANDdistribution}
 
 \end{document}
