@@ -20,6 +20,8 @@
 \usepackage{pslatex}
 \usepackage{mathptmx}	% Use the Postscript Times font
 \usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
+\usepackage[dvips,light,first,bottomafter]{draftcopy}
+\draftcopyName{Sample, contains no OUO}{70}
 
 % If you want to relax some of the SAND98-0730 requirements, use the "relax"
 % option. It adds spaces and boldface in the table of contents, and does not
@@ -211,7 +213,7 @@
 	    sure tiles and table of content entries work for those.
 
 	    And while we are at it, we might as well check paragraph
-	    spacing. Although, we will do that again in the bla section.
+	    spacing. Although, we will do that again in Section~\ref{sec:long}.
 
 	\section{The Square}
 	    Figure~\ref{fig2} illustrates another famous magical shape.
@@ -317,27 +319,12 @@
 
 
 
-    \chapter{A Long Chapter}
-	We need a long chapter to test two-sided formatting. Therefore,
-	we introduce the concept of {\em bla}. We will discover in a
-	moment, that there are many bla's in this chapter. Without further
-	ado, here they are.
+    \chapter{A Long Chapter}\label{sec:long}
+	We need a long chapter to test full-page formatting. Therefore,
+	we switch to the ancient magical language of Latin.
 
-	\newcommand{\myblaA}{bla bla bla bla bla bla bla bla bla bla }
-	\newcommand{\myblaB}{\myblaA \myblaA \myblaA \myblaA \myblaA
-	    \myblaA \myblaA \myblaA \myblaA \myblaA }
+	\input{LoremIpsum}
 
-	\myblaB \myblaB
-
-	\myblaB \myblaB \myblaB \myblaB
-
-	\myblaB \myblaB \myblaB 
-
-	\myblaB \myblaB \myblaB
-
-	\myblaB \myblaB \myblaB \myblaB \myblaB
-
-	\myblaB \myblaB
 
     \chapter{Conclusion}
 	Of course, no report would be complete without some conclusions.

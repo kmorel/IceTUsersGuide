@@ -1,6 +1,6 @@
 #
 # Makefile for the SAND report Example files
-# $Id: Makefile,v 1.1 2006/04/11 21:49:52 kmorel Exp $
+# $Id: Makefile,v 1.10 2005/06/14 16:45:09 rolf Exp $
 #
 PFILES	= SANDExampleArticleNotstrict
 
