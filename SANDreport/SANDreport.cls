@@ -259,7 +259,7 @@
 %	    think this is smoother.
 %
 %    - The Technical Library has a new org number again: 4536 --> 9536 (Ann Smaple via Bill Hart)
-%        Also changed NM tech library org to 8944, but I am mostly guessing here...
+%        Also changed CA tech library org to 8944, but I am mostly guessing here...
 %        Added  (1 electronic and 1 hardcopy) for housekeeping copies and reduce spacing
 %        between distribution entries. (Ann Smaple via Bill Hart)
 %    - Central Technical Files doesn't seem to want unclassified reports anymore. (Several)
@@ -880,7 +880,7 @@
 		\SANDdistInternalM{2}{2497}{Central Technical Files}{8944 (1 electronic and 1 hardcopy)}
 	    }{}
 
-	    \SANDdistInternal{2}{0899}{Technical Library}{9536 (1 electronic and 1 hardcopy)}
+	    \SANDdistInternal{1}{0899}{Technical Library}{9536 (electronic)}
 
 	    % If this report has a Patent Caution or Patent Interest
 	    \ifthenelse{\boolean{distPatent}}   {
