@@ -70,6 +70,14 @@ ENDMACRO(ICET_ALIAS_MAN_PAGE)
 ICET_ALIAS_MAN_PAGE(icetEnable icetDisable)
 ICET_ALIAS_MAN_PAGE(icetGetColorBuffer icetGetDepthBuffer)
 
+ICET_ALIAS_MAN_PAGE(icetBoundingBox icetBoundingBoxd)
+ICET_ALIAS_MAN_PAGE(icetBoundingBox icetBoundingBoxf)
+ICET_ALIAS_MAN_PAGE(icetGet icetGetDoublev)
+ICET_ALIAS_MAN_PAGE(icetGet icetGetFloatv)
+ICET_ALIAS_MAN_PAGE(icetGet icetGetIntegerv)
+ICET_ALIAS_MAN_PAGE(icetGet icetGetBooleanv)
+ICET_ALIAS_MAN_PAGE(icetGet icetGetPointerv)
+
 ADD_CUSTOM_TARGET(IceTManPages ALL
   DEPENDS ${man3files}
   )
