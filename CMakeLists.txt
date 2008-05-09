@@ -8,6 +8,7 @@ SET(CHAPTERS
   Introduction.tex
   Tutorial.tex
   BasicUsage.tex
+  CustomizingCompositing.tex
   )
 
 LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/SANDreport/*.cls .)

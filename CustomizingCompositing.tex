@@ -1,0 +1,90 @@
+% -*- latex -*-
+
+\chapter{Customizing Compositing}
+\label{chap:Customizing_Compositing}
+
+If you have been reading this document from the beginning, then you already
+know enough to use \IceT for many typical rendering applications.  Chapters
+\ref{chap:Tutorial} and \ref{chap:Basic_Usage} describe how to build and
+link \IceT, establish an \IceT context in your application, and to leverage
+\IceT to make your rendering parallel.  This chapter describes the many
+features \IceT provides to let you customize the image compositing to your
+application.
+
+\section{Compositing Operation}
+\label{sec:Customizing_Compositing:Compositing_Operation}
+\index{compositing|(}
+\index{compositing~operation|(}
+
+\IceT is classified as a \index{sort-last}\keyterm{sort-last} type of
+parallel rendering library.  Basically, this means that each process
+renders images independently, and then these images, each comprising a
+different partition of the geometry, are combined together in a process
+called \keyterm{compositing}.
+
+To combine two images together, a \keyterm{compositing operation} is
+applied to every corresponding pair of pixels.  Three or more images are
+combined by applying the compositing operation multiple times to eventually
+reduce everything to one image.  (The compositing operations supported by
+\IceT are associative, so order does not matter.  \IceT takes advantage of
+this fact to efficiently perform the compositing in parallel.)
+
+\IceT supports two compositing operations.  The first type of compositing
+operation is a depth comparison and the other is an alpha blend.    The
+depth comparison is a bit faster and is easier to use, but only works for
+opaque surfaces.  If you are performing
+\index{volume~rendering}\keyterm{volume rendering}, the translucent
+rendering of 3-dimensional volumes, or any other rendering that involves
+transparent data, then you will have to use the alpha blend compositing
+operation.
+
+\subsection{Z-Buffer Compositing}
+\label{sec:Customizing_Compositing:User_Defined_Communicators}
+\index{z-buffer|see{compositing, z-buffer}}
+\index{compositing!z-buffer|(}
+\index{compositing!z-buffer|)}
+
+\subsection{Volume Rendering (and Other Transparent Objects)}
+\label{sec:Customizing_Compositing:Volume_Rendering}
+\index{blending|see{compositing, blended}}
+\index{compositing!blended|(}
+\index{volume~rendering|(}
+
+Turning on blending (via icetInputOutputBuffers).
+Ordered Compositing.
+Blending into background.
+
+\index{compositing!blended|)}
+\index{volume~rendering|)}
+
+\index{compositing~operation|)}
+\index{compositing|)}
+
+\section{Image Inflation}
+\label{sec:Customizing_Compositing:Image_Inflation}
+\index{image~inflation|(}
+\index{image~inflation|)}
+
+\section{Floating Viewport}
+\label{sec:Customizing_Compositing:Floating_Viewport}
+\index{floating~viewport|(}
+\index{floating~viewport|)}
+
+\section{Active Pixel Encoding}
+\label{sec:Customizing_Compositing:Active_Pixel_Encoding}
+\index{active~pixel~encoding|(}
+\index{active~pixel~encoding|)}
+
+\section{Data Replication}
+\label{sec:Customizing_Compositing:Data_Replication}
+\index{data~replication|(}
+\index{data~replication|)}
+
+\section{Timing (and Other Metrics)}
+\label{sec:Customizing_Compositing:Timing}
+\index{timing|(}
+
+Time metrics.
+Message metrics.
+
+\index{timing|)}
