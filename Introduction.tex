@@ -56,3 +56,52 @@ algorithms, see:
   \emph{Proceedings of IEEE Symposium on Parallel and Large-Data
     Visualization and Graphics}, October 2001, pp. 85--154.
 \end{quote}
+
+
+\section{A Parallel Rendering Primer}
+\label{sec:Introduction:Parallel_Rendering_Primer}
+
+\IceT requires you to know very little about parallel rendering and their
+algorithms.  However, it is helpful to know the basic idea behind \IceT's
+algorithms.  This section gives a brief introduction to how \IceT renders
+in parallel.
+
+Parallel rendering algorithms are classified as
+\index{sort-first}\keyterm{sort-first},
+\index{sort-middle}\keyterm{sort-middle}, or
+\index{sort-last}\keyterm{sort-last}.  The key distinguishing feature of
+each class is how primitives are distributed amongst processes.  As
+demonstrated in Figure~\ref{fig:Introduction:ParallelRenderingClasses},
+sort-first and sort-middle algorithms allocate screen space to processes
+and send the appropriate geometry to each process every frame whereas
+sort-last algorithms render static partitions of geometry in each process
+and then composite the resulting images to a single image.\footnote{In the
+  interest of brevity and clarity, I am intentionally leaving out details
+  that are unimportant to understanding \IceT such as hybrid algorithms and
+  differences between sort-first and sort-middle algorithms.}  \IceT is a
+sort-last parallel rendering library.
+
+\begin{figure}
+  \sticky{Labeled images showing sort-first/middle transferring polygons and
+    sort last transferring images.}
+  \label{fig:Introduction:ParallelRenderingClasses}
+  \caption{The differences between parallel rendering classes.  Sort-first
+    and sort-middle algorithms transfer geometric data.  Sort-last
+    algorithms transfer image data.}
+\end{figure}
+
+A convenient feature of sort-last rendering is that an application needs to
+change very little about how it renders geometry.  The geometry is rendered
+the same in parallel as it is in serial; the only difference is that each
+process only renders a subset of the geometry.  The typical operation of a
+parallel application using sort-last rendering is to simply render locally
+and then composite the images.
+
+When rendering to a tiled display, as \IceT allows you to do, there is an
+added level of complexity introduced because the graphics system is often
+not capable of rendering an image large enough for the entire display.
+Thus, image compositing for a tiled display requires a loop that can
+iteratively render images for each tile and composite them.  \IceT handles
+this looping and interfaces with the rendering functions of your
+application through a callback mechanism.  This will be described in the
+following chapters.

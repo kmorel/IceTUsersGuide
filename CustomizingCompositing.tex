@@ -17,10 +17,11 @@ application.
 \index{compositing~operation|(}
 
 \IceT is classified as a \index{sort-last}\keyterm{sort-last} type of
-parallel rendering library.  Basically, this means that each process
-renders images independently, and then these images, each comprising a
-different partition of the geometry, are combined together in a process
-called \keyterm{compositing}.
+parallel rendering library, as discussed in
+Chapter~\ref{sec:Introduction:Parallel_Rendering_Primer}.  Basically, this
+means that each process renders images independently, and then these
+images, each comprising a different partition of the geometry, are combined
+together in a process called \keyterm{compositing}.
 
 To combine two images together, a \keyterm{compositing operation} is
 applied to every corresponding pair of pixels.  Three or more images are
@@ -41,7 +42,44 @@ operation.
 \subsection{Z-Buffer Compositing}
 \label{sec:Customizing_Compositing:User_Defined_Communicators}
 \index{z-buffer|see{compositing, z-buffer}}
+\index{depth~buffer|see{compositing, z-buffer}}
 \index{compositing!z-buffer|(}
+
+Z-buffer compositing takes advantage of the same hidden surface removal
+already taking place in the OpenGL pipeline.  \IceT pulls the z-buffer
+(also often known as the \keyterm{depth buffer}) from the OpenGL image
+buffers.  The compositing operation then just compares the depth values of
+two pixels and chooses the one that is closer.
+
+Z-buffer compositing is used whenever the depth buffer is chosen as one of
+the input buffers.  The input (and output) buffers are chosen with the
+\CFunc{icetInputOutputBuffers} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetInputOutputBuffers}\textC{(}&\textC{GLenum}&\CArg{inputs}\textC{,} \\
+  &\textC{GLenum}&\CArg{outputs}\quad\textC{);}
+\end{Table}
+
+By default, both the the color and depth buffer are selected as input
+buffers and the color buffer is selected as the only output buffer.  This
+means that the depth buffer will be used to do z-buffer compositing, but
+only the color buffer will be fully composited.  (Not computing the depth
+buffer may save some network transfer time.)
+
+If you need the depth buffer composited in addition to the color buffer
+(for example, to help with a picking operation), you can do so by simply
+setting the depth buffer as one of the output buffers.
+\begin{code}
+  icetInputOutputBuffers(ICET_COLOR_BUFFER_BIT | ICET_DEPTH_BUFFER_BIT,
+                         ICET_COLOR_BUFFER_BIT | ICET_DEPTH_BUFFER_BIT);
+\end{code}
+Alternatively, if you only need the depth buffer (for example, as a shadow
+map), you can do so by setting both the input and output buffers to just
+the depth buffer.
+\begin{code}
+  icetInputOutputBuffers(ICET_DEPTH_BUFFER_BIT, ICET_DEPTH_BUFFER_BIT);
+\end{code}
+
 \index{compositing!z-buffer|)}
 
 \subsection{Volume Rendering (and Other Transparent Objects)}
@@ -49,6 +87,113 @@ operation.
 \index{blending|see{compositing, blended}}
 \index{compositing!blended|(}
 \index{volume~rendering|(}
+
+A well known limitation to z-buffer compositing --- and the z-buffer hidden
+surface removal algorithm in general --- is that it only works with opaque
+objects.  You will get invalid results if you try to apply z-buffer
+compositing on transparent objects.
+
+There are two fundamental problems with the z-buffer compositing operation
+when dealing with translucent pixels.  The first problem is that you cannot
+simply pick the nearest color value.  You must \keyterm{blend} the front
+pixel's color with the back pixel's color.  The second problem is that the
+color blending is order dependent.  That is, you have to know which pixels
+are in front of others.  Although it is technically possible to use
+z-buffer values to determine the ordering of a pair of pixels, making sure
+that all the pixels get composited in the correct order requires additional
+information about and constraints on the geometry.
+
+When z-buffer compositing is not applicable, you must use \keyterm{blended
+  compositing}.  Blended compositing is automatically turned on when there
+is no z-buffer specified as an input buffer.  That generally means you will
+be setting both the input and output buffers to the color buffer.
+\begin{code}
+  icetInputOutputBuffers(ICET_COLOR_BUFFER_BIT, ICET_COLOR_BUFFER_BIT);
+\end{code}
+
+The blending composite operator relies on the \index{alpha}\keyterm{alpha}
+(\index{$\alpha$}\keyterm{$\alpha$}) channel of the color buffer (the A in
+RGBA colors).  Note that the alpha values must actually be available in the
+OpenGL color buffers in order for blended compositing to work.  Many
+applications create OpenGL buffers without alpha bit planes in them because
+they are often not necessary to render images in serial.  Make sure you
+application creates alpha bit planes before attempting to composite
+translucent images with \IceT (or any other library).
+
+The blending operation is the standard
+\index{over~operator}\index{under~operator}\keyterm{over/under operator}
+defined in the seminal 1984 Porter and Duff paper.
+\begin{equation}
+  C_o \leftarrow C_f + C_b (1 - \alpha_f)
+  \label{eq:VolumeRendering:OverOperator}
+\end{equation}
+where $C$ is an RGBA color vector, $\alpha$ is the alpha component of a
+color vector, and the $f$, $b$, and $o$ subscripts denote the front, back,
+and output values, respectively.
+
+Each color in Equation~\ref{eq:VolumeRendering:OverOperator} represents a
+\index{pre-multiplied~color}\keyterm{pre-multiplied color}, meaning that
+the red, green, and blue values are scaled by the alpha parameter.  Thus, a
+fully red color at half transparency is represented by the vector $\langle
+0.5, 0, 0, 0.5 \rangle$ rather than $\langle 1, 0, 0, 0.5 \rangle$.  In
+pre-multiplied colors, none of the red, green, or blue values ever exceed
+the alpha value.  Note that colors are often provided in OpenGL as
+non-pre-multiplied values, and the blending equation $C_o \leftarrow C_f
+\alpha_f + C_b (1 - \alpha_f)$ is used instead of the one in
+Equation~\ref{eq:VolumeRendering:OverOperator}.  Although this blending
+gives the correct RGB color, it computes an invalid alpha parameter, so
+watch out!
+
+\index{ordered compositing|see{compositing, ordered}}
+\index{compositing!ordered|(}
+
+Simply turning on blended compositing is not sufficient to render
+translucent objects.  You must also tell \IceT to perform \keyterm{ordered
+  compositing}.  In ordered compositing, you must have a
+\index{visibility~ordering}\keyterm{visibility ordering}.  Given any two
+processes, a visibility ordering ensures and determines that all of the
+geometry in one process is in front of all the geometry in the other
+process with respect to the camera.  In some cases, such as when volume
+rendering a 3D Cartesian grid of points distributed in blocks to processes,
+finding the visibility ordering is straightforward.  In other cases, such
+as when rendering unstructured collections of polygons or polyhedra, it can
+be difficult to ensure that a visibility ordering exists and can be found.
+Doing so may be the most challenging part of creating a parallel rendering
+application.  An example of creating a visibility ordering from unstructured
+data can be found in the ParaView application, and the implementation is
+detailed in the following paper:
+
+\begin{quote}
+  Kenneth Moreland, Lisa Avila, and Lee Ann Fisk. ``Parallel Unstructured
+  Volume Rendering in ParaView,'' In \emph{Visualization and Data Analysis
+    2007, Proceedings of SPIE-IS\&T Electronic Imaging}, January 2007,
+  pp. 64950F-1--12.
+\end{quote}
+
+Ordered compositing is turned on by simply passing the
+\CEnum{ICET\_ORDERED\_COMPOSITE} flag to \CFunc{icetEnable}.
+\begin{code}
+  icetEnable(ICET_ORDERED_COMPOSITE);
+\end{code}
+
+Once ordered compositing is enabled, it is very important to use
+\CFunc{icetCompositeOrder} to specify the visibility order of the geometry
+associated with each process.  This must generally be done before each call
+to \CFunc{icetDrawFrame}.
+\begin{Table}{1}
+  \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const GLint *}
+  \CArg{process\_ranks} \textC{);}
+\end{Table}
+The \CFunc{icetCompositeOrder} provides an array of processes.  It is
+assumed that the geometry of the first process in the list is in front of
+the rest of the processes; the geometry of the second process in the list
+is in front of all the processes, and so on.  The visibility order often
+changes when the camera angle changes, so it is important to recompute and
+report a new composite order on every frame.
+
+\index{compositing!ordered|)}
+
+\sticky{Document blending into background.}
 
 Turning on blending (via icetInputOutputBuffers).
 Ordered Compositing.
