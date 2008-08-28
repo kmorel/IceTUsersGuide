@@ -41,15 +41,16 @@ operation.
 
 \subsection{Z-Buffer Compositing}
 \label{sec:Customizing_Compositing:User_Defined_Communicators}
-\index{z-buffer|see{compositing, z-buffer}}
+\index{z-buffer}
+\index{z-buffer|seealso{compositing, z-buffer}}
 \index{depth~buffer|see{compositing, z-buffer}}
 \index{compositing!z-buffer|(}
 
-Z-buffer compositing takes advantage of the same hidden surface removal
-already taking place in the OpenGL pipeline.  \IceT pulls the z-buffer
-(also often known as the \keyterm{depth buffer}) from the OpenGL image
-buffers.  The compositing operation then just compares the depth values of
-two pixels and chooses the one that is closer.
+\keyterm{Z-buffer compositing} takes advantage of the same hidden surface
+removal already taking place in the OpenGL pipeline.  \IceT pulls the
+\index{z-buffer}z-buffer (also often known as the \keyterm{depth buffer})
+from the OpenGL image buffers.  The compositing operation then just
+compares the depth values of two pixels and chooses the one that is closer.
 
 Z-buffer compositing is used whenever the depth buffer is chosen as one of
 the input buffers.  The input (and output) buffers are chosen with the
@@ -60,7 +61,7 @@ the input buffers.  The input (and output) buffers are chosen with the
   &\textC{GLenum}&\CArg{outputs}\quad\textC{);}
 \end{Table}
 
-By default, both the the color and depth buffer are selected as input
+By default, both the the color and the depth buffer are selected as input
 buffers and the color buffer is selected as the only output buffer.  This
 means that the depth buffer will be used to do z-buffer compositing, but
 only the color buffer will be fully composited.  (Not computing the depth
@@ -116,7 +117,7 @@ The blending composite operator relies on the \index{alpha}\keyterm{alpha}
 RGBA colors).  Note that the alpha values must actually be available in the
 OpenGL color buffers in order for blended compositing to work.  Many
 applications create OpenGL buffers without alpha bit planes in them because
-they are often not necessary to render images in serial.  Make sure you
+they are often not necessary to render images in serial.  Make sure your
 application creates alpha bit planes before attempting to composite
 translucent images with \IceT (or any other library).
 
@@ -152,16 +153,16 @@ translucent objects.  You must also tell \IceT to perform \keyterm{ordered
   compositing}.  In ordered compositing, you must have a
 \index{visibility~ordering}\keyterm{visibility ordering}.  Given any two
 processes, a visibility ordering ensures and determines that all of the
-geometry in one process is in front of all the geometry in the other
-process with respect to the camera.  In some cases, such as when volume
-rendering a 3D Cartesian grid of points distributed in blocks to processes,
-finding the visibility ordering is straightforward.  In other cases, such
-as when rendering unstructured collections of polygons or polyhedra, it can
-be difficult to ensure that a visibility ordering exists and can be found.
-Doing so may be the most challenging part of creating a parallel rendering
-application.  An example of creating a visibility ordering from unstructured
-data can be found in the ParaView application, and the implementation is
-detailed in the following paper:
+geometry in one process is in front of or behind all the geometry in each
+of the other process with respect to the camera.  In some cases, such as
+when volume rendering a 3D Cartesian grid of points distributed in blocks
+to processes, finding the visibility ordering is straightforward.  In other
+cases, such as when rendering unstructured collections of polygons or
+polyhedra, it can be difficult to ensure that a visibility ordering exists
+and can be found.  Doing so may be the most challenging part of creating a
+parallel rendering application.  An example of creating a visibility
+ordering from unstructured data can be found in the ParaView application,
+and the implementation is detailed in the following paper:
 
 \begin{quote}
   Kenneth Moreland, Lisa Avila, and Lee Ann Fisk. ``Parallel Unstructured
@@ -184,20 +185,70 @@ to \CFunc{icetDrawFrame}.
   \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const GLint *}
   \CArg{process\_ranks} \textC{);}
 \end{Table}
-The \CFunc{icetCompositeOrder} provides an array of processes.  It is
+The \CFunc{icetCompositeOrder} function takes an array of processes.  It is
 assumed that the geometry of the first process in the list is in front of
 the rest of the processes; the geometry of the second process in the list
-is in front of all the processes, and so on.  The visibility order often
-changes when the camera angle changes, so it is important to recompute and
-report a new composite order on every frame.
+is in front of all the processes except the first, and so on.  The
+visibility order often changes when the camera angle changes, so it is
+important to recompute and report a new composite order on every frame.
+
+Be aware that not all strategies support ordered compositing.  If the
+current strategy does not support ordered compositing, then the
+\CEnum{ICET\_ORDERED\_COMPOSITE} flag is ignored.  Consult the
+documentation in Chapter~\ref{chap:Strategies} or the documentation for the
+\CFunc{icetStrategy} command to determine which strategies support ordered
+compositing.  In any case, you can check the
+\CEnum{ICET\_STRATEGY\_SUPPORTS\_ORDERING} state variable to determine if
+the current compositing strategy supports ordered compositing.
 
 \index{compositing!ordered|)}
 
-\sticky{Document blending into background.}
+\index{clear~color|see{background color}}
+\index{background~color|(}
 
-Turning on blending (via icetInputOutputBuffers).
-Ordered Compositing.
-Blending into background.
+One final thing to worry about when using blended compositing is to make
+sure that the background color does not interfere with the compositing.
+Because the visibility order is important, you need to make sure that none
+of the processes render with a background (except perhaps the process
+nearest the rear).  For example, let us say you want to render an image
+with a blue background.  Let us also say that process $A$'s geometry is in
+front of process $B$'s geometry.  Process $A$ cannot render its geometry on
+top of a blue background because that background should really also be
+behind the geometry of process $B$, and the resulting image will be
+invalid.
+
+If your background is a solid color, then \IceT can fix this problem
+automatically.  Simply set the OpenGL background (clear) color like you
+normally would and enable the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND}
+feature.
+
+\index{glClearColor}
+\begin{code}
+  glClearColor(0.0, 0.0, 1.0, 1.0);
+  icetEnable(ICET_CORRECT_COLORED_BACKGROUND)
+\end{code}
+
+When the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} feature is enabled and
+blended compositing is on, \IceT will change the background to $\langle 0,
+0, 0, 0 \rangle$, perform the rendering and compositing, blend the result
+into the specified background color, and finally restore the OpenGL clear
+color.
+
+If you do not actually need to get the image result back from
+\CFunc{icetGetColorBuffer}, you can use the
+\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND}.
+
+\begin{code}
+  glClearColor(0.0, 0.0, 1.0, 1.0);
+  icetEnable(ICET_CORRECT_COLORED_BACKGROUND)
+\end{code}
+
+\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} operates similar to
+\CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} with the exception that it uses
+the OpenGL graphics hardware to blend the composited image to the colored
+background, and may therefore get a modest performance increase.
+
+\index{background~color|)}
 
 \index{compositing!blended|)}
 \index{volume~rendering|)}
@@ -208,21 +259,39 @@ Blending into background.
 \section{Image Inflation}
 \label{sec:Customizing_Compositing:Image_Inflation}
 \index{image~inflation|(}
+
+\sticky{\CEnum{ICET\_DISPLAY\_INFLATE}
+  \CEnum{ICET\_DISPLAY\_INFLATE\_WITH\_HARDWARE}.  Set tiles smaller with
+  \CFunc{icetAddTile} but leave viewport from \CFunc{glViewport} as big as
+  possible.  Consider creating multiple contexts (\CFunc{icetCreateContext}
+  and \CFunc{icetCopyState}) and switching back and forth with
+  \CFunc{icetSetContext}.}
+
 \index{image~inflation|)}
 
 \section{Floating Viewport}
 \label{sec:Customizing_Compositing:Floating_Viewport}
 \index{floating~viewport|(}
+
+\sticky{\CEnum{ICET\_FLOATING\_VIEWPORT}}
+
 \index{floating~viewport|)}
 
 \section{Active Pixel Encoding}
 \label{sec:Customizing_Compositing:Active_Pixel_Encoding}
 \index{active~pixel~encoding|(}
+
+\sticky{Done automatically.}
+
 \index{active~pixel~encoding|)}
 
 \section{Data Replication}
 \label{sec:Customizing_Compositing:Data_Replication}
 \index{data~replication|(}
+
+\sticky{\CFunc{icetDataReplicationGroup},
+  \CFunc{icetDataReplicationGroupColor}}
+
 \index{data~replication|)}
 
 \section{Timing (and Other Metrics)}
@@ -231,5 +300,13 @@ Blending into background.
 
 Time metrics.
 Message metrics.
+
+\sticky{\CFunc{icetGet}, \CEnum{ICET\_BLEND\_TIME},
+  \CEnum{ICET\_BUFFER\_READ\_TIME}, \CEnum{ICET\_BUFFER\_WRITE\_TIME},
+  \CEnum{ICET\_COMPARE\_TIME}, \CEnum{ICET\_COMPOSITE\_TIME},
+  \CEnum{ICET\_COMPRESS\_TIME}, \CEnum{ICET\_RENDER\_TIME},
+  \CEnum{ICET\_TOTAL\_DRAW\_TIME}}
+
+\sticky{\CEnum{ICET\_FRAME\_COUNT}, \CEnum{ICET\_BYTES\_SENT}}
 
 \index{timing|)}
