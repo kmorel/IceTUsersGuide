@@ -246,7 +246,9 @@ If you do not actually need to get the image result back from
 \CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} operates similar to
 \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} with the exception that it uses
 the OpenGL graphics hardware to blend the composited image to the colored
-background, and may therefore get a modest performance increase.
+background, and may therefore get a modest performance increase.  However,
+it also means that the result will not be available in the memory buffer
+returned by \CFunc{icetGetColorBuffer}.
 
 \index{background~color|)}
 
@@ -260,12 +262,61 @@ background, and may therefore get a modest performance increase.
 \label{sec:Customizing_Compositing:Image_Inflation}
 \index{image~inflation|(}
 
-\sticky{\CEnum{ICET\_DISPLAY\_INFLATE}
-  \CEnum{ICET\_DISPLAY\_INFLATE\_WITH\_HARDWARE}.  Set tiles smaller with
-  \CFunc{icetAddTile} but leave viewport from \CFunc{glViewport} as big as
-  possible.  Consider creating multiple contexts (\CFunc{icetCreateContext}
-  and \CFunc{icetCopyState}) and switching back and forth with
-  \CFunc{icetSetContext}.}
+Because \IceT is an image-based \index{sort-last}sort-last parallel
+rendering library, its overhead is proportional to the size of the images
+being generated.  Thus, large displays can limit the maximum rendering
+frame rate that can be achieved.
+
+A simple way to increase the frame rate is to reduce the resolution of the
+images being displayed.  If the display resolution is larger than necessary
+(and ``larger than necessary'' is a flexible metric that can change
+regularly as an application runs), then you can tell \IceT to render
+smaller images and then \keyterm{inflate} the images to fill the display.
+A major use case for a reduced resolution image is for maintaining
+application interactivity.  Many applications, particularly visualization
+applications, contain bursts of interactivity.  The user will interact with
+the data (move the camera or objects) and then hold still and analyse the
+results.  While interacting, application responsiveness is much more
+important than image details, so during this time a lower resolution image
+can be rendered and inflated.  When the user stops interacting and starts
+analysing, a full resolution image can be created.
+
+You can instruct \IceT to render and composite smaller images by simply
+specifying a lower resolution display with the \CFunc{icetAddTile}
+function.  If you are frequently switching the resolution of the images
+being generated (which is common), then you can use \IceT state management
+to switch states.  First, use \CFunc{icetCreateContext} and
+\CFunc{icetCopyState} to create a duplicate state.  Then change the display
+of one of the states to a lower resolution with \CFunc{icetAddTile}.  As
+the application runs, use \CFunc{icetSetContext} to swap between the
+different resolutions.  See Chapter~\ref{chap:Basic_Usage} for details on
+using these functions.
+
+Between rendering and display, the smaller images must be inflated to fill
+the display.  An application can always perform this inflation itself (and
+that is probably necessary if the images are shipped to a remote display).
+When \IceT is displaying the data (i.e. \CEnum{ICET\_DISPLAY} is enabled),
+\IceT has the ability to automatically inflate the images.  Turn on this
+feature by enabling \CEnum{ICET\_DISPLAY\_INFLATE}.  \IceT contains two
+modes for inflating images: using the CPU or using texture mapping in
+OpenGL.  When \CEnum{ICET\_DISPLAY\_INFLATE\_WITH\_HARDWARE} is enabled
+(the default), then texture mapping is used.  In either case,
+\CFunc{icetGetColorBuffer} and \CFunc{icetGetDepthBuffer} return the
+smaller image size specified by \CFunc{icetAddTile}.
+
+One final note: Regardless of what size you set for the displays in
+\CFunc{icetAddTile}, you should keep the viewport (specified by
+\CFunc{glViewport}) as large as possible.  The size of the graphics
+viewport and the size of the tile images can be different so long as each
+viewport is at least as large as the largest tile image.  In fact, it is
+advantageous to have the viewport larger than the specified tiles.  The
+first reason is that the \CEnum{ICET\_DISPLAY\_INFLATE} feature fills the
+image to the OpenGL viewport.  If the dimensions the two are the same, then
+no inflation will actually take place.  The second reason is that \IceT
+will use the entire OpenGL viewport for rendering.  For a multi-tile
+display, this can dramatically reduce the number of times the render
+callback needs to be called.  Thus, in general it is best to keep the
+OpenGL viewport as large as possible.
 
 \index{image~inflation|)}
 
