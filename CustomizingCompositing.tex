@@ -432,8 +432,84 @@ process.  There is currently no way to turn it off.
 \label{sec:Customizing_Compositing:Data_Replication}
 \index{data~replication|(}
 
-\sticky{\CFunc{icetDataReplicationGroup},
-  \CFunc{icetDataReplicationGroupColor}}
+The primary advantage of \IceT's parallel rendering algorithms, and
+sort-last rendering algorithms in general, is that they are very scalable
+with respect to the size of the input geometry.  That is, there is no
+overhead to adding more geometry other than the time it takes hardware to
+render and there is only a logarithmic overhead for adding processors to
+the job.
+
+The down side of a sort-last approach is that the image compositing
+overhead must be incurred regardless of how little geometry is being
+rendered.  This overhead limits the maximum frame rate that can be achieved
+by the parallel rendering.  Consequently, the parallel rendering can
+potentially be slower than the serial rendering if the amount of geometry
+being rendered is small.
+
+One possible way to get higher frame rates with smaller geometries would be
+to switch to a different parallel rendering mode, but doing so is
+unnecessarily complicated.  Another possibility is to collect the data on
+a single process and circumvent the \IceT library entirely.  This approach
+is fine when using single tile mode where the image is displayed at a
+single location, but is not at all straightforward when displaying to a
+tiled display.
+
+\IceT provides a better solution than either of the previous two
+approaches.  If the image compositing work is dominating the rendering
+time, you can set up a \keyterm{data replication group}.  To set up a data
+replication group, you partition the geometry using fewer partitions than
+processes, and then you share each partition with multiple processes.  The
+processes that share a data partition are a replication group.  \IceT will
+divide the compositing work for each replication group amongst the
+processes in the group.  In essence, you are adding geometry rendering work
+to remove image compositing work.
+
+One of the most common uses for data replication groups is to simply
+replicate the same geometry on all processes.  This is helpful, for
+example, if your application supports lower levels of detail for
+interaction.  The lower level of detail can be replicated on all
+processes.  However, you could also conceivably arrange for any amount of
+replication between all replicated and none replicated for a consistently
+appropriate overhead as the amount of data grows.
+
+To set up data replication groups, it is your responsibility to partition
+and replicate geometry.  (\IceT knows nothing about geometry.)  You then
+report what the data replication groups are with the
+\CFunc{icetDataReplicationGroup} function.
+\begin{Table}{3}
+  \textC{void }\CFunc{icetDataReplicationGroup}\textC{(}&\textC{GLint}&\CArg{size}\textC{,} \\
+  &\textC{const GLint *}&\CArg{processes}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetDataReplicationGroup} simply takes an array defining the
+replication group that the local process belongs to.  It is important to
+ensure that all processes belonging to a group provide the same array to
+\CFunc{icetDataReplicationGroup}.  As a convenience, \IceT also provides
+the \CFunc{icetDataReplicationGroupColor} function that allows you to
+define the data replication groups by assigning an identifier (i.e. color)
+to each partition and having each process report the partition color in
+which it belongs.
+\begin{Table}{3}
+  \textC{void }\CFunc{icetDataReplicationGroupColor}\textC{(}&\textC{GLint}&\CArg{color}\quad\textC{);}
+\end{Table}
+
+As an example, let us say that processes 0--3 share the same geometry, 4--7
+share the same geometry, 8--11 share the same geometry, and so on.  These
+replication groups could be reported with the following call (where
+\textC{rank} is the local process id as stored in the \CEnum{ICET\_RANK}
+state variable).
+\begin{code}
+  icetDataReplicationGroupColor(rank/4);
+\end{code}
+
+The data replication group is stored in the
+\CEnum{ICET\_DATA\_REPLICATION\_GROUP} state variable (retrievable with
+\CFunc{icetGet}).  The length of the group array is stored in
+\CEnum{ICET\_DATA\_REPLICATION\_GROUP\_SIZE}.  The data replication group
+array is available regardless of whether you used
+\CFunc{icetDataReplicationGroup} or \CFunc{icetDataReplicationGroupColor}
+to define the group.  The default value is an array with one value: the
+local process.
 
 \index{data~replication|)}
 
