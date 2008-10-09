@@ -517,15 +517,42 @@ local process.
 \label{sec:Customizing_Compositing:Timing}
 \index{timing|(}
 
-Time metrics.
-Message metrics.
+Whenever \CFunc{icetDrawFrame} is called, \IceT measures the amount of time
+spent in the various tasks required for parallel rendering.  These timings
+are stored in the \IceT state and can be retrieved with \CFunc{icetGet}.
+The state variables containing these timing metrics (in seconds) are as
+follows.
 
-\sticky{\CFunc{icetGet}, \CEnum{ICET\_BLEND\_TIME},
-  \CEnum{ICET\_BUFFER\_READ\_TIME}, \CEnum{ICET\_BUFFER\_WRITE\_TIME},
-  \CEnum{ICET\_COMPARE\_TIME}, \CEnum{ICET\_COMPOSITE\_TIME},
-  \CEnum{ICET\_COMPRESS\_TIME}, \CEnum{ICET\_RENDER\_TIME},
-  \CEnum{ICET\_TOTAL\_DRAW\_TIME}}
+\begin{Description}[xxxxxxxx]
+\item[\CEnum{ICET\_RENDER\_TIME}] The total time spent in the drawing
+  callback during the last call to \CFunc{icetDrawFrame}.
+\item[\CEnum{ICET\_BUFFER\_READ\_TIME}] The total time spent reading from
+  OpenGL buffers during the last call to \CFunc{icetDrawFrame}.
+\item[\CEnum{ICET\_BUFFER\_WRITE\_TIME}] The total time spent writing to
+  OpenGL buffers during the last call to \CFunc{icetDrawFrame}.
+\item[\CEnum{ICET\_COMPRESS\_TIME}] The total time spent in compressing
+  image data using active pixel encoding during the last call to
+  \CFunc{icetDrawFrame}.
+\item[\CEnum{ICET\_BLEND\_TIME}]/\CEnum{ICET\_COMPARE\_TIME} The total time
+  spent in performing Z comparisons or color blending of images during the
+  last call to \CFunc{icetDrawFrame}.  These two variables always return
+  the same value.
+\item[\CEnum{ICET\_RENDER\_TIME}] The total time spent in the drawing
+  callback during the last call to \CFunc{icetDrawFrame}.
+\item[\CEnum{ICET\_COMPOSITE\_TIME}] The total time spent in compositing
+  during the last call to \CFunc{icetDrawFrame}.  Equal to
+  $\CEnum{ICET\_TOTAL\_DRAW\_TIME} - \CEnum{ICET\_RENDER\_TIME} -
+  \CEnum{ICET\_BUFFER\_READ\_TIME} - \CEnum{ICET\_BUFFER\_WRITE\_TIME}$.
+\end{Description}
 
-\sticky{\CEnum{ICET\_FRAME\_COUNT}, \CEnum{ICET\_BYTES\_SENT}}
+In addition to timing how long rendering and compositing takes, \IceT also
+keeps track of how much data is transmitted during compositing.  The state
+variable \CEnum{ICET\_BYTES\_SENT} stores the total number of bytes sent by
+the calling process for transferring image data during the last call to
+\CFunc{icetDrawFrame}.  Obviously, each process could have a different
+value for \CEnum{ICET\_BYTES\_SENT}.
+
+\IceT also keeps track of the number of times \CFunc{icetDrawFrame} has
+been called.  This number is stored in \CEnum{ICET\_FRAME\_COUNT}.
 
 \index{timing|)}
