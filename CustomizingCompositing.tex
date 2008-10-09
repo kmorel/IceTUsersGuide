@@ -324,7 +324,41 @@ OpenGL viewport as large as possible.
 \label{sec:Customizing_Compositing:Floating_Viewport}
 \index{floating~viewport|(}
 
-\sticky{\CEnum{ICET\_FLOATING\_VIEWPORT}}
+\begin{figure}
+  \centering
+  \includegraphics[width=3in]{images/FloatingViewport}
+  \caption{Even though geometry may straddle tile boundaries, we may be
+    able to render it all in one pass by ``floating'' the viewport.}
+  \label{fig:FloatingViewport}
+\end{figure}
+
+Consider the geometry shown in Figure~\ref{fig:FloatingViewport} that
+projects onto a screen space that fits within a single tile but is moved in
+the horizontal and vertical directions so that it straddles four tiles.  If
+the system limits itself to projecting onto physical tiles, the processor
+must render and read back four images; although it could generate a single
+image that contains the entire geometry with the exact same pixel spacing.
+Instead of rendering four tiles, the system can \keyterm{float} the
+viewport in the global display to the space straddling the tiles.  That is,
+the system may project the geometry to the space shown by the dotted line
+in Figure~\ref{fig:FloatingViewport} and split the resulting image back
+into pieces that can be displayed directly on each tile.  Hence, the system
+does not need to render any polygon more than once, and the frame buffer is
+read back one time instead of four.
+
+When a processor’s geometry fits within the floating viewport, it can cut
+the rendering time dramatically.  This is most likely to happen when the
+number of tiles is small compared to the number of processors and the
+spatial coherency of the data is good.
+
+The floating viewport is always enabled by default.  You can disable it by
+calling \CFunc{icetDisable} with the \CEnum{ICET\_FLOATING\_VIEWPORT}
+identifier.  In general, there is not much reason to turn off the floating
+viewport.  The only real reason to turn off the floating viewport is to
+prevent \IceT from changing the perspective matrix when in single tile
+mode.  However, \IceT will change the perspective matrix anyway when
+rendering with more than one tile, so any application that might render to
+a tiled display should simply leave the floating viewport option on.
 
 \index{floating~viewport|)}
 
