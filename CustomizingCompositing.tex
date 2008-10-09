@@ -362,13 +362,71 @@ a tiled display should simply leave the floating viewport option on.
 
 \index{floating~viewport|)}
 
-\section{Active Pixel Encoding}
+\section{Active-Pixel Encoding}
 \label{sec:Customizing_Compositing:Active_Pixel_Encoding}
-\index{active~pixel~encoding|(}
+\index{active-pixel~encoding|(}
 
-\sticky{Done automatically.}
+Because each processor renders only a fraction of the total geometry, the
+geometry often occupies only a fraction of the screen space in some or all
+of the tiles in which it lies.  Consequently, the initial images
+distributed between processors at the beginning of composition often have a
+significant amount of blank space within them.  Explicitly sending this
+information between processors is a waste of bandwidth.  Transferring
+sparse image data rather than full image data is a well-known way to reduce
+network overhead.  So far, our best method to do this has been with
+active-pixel encoding.
 
-\index{active~pixel~encoding|)}
+Active-pixel encoding is a form of run-length encoding.  A traditional
+run-length encoding groups pixels into contiguous groups where the color
+and/or depth does not change.  However, in a practical 3D rendering, both
+the color and depth change almost everywhere except in the background areas
+where nothing is rendered.  To take advantage of this, images are grouped
+into alternating run lengths of \keyterm{active pixels}, pixels that
+contain geometry information, and \keyterm{inactive pixels}, pixels that
+have no geometry drawn on them.  The active-pixel run length is followed by
+pairs of color and depth values (or just one of the two if that is the only
+data available)..  The inactive pixels are not accompanied by any color or
+depth information.  The depth information is assumed to be of maximum
+depth, and the color values are ignored since they contain no geometry
+information.
+
+There are many other ways to encode sparse images and reduce data
+redundancy.  However, we are particularly enamored with our active-pixel
+encoding for this application because it exhibits all of the following
+properties:
+
+\begin{description}
+\item[Fast encoding]  Image encoding requires each pixel to be visited
+  exactly once.  Each visit includes a single depth buffer comparison, a
+  single addition, and at most one copy.
+\item[Free decoding]  Processors typically perform a depth comparison as
+  soon as they receive incoming data.  The depth comparison can be done
+  directly against an image that is still encoded in sparse form.  In fact,
+  the depth comparison can skip the comparisons for the inactive pixels.
+  Thus doing depth comparisons against encoded images is often faster than
+  against unencoded images.
+\item[Effective compression]  During the early stages of composition when
+  the largest images must be transferred, the sparse data is commonly less
+  than one fifth the size of the original data.
+\item[Good worst case behavior] No image with both color and depth
+  information (the most common case) will ever grow by more than a few
+  bytes of header information.  Images that have geometry drawn on every
+  pixel will only have one run length.  Even images that alternate between
+  active and inactive status for every pixel, and hence have a run length
+  for every pixel, do not grow when encoded.  The number of bytes required
+  to record two run lengths is equal to the number of bytes saved by not
+  recording color and depth information for a single inactive pixel.  Thus,
+  there is no penalty for recording run lengths of size one.  If only color
+  or only depth is being recorded, it is possible to grow data in the
+  pathological case where pixels alternate between active and inactive, but
+  in practice background pixels are grouped and the data never really
+  grows.
+\end{description}
+
+Active-pixel encoding is performed automatically during the compositing
+process.  There is currently no way to turn it off.
+
+\index{active-pixel~encoding|)}
 
 \section{Data Replication}
 \label{sec:Customizing_Compositing:Data_Replication}
