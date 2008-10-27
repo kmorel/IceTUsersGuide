@@ -1,0 +1,177 @@
+% -*- Index -*-
+
+
+\chapter{Strategies}
+\label{chap:Strategies}
+
+\index{strategy|(}
+
+\IceT contains several parallel image compositing algorithms.  The type of
+compositing algorithm to use is selected by choosing a
+\index{strategy}\keyterm{strategy}.  This chapter describes the underlying
+algorithm of each strategy.  This user's guide will give qualitative
+comparisons between the strategies, but for a more quantitative analysis,
+see the following paper.
+
+\begin{quote}
+  Kenneth Moreland, Brian Wylie, and Constantine Pavlakos.  ``Sort-last
+  parallel rendering for viewing extremely large data sets on tile
+  displays,'' In \emph{Proceedings of IEEE Symposium on Parallel and
+    Large-Data Visualization and Graphics}, October 2001, pp. 85--154.
+\end{quote}
+
+A strategy is specified using the \CFunc{icetStrategy} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetStrategy}\textC{(}&\CType{IceTStrategy}&\CArg{strategy}\quad\textC{);}
+\end{Table}
+
+The \CArg{strategy} is set to one of the identifiers for the strategies
+documented in the following sections of this chapter.  A string documenting
+the current strategy can be retrieved with the \CFunc{icetGetStrategyName}
+function.
+
+To describe the \IceT compositing algorithms, we will use the example
+parallel rendering problem shown in Figure~\ref{fig:ExampleInputs} where 6
+processes are each rendering their own piece of a shuttle model to a two
+tile display.
+
+\begin{figure}
+  \centering
+  \includegraphics{images/AllInput}
+  \includegraphics{images/CompositedInput}
+  \caption[Example compositing problem.]{An example of six processes
+    rendering to two tiles (top) and their composited image (bottom).}
+  \label{fig:ExampleInputs}
+\end{figure}
+
+In this example, processes are denoted, in no particular order, by the
+colors gray, red, blue, green, purple, and orange.  The colors of the
+geometry correspond to the process that generated each piece.  Image
+boarder colors denote the process that generates and holds that image.
+(Apologies to those having troubles resolving the colors due to poor
+display or vision deficiencies.  It should not be hard to follow the
+descriptions either way.)
+
+\section{Single Image Compositing}
+
+\index{single~image~composite|(}
+\index{compositing!single~image|(}
+
+Before discussing the multi-tile image compositing algorithms implemented
+by \IceT, we visit the standard single image compositing algorithms.  You
+cannot directly select a single image compositing algorithm as a strategy
+(most of the multi-tile algorithms work well in ``single-tile'' mode), but
+these compositing algorithms are used as ``subroutines'' in some of the
+multi-tile algorithms.  A reference to a
+\index{single~image~composite~network}\keyterm{single image composite
+  network} in the subsequent compositing algorithm descriptions refers to
+the algorithms described here.
+
+\index{compositing!tree|(}
+\index{tree~composite|(}
+\index{binary~tree~composite|(}
+
+\IceT internally has two single image composite implementations.  The first
+of which is the \keyterm{tree composite} algorithm (sometimes also called
+binary tree composite due to its group-wise pairing).  The basic network
+for tree composite is shown in Figure~\ref{fig:BinaryTree}.
+
+\begin{figure}
+  \centering
+  \includegraphics{images/BinaryTree}
+  \caption[Tree composite network.]{Tree composite network.  Arrows
+    represent the passing of data from one stage to the next.  Processes
+    receiving multiple images composite them together.}
+  \label{fig:BinaryTree}
+\end{figure}
+
+The tree compositing algorithm is organized in stages.  At each stage the
+processes pair up.  One of the processes sends its data to its pair and
+then drops out of the computation.  The receiving process combines the two
+images (using the \index{compositing~operation}compositing operation
+described in
+Chapter~\ref{sec:Customizing_Compositing:Compositing_Operation}) and
+continues to the next stage.  Processing continues until there is only one
+image (and one process) remaining.
+
+As just defined, the tree composite algorithm only handles process that are
+a power of two (that is, the number of processes is equal to $2^i$ for some
+integer $i$).  \IceT handles non-powers of two gracefully.  At any stage
+where the number of processes is not even and one of the processes cannot
+be paired, that leftover process does nothing for that stage but then
+continues to participates in the next stage.  An example of this can be
+seen in the second stage of Figure~\ref{fig:BinaryTree}.
+
+The advantages of tree composite are its regular and efficient data
+transfers.  The limiting factor of tree compositing is that at each stage of the
+algorithm half of the 
+
+
+\index{binary~tree~composite|)}
+\index{tree~composite|)}
+\index{compositing!tree|)}
+
+\index{compositing!binary~swap|(}
+\index{binary~swap~composite|(}
+\index{binary~swap~composite|)}
+\index{compositing!binary~swap|)}
+
+\sticky{Ordered compositing}.
+
+\index{compositing!single~image|)}
+\index{single~image~composite|)}
+
+\section{Reduce Strategy}
+\label{sec:Strategies:Reduce}
+
+\index{strategy!reduce|(}
+\index{reduce~strategy|see{strategy, reduce}}
+
+\sticky{Supports ordered compositing.}
+
+\index{strategy!reduce|)}
+
+\section{Split Strategy}
+\label{sec:Strategies:Split}
+
+\index{strategy!split|(}
+\index{split~strategy|see{strategy, split}}
+
+\sticky{Does not support ordered compositing.}
+
+\index{strategy!split|)}
+
+\section{Virtual Trees Strategy}
+\label{sec:Strategies:Vertial_Trees}
+
+\index{strategy!virtual~trees|(}
+\index{virtual~trees|see{strategy, virtual trees}}
+
+\sticky{Does not support ordered compositing.}
+
+\index{strategy!virtual~trees|)}
+
+\section{Serial Strategy}
+\label{sec:Strategies:Serial}
+
+\index{strategy!serial|(}
+\index{serial~strategy|see{strategy, serial}}
+
+\sticky{Supports serial strategy.}
+
+\index{strategy!serial|)}
+
+\section{Direct Strategy}
+\label{sec:Strategies:Direct}
+
+\index{strategy!direct|(}
+\index{direct~strategy|see{strategy, direct}}
+
+\sticky{Supports serial strategy.}
+
+\index{strategy!direct|)}
+
+\section{Implementing New Strategies}
+
+\index{strategy|)}
