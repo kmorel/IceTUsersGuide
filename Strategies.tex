@@ -222,7 +222,7 @@ previous section.  The reduce strategy is selected by calling
 \begin{figure}
   \centering
   \includegraphics{images/ReduceComposite}
-  \caption[Reduce strategy composite network.]{Composite network reduce
+  \caption[Reduce strategy composite network.]{Composite network for reduce
     strategy.  Arrows represent the passing of data from one stage to the
     next.  Processes receiving multiple images composite them together.
     The single image composite network is described in a preceding
@@ -317,7 +317,43 @@ strategy in color blending mode will fail.
 \index{strategy!virtual~trees|(}
 \index{virtual~trees|see{strategy, virtual trees}}
 
-\sticky{Does not support ordered compositing.}
+The \keyterm{virtual trees strategy} is based on the binary tree
+compositing algorithm, but performs multiple composites simultaneously to
+regain some of the load balance lost in the original algorithm.  The
+virtual trees strategy has nice regular communications, but still suffers
+from some load imbalance, particularly when using fewer tiles and in later
+stages of the algorithm.  The virtual trees strategy is selected by calling
+\CFunc{icetStrategy} with the \CEnum{ICET\_STRATEGY\_VTREE} argument.
+
+\begin{figure}
+  \centering
+  \includegraphics{images/VTrees}
+  \caption[Virtual trees composite network.]{Composite network for virtual
+    trees strategy.  Arrows represent the passing of data from one state to
+    the next.  Processes receiving multiple images composite them
+    together.}
+  \label{fig:VTreesComposite}
+\end{figure}
+
+The virtual trees strategy works by creating a ``virtual'' tree for each
+tile.  Contained in each tree are processes that have rendered an image for
+that display tile.  The algorithm proceeds much like the binary tree
+composition algorithm except that the processes float amongst the trees,
+helping with the compositing as they become available.
+Figure~\ref{fig:VTreesComposite} shows an example of the virtual trees
+compositing.  In particular, notice that the gray process takes part in the
+left tree in stage 1, then floats to take part in the right tree in stage
+2, and then returns to take part in the left tree in stage 3.
+
+When necessary, the process must keep track of multiple images belonging to
+different virtual trees.  Two conserve memory, images are not rendered
+until they are needed.  Also, a process can only hold two images at a time:
+one that it is sending and one that it is receiving.  If a process is
+holding an image for one tile, it cannot receive an image for another tile
+until it sends away the image it is holding.
+
+The virtual trees strategy does not support ordered compositing.  Using the
+virtual trees strategy in color blending mode will fail.
 
 \index{strategy!virtual~trees|)}
 
