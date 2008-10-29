@@ -363,7 +363,36 @@ virtual trees strategy in color blending mode will fail.
 \index{strategy!serial|(}
 \index{serial~strategy|see{strategy, serial}}
 
-\sticky{Supports serial strategy.}
+Despite its name, the \keyterm{serial strategy} does not completely
+serialize the image compositing process.  Rather, it serially addresses the
+tiles, but performs parallel compositing for each tile.  The serial
+strategy is selected by calling \CFunc{icetStrategy} with the
+\CEnum{ICET\_STRATEGY\_SERIAL} argument.
+
+\begin{figure}
+  \centering
+  \includegraphics{images/SerialComposite}
+  \caption[Serial compositing network.]{Composite network for serial
+    compositing.  One at a time, each tile is composited using a parallel
+    single image composite network described in a previous section.}
+  \label{fig:SerialComposite}
+\end{figure}
+
+The serial strategy iterates over all of the tiles.  For each tile, it
+composites all the images for that tile using one of the single image
+compositing algorithms described in that preceding section.  As
+demonstrated in the example in Figure~\ref{fig:SerialComposite} images from
+all processes are composited for each tile regardless of whether some of
+them may be empty.
+
+Since the single image compositing algorithms support ordered
+compositing, the serial strategy also supports ordered compositing.
+
+The serial strategy is really only implemented as a baseline algorithm to
+compare other algorithms.  In general, the reduce strategy does at least as
+well or outperforms the serial strategy.  We have observed this even in
+single tile mode, possibly because the reduce strategy can throw away empty
+images.
 
 \index{strategy!serial|)}
 
