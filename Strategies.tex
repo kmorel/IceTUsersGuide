@@ -212,11 +212,11 @@ is, there is no image that needs to be inserted between them).
 \index{reduce~strategy|see{strategy, reduce}}
 \index{reduce~to~single~tile|see{strategy, reduce}}
 
-A simple but effective strategy implemented in \IceT is the \keyterm{reduce
-  to single tile strategy} (or simply the reduce strategy).  In this
-strategy, the multi-tile composite problem is efficiently reduced to a set
-of single image compositing problems, which are well studied and discussed
-in the previous section.  The reduce strategy is selected by calling
+An effective strategy implemented in \IceT is the \keyterm{reduce to single
+  tile strategy} (or simply the reduce strategy).  In this strategy, the
+multi-tile composite problem is efficiently reduced to a set of single
+image compositing problems, which are well studied and discussed in the
+previous section.  The reduce strategy is selected by calling
 \CFunc{icetStrategy} with the \CEnum{ICET\_STRATEGY\_REDUCE} argument.
 
 \begin{figure}
@@ -268,8 +268,46 @@ second phase each support their own ordered compositing.
 
 \index{strategy!split|(}
 \index{split~strategy|see{strategy, split}}
+\index{tile~split~and~delegate|see{strategy, split}}
 
-\sticky{Does not support ordered compositing.}
+The \keyterm{tile split and delegate strategy} (or simply the split
+strategy) is a simple algorithm that splits up tiles, assigns each piece to
+a tile, and then sends image fragments directly to the tiles for
+compositing.  The split strategy makes efficient use of processing
+resources, but exhibits haphazard message passing which can cause issues on
+some high speed interconnects.  The split strategy is selected by calling
+\CFunc{icetStrategy} with the \CEnum{ICET\_STRATEGY\_SPLIT} argument.
+
+\begin{figure}
+  \centering
+  \includegraphics{images/TileSplit}
+  \caption[Split strategy composite network.]{Compositing for split
+    strategy.  First tiles are split and assigned to processes (upper
+    left).  Then each process simultaneously sends its images to the
+    responsible process (upper right) and receives all sub-images for its
+    piece (bottom).  The composited pieces are then collected and stitched
+    together.}
+  \label{fig:TileSplit}
+\end{figure}
+
+The split strategy first assigns processes to tiles similar to how they are
+assigned in the reduce strategy described previously.  That is, the number
+of processes per tile is proportional to the number of non-empty images
+generated for it.  Each tile is then split up evenly amongst all processes
+assigned to it.  In the example in Figure~\ref{fig:TileSplit}, the upper
+left image shows that the left image is split between 2 processes and the
+right image is split amongst 4 processes.
+
+On being assigned a section of tile, each process prepares to receive data
+from all the sending processes using asynchronous receives.  Each process
+then renders its images, splits them up, and sends the sub-images to the
+corresponding process.  When a process is ready and as it receives data,
+the incoming images are composited together.  Once all of the incoming
+images are composited, the complete sub-image is sent to the display process
+to be stitched together.
+
+The split strategy does not support ordered compositing.  Using the split
+strategy in color blending mode will fail.
 
 \index{strategy!split|)}
 
