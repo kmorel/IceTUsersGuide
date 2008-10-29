@@ -396,15 +396,34 @@ images.
 
 \index{strategy!serial|)}
 
-\section{Direct Strategy}
-\label{sec:Strategies:Direct}
+\section{Direct Send Strategy}
+\label{sec:Strategies:DirectSend}
 
-\index{strategy!direct|(}
-\index{direct~strategy|see{strategy, direct}}
+\index{strategy!direct~send|(}
+\index{direct~send~strategy|see{strategy, direct send}}
 
-\sticky{Supports serial strategy.}
+The \keyterm{direct send strategy} is the simplest of all the strategies.
+Each process simply renders its images and sends them directly to the
+display process where the images get composited, as shown in
+Figure~\ref{fig:DirectSend}.  The direct send strategy is selected by
+calling \CFunc{icetStrategy} with the \CEnum{ICET\_STRATEGY\_DIRECT}
+argument.
 
-\index{strategy!direct|)}
+\begin{figure}
+  \centering
+  \includegraphics{images/DirectSend}
+  \caption[Direct send compositing network.]{Composite network for direct
+    send compositing.  Arrows represent the passing of data from one
+    process to another.  Receiving process composite all incoming images
+    together.}
+  \label{fig:DirectSend}
+\end{figure}
+
+The direct send strategy is usually a poor performer.  It was designed as a
+low watermark to compare to other compositing strategies.  The direct send
+strategy does, however, support ordered compositing.
+
+\index{strategy!direct~send|)}
 
 \section{Implementing New Strategies}
 
