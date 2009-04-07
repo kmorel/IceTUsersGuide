@@ -460,8 +460,9 @@ strategy supports ordered compositing.  Finally, and most importantly, the
 \textC{compose} field is a function that is called during an invocation of
 \CFunc{icetDrawFrame} to perform the rendering and compositing.  It takes
 no arguments (the composition should rely on the current \IceT state), and
-returns a composited image.  The proper format for the \CType{IceTImage}
-returned is discussed later.
+returns a composited image.  The \CType{IceTImage} type is opaque to
+compositing algorithms, but several functions, discussed later in this
+chapter, are available to create and manipulate them.
 
 All it takes to make \IceT use a new strategy is to define and fill an
 object of type \CType{IceTStrategy} and pass it to the \CFunc{icetStrategy}
@@ -551,12 +552,307 @@ from, not written to.
   is the sub of all entries in \CEnum{ICET\_TILE\_CONTRIB\_COUNTS}.
 \end{Description}
 
-\subsection{Internal Image Format}
+\label{manpage:icetUnsafeStateGet}
+In addition to several internal state variables, \IceT also has several
+internal functions for accessing them.  The most important one for
+implementing a strategy is \CFunc{icetUnsafeStateGet}, which is defined in
+the \index{state.h}\textC{state.h} header file.
+
+\begin{Table}{3}
+  \textC{void *}\CFunc{icetUnsafeStateGet}\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
+\end{Table}
+
+The implementation for the \CFunc{icetGet} functions is to copy the data
+into a memory buffer you provide, performing type conversion as necessary.
+\CFunc{icetUnsafeStateGet} simply returns the internal pointer where the
+data is stored.  This can be faster and more convienient (since you do not
+have to allocate your own memory), but is unsafe in two ways.  First, if
+the state variable is changed, the pointer you receive can become invalid.
+Second, no type conversion is performed.  You have to make sure you cast
+the pointer correctly yourself, and there is no real way to query the
+correct type.  Since the state setting functions are hidden from the end
+user API, it is possible to manage these erroneous conditions.
+
+\subsection{Memory Management}
+
+Compositing algorithms by their nature require buffers of memory of
+non-trivial size to hold images, among other data, that are not needed in
+between calls to the compositing.  One approach is to simply use the
+standard C \CFuncExternal{malloc} and \CFuncExternal{free} functions.
+However, some implementations of
+\CFuncExternal{malloc}/\CFuncExternal{free} are not always efficient, and
+even the best implementations can have a tendency to fragment memory over
+time as large buffers are allocated and released.
+
+To ensure efficient memory allocation, \IceT provides its own memory
+management that is simple but effective for its compositing operations.
+\IceT keeps around a pool of memory to be used by various components of the
+API.  To use the \index{memory~pool}\index{pool!memory}\keyterm{memory
+  pool}, the code first clears the buffer and ensures that it is big
+enough.  The code then reserves sections of the pool for various buffers.
+Since this pool changes size infrequently, allocating time or memory
+fragmentation is not an issue.  The size of the allocated memory is also
+minimized since it is shared throughout all of \IceT.
+
+\label{manpage:icetResizeBuffer}
+The \CFunc{icetResizeBuffer} function is used to clear out the memory
+pool.  The declaration for this function is located in the
+\index{context.h}\textC{context.h} header file.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetResizeBuffer}\textC{(}&\textC{int}&\CArg{size}\quad\textC{);}
+\end{Table}
+
+The \CFunc{icetResizeBuffer} function ensures that the memory pool is at
+least \CArg{size} bytes large.  It also resets all previously allocated
+memory (that is, freeing it back into the pool).  This has two important
+consequences.  First, you must know the amount of memory you need
+\emph{a-priori}.  You cannot resize the buffer once you have started
+allocating memory blocks.  If you try to do so, the previously allocated
+blocks (potentially) will be destroyed.
+
+Second, since this block of data is shared amongst all functions of \IceT,
+you must be aware that other \IceT code can potentially release your memory
+and allocate its own.  You should feel free to use \IceT's memory pool from
+within the compose function of your strategy and the image that it returns
+is best allocated from this buffer.  Furthermore, the helper functions
+described in this section to implement your own strategy are also safe to
+call.  Be aware, however, that in between calls to your composite function
+the memory you allocate will be lost and you will have to reallocate your
+buffers.
+
+\label{manpage:icetReserveBufferMem}
+Once you have sized the memory pool, use \CFunc{icetReserveBufferMem} to
+allocate a chunk of memory.
+
+\begin{Table}{3}
+  \textC{void *}\CFunc{icetReserveBufferMem}\textC{(}&\textC{int}&\CArg{size}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetReserveBufferMem} returns a pointer to a buffer reserved to the
+given size.  The buffer is aligned on 64-bit boundaries to help prevent
+illegal memory accesses.
+
+The following code snippet (taken from the direct send strategy)
+demonstrates the use of \CFunc{icetResizeBuffer} and
+\CFunc{icetReserveBufferMem}.  (The image size functions are described in
+the section on image functions.)
+
+\begin{code}
+    icetResizeBuffer(  2*icetSparseImageSize(max_pixels)
+		     + icetFullImageSize(max_pixels)
+		     + num_tiles*sizeof(GLint));
+    inImage     = icetReserveBufferMem(icetSparseImageSize(max_pixels));
+    outImage    = icetReserveBufferMem(icetSparseImageSize(max_pixels));
+    image	= icetReserveBufferMem(icetFullImageSize(max_pixels));
+    tile_image_dest = icetReserveBufferMem(num_tiles*sizeof(GLint));
+\end{code}
+
+\subsection{Image Manipulation Functions}
+
+You probably have noticed from the definition of the strategy structure
+that the compose function returns a variable of type \CType{IceTImage}.
+There is another variable type used internally by strategies called
+\CType{IceTSparseImage}.  Both image types can hold color data or depth
+data or both.  The \CType{IceTImage} type stores pixels as raw data, simple
+2D arrays that are compatible with OpenGL buffers.  The
+\CType{IceTSparseImage} stores images using
+\index{active-pixel~encoding}active-pixel encoding, the run length encoding
+described in the Active-Pixel Encoding section of
+Chapter~\ref{sec:Customizing_Compositing:Active_Pixel_Encoding}.
+
+Both the \CType{IceTImage} type and the \CType{IceTSparseImage} type are
+opaque to compositing algorithms.  Although you will create them by
+allocating a buffer and casting the pointer, you will not access the data
+directly.  Instead, you will manipulate it with the functions described in
+this section.  These functions are defined in the
+\index{image.h}\textC{image.h} header file.
+
+\subsubsection{Creating Images}
+
+\label{manpage:icetFullImageSize}
+\label{manpage:icetSparseImageSize}
+To create an image, you first need to know how big of a buffer you need.
+You can do this with the \CFunc{icetFullImageSize} and
+\CFunc{icetSparseImageSize} functions.
+
+\begin{Table}{3}
+  \textC{GLuint }\CFunc{icetFullImageSize}\textC{(}&\textC{GLuint}&\CArg{pixels}\quad\textC{);}
+\end{Table}
+\begin{Table}{3}
+  \textC{GLuint }\CFunc{icetSparseImageSize}\textC{(}&\textC{GLuint}&\CArg{pixels}\quad\textC{);}
+\end{Table}
+
+The former of these functions return the size, in bytes, required for an
+\CType{IceTImage} containing the number of \CArg{pixels} specified.  The
+latter performs the same operation for an \CType{IceTSparseImage}.  A
+sparse image can vary in actual size depending on how well the data
+compresses so \CFunc{icetSparseImageSize} conservatively returns the
+maximum amount of bytes needed in any case.
+
+To ensure memory is managed efficiently, your strategy will have to create
+all of the images it uses by allocating them with \CFunc{icetResizeBuffer}
+and \CFunc{icetReserveBufferMem} (discussed in the previous section with an
+example) and then casting the pointer to \CType{IceTImage} or
+\CType{IceTSparseImage} as appropriate.
+
+\label{manpage:icetInitializeImage}
+Image structures are basically a block of memory with a small bit of header
+data.  \IceT functions that create images will fill that information for
+you.  Occasionally you may need to explicitly fill the header information.
+This is done with \CFunc{icetInitializeImage}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetInitializeImage}\textC{(}&\CType{IceTImage}&\CArg{image},\\
+  &\textC{GLuint}&\CArg{pixel\_count}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetInitializeImage} will initialize the \CArg{image} buffer to be
+a full containing \CArg{pixel\_count} pixels and the type of pixel data
+specified by the \CEnum{ICET\_INPUT\_BUFFERS} state parameter.  There are
+only two common instances in which you will have to initialize an image
+yourself.  The first is that you are filling the buffer one part at a
+time.  The other is that you are creating a blank image, which frequently
+happens when a tile is empty.  To clear out an image use
+\CFunc{icetClearImage}.
+
+\label{manpage:icetClearImage}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearImage}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetClearImage} will set all of the pixel data in an image to the
+background.  In practice, \CFunc{icetClearImage} is coupled with a call to
+\CFunc{icetInitializeImage} such as in the following.
+
+\begin{code}
+  image = icetReserveBufferMem(icetFullImageSize(max_pixels));
+  icetInitializeImage(image, max_pixels);
+  icetClearImage(image);
+\end{code}
+
+\subsubsection{Querying Images}
+
+\label{manpage:icetGetImagePixelCount}
+Once you have an initialized image, whether initialized by you or some
+other \IceT function, you can retrive the number of pixels in it with
+\CFunc{icetGetImagePixelCount}.
+
+\begin{Table}{2}
+  \textC{GLuint }\CFunc{icetGetImagePixelCount}\textC{(}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+Unlike most functions, \CFunc{icetGetImagePixelCount} can take either a
+\CType{IcetImage} or a \CType{IceTSparseImage}.
+
+\label{manpage:icetGetImageColorBuffer}
+\label{manpage:icetGetImageDepthBuffer}
+If you need to access the actual data of a \CType{IceTImage}, you can do so
+with \CFunc{icetGetImageColorBuffer} and \CFunc{icetGetImageDepthBuffer}.
+
+\begin{Table}{4}
+  \textC{GLubyte}&\textC{*}\CFunc{icetGetImageColorBuffer}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}\\
+  \textC{GLuint}&\textC{*}\CFunc{icetGetImageDepthBuffer}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+For these functions to work, the image must be initialized and contain the
+respective color or depth buffer (of course).  If this condition is not
+met, an error is raised and \textC{NULL} is returned.
+
+\subsubsection{Rendering Images}
+
+\label{manpage:icetGetTileImage}
+\label{manpage:icetGetCompressedTileImage}
+To get the image for a particular tile in the display, use either
+\CFunc{icetGetTileImage} or \CFunc{icetGetCompressedTileImage}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetGetTileImage}\textC{(}&\textC{GLint}&\CArg{tile},\\
+    &\CType{IceTImage}&\CArg{buffer}\quad\textC{);}
+\end{Table}
+\begin{Table}{3}
+  \textC{GLuint }\CFunc{icetGetCompressedTileImage}\textC{(}&\textC{GLint}&\CArg{tile},\\
+    &\CType{IceTSparseImage}&\CArg{buffer}\quad\textC{);}
+\end{Table}
+
+Both functions will invoke a rendering for that tile (performing the
+appropriate projection transformations) as necessary, read back the frame
+buffers and store the results in an image buffer you specify.  The
+difference, of course, is that \CFunc{icetGetTileImage} fills the buffer
+with raw data whereas \CFunc{icetGetCompressedTileImages} will compress the
+image data with \index{active-pixel~encoding}active-pixel encoding.
+
+\CFunc{icetGetTileImage} writes a pre-determined amount of data into
+\CArg{buffer}, which corresponds to the value returned by
+\CFunc{icetFullImageSize}.  The amount of data written to \CArg{buffer} by
+\CFunc{icetGetCompressedTileImage} varies depending on how well the image
+compresses.  The actual number of bytes written is returned by
+\CFunc{icetGetCompressedTileImage}.  In general, you should record this
+size as you will need it to transfer the data to another process.  The
+amount of data written will never exceed the amount returned by
+\CFunc{icetSparseImageSize}.
+
+\subsubsection{Compressing Images}
+
+\label{manpage:icetCompressImage}
+\CFunc{icetCompressImage} converts a full \CType{IceTImage} into to more
+compact \CType{IceTSparseImage}.
+
+\begin{Table}{3}
+  \textC{GLuint }\CFunc{icetCompressImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{imageBuffer},\\
+  &\CType{IceTSparseImage}&\CArg{compressedBuffer}\textC{);}
+\end{Table}
+
+\CFunc{icetCompressImage} returns the actual size of
+\CArg{compressedBuffer} in bytes.
+
+\label{manpage:icetCompressSubImage}
+Sometimes it is convenient to break up an image into pieces, and compress
+each piece.  This is common when dividing up an image to be divided amongst
+some amount of processes.  This can be most easily achieved by using the
+\CFunc{icetCompressSubImage}.
+
+\begin{Table}{3}
+  \textC{GLuint }\CFunc{icetCompressSubImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{imageBuffer},\\
+  &\textC{GLuint}&\CArg{offset},\\
+  &\textC{GLuint}&\CArg{pixels},\\
+  &\CType{IceTSparseImage}&\CArg{compressedBuffer}\textC{);}
+\end{Table}
+
+\CFunc{icetCompressSubImage} compresses a region of contiguous pixels.  The
+block of pixels starts \CArg{offset} pixels past the beginning of the image
+and is \CArg{pixels} long.  \CArg{icetCompressImage} is equivalent to
+calling \CArg{icetCompressSubImage} with \CArg{offset} set to $0$ and
+\CArg{pixels} set to the result of \CFunc{icetGetImagePixelCount}.
+
+\label{manpage:icetDecompressImage}
+A sparse image can be returned to its uncompressed form with
+\CFunc{icetDecompressImage}.
+
+\begin{Table}{3}
+  \textC{GLuint }\CFunc{icetDecompressImage}\textC{(}&\textC{const }\CType{IceTSparseImage}&\CArg{compressedBuffer},\\
+  &\CType{IceTImage}&\CArg{imageBuffer}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetDecompressImage} returns the number of pixels in the resulting
+image, which is the same number that you will get if you call
+\CFunc{icetGetImagePixelCount} on the resulting image.
 
 \subsection{Communications}
 
+The first thing to know about communications in \IceT is to understand that
+it is up to the strategy to count how many bytes are being transmitted in your
+
+Don't forget transferring images.
+
 \subsection{Internal Functions for Compositing}
 
-\subsection{Memory Management}
+icetComposite
+icetCompressedComposite
+icetCompressedSubComposite
+
+\subsection{Other Convenience Functions}
+
+Everything else in common.h.
 
 \index{strategy|)}
