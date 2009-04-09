@@ -779,7 +779,7 @@ Both functions will invoke a rendering for that tile (performing the
 appropriate projection transformations) as necessary, read back the frame
 buffers and store the results in an image buffer you specify.  The
 difference, of course, is that \CFunc{icetGetTileImage} fills the buffer
-with raw data whereas \CFunc{icetGetCompressedTileImages} will compress the
+with raw data whereas \CFunc{icetGetCompressedTileImage} will compress the
 image data with \index{active-pixel~encoding}active-pixel encoding.
 
 \CFunc{icetGetTileImage} writes a pre-determined amount of data into
@@ -841,11 +841,276 @@ image, which is the same number that you will get if you call
 \subsection{Communications}
 
 The first thing to know about communications in \IceT is to understand that
-it is up to the strategy to count how many bytes are being transmitted in your
+it is up to the strategy to count how many bytes are being transmitted in
+your compose function and store this in the \CEnum{ICET\_BYTES\_SENT} state
+variable.  To make this easier, \index{common.h}\textC{common.h} (found in
+the strategies directory) provies \CFunc{icetAddSentBytes}.
 
-Don't forget transferring images.
+\label{manpage:icetAddSentBytes}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetAddSentBytes}\textC{(}&\textC{GLint }&\CArg{num\_sending}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetAddSentBytes} simply adds \CArg{num\_sending} to the value in
+state variable \CEnum{ICET\_BYTES\_SENT}.  A call to
+\CFunc{icetAddSentBytes} should be coupled with every communication call
+that sends data.
+
+\IceT provides an abstract communication layer, which is described in
+detail in Chapter~\ref{chap:Communicators}.  A handle to a communicator is
+stored in the current context.  To make using the communicator easier, a
+set of convenience functions described next is available in the
+\index{context.h}\textC{context.h} include file.  All of these functions
+are based off of those found in the \MPI standard.  For documentation, see
+that for the corresponding \MPI function.  Note that each function is
+missing an argument specifying the communicator.  These functions just grab
+the current context's communicator.
+
+\index{ICET\_COMM\_DUPLICATE}
+\renewcommand{\currentmansection}{ICET\_COMM\_DUPLICATE}
+\begin{Table}{3}
+  \textC{struct }\CType{IceTCommunicatorStruct}\textC{ *}\CFunc{ICET\_COMM\_DUPLICATE}\textC{(void);}
+\end{Table}
+
+\index{ICET\_COMM\_DESTROY}
+\renewcommand{\currentmansection}{ICET\_COMM\_DESTROY}
+\begin{Table}{3}
+  \textC{void }\CFunc{ICET\_COMM\_DESTROY}\textC{(void);}
+\end{Table}
+
+\index{ICET\_COMM\_SEND}
+\renewcommand{\currentmansection}{ICET\_COMM\_SEND}
+\begin{Table}{3}
+  \textC{void }\CFunc{ICET\_COMM\_SEND}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{dest},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_RECV}
+\renewcommand{\currentmansection}{ICET\_COMM\_RECV}
+\begin{Table}{3}
+  \textC{void }\CFunc{ICET\_COMM\_RECV}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{src},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_SENDRECV}
+\renewcommand{\currentmansection}{ICET\_COMM\_SENDRECV}
+\begin{Table}{3}
+  \textC{void }\CFunc{ICET\_COMM\_SENDRECV}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{GLenum}&\CArg{sendtype}\textC{,}\\
+  &\textC{int}&\CArg{dest}\textC{,}\\
+  &\textC{int}&\CArg{sendtag}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\textC{,}\\
+  &\textC{int}&\CArg{recvcount}\textC{,}\\
+  &\textC{GLenum}&\CArg{recvtype}\textC{,}\\
+  &\textC{int}&\CArg{src}\textC{,}\\
+  &\textC{int}&\CArg{recvtag}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_ALLGATHER}
+\renewcommand{\currentmansection}{ICET\_COMM\_ALLGATHER}
+\begin{Table}{3}
+  \textC{void }\CFunc{ICET\_COMM\_ALLGATHER}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{GLenum}&\CArg{type}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_ISEND}
+\renewcommand{\currentmansection}{ICET\_COMM\_ISEND}
+\begin{Table}{3}
+  \CType{IceTCommRequest}\textC{ }\CFunc{ICET\_COMM\_ISEND}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{dest},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_IRECV}
+\renewcommand{\currentmansection}{ICET\_COMM\_IRECV}
+\begin{Table}{3}
+  \CType{IceTCommRequest}\textC{ }\CFunc{ICET\_COMM\_IRECV}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{src},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_WAIT}
+\renewcommand{\currentmansection}{ICET\_COMM\_WAIT}
+\begin{Table}{3}
+  \textC{void }\CFunc{ICET\_COMM\_WAIT}\textC{(}&\CType{IceTCommRequest}\textC{ *}&\CArg{request}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_WAITANY}
+\renewcommand{\currentmansection}{ICET\_COMM\_WAITANY}
+\begin{Table}{3}
+  \textC{void }\CFunc{ICET\_COMM\_WAITANY}\textC{(}&\textC{int}&\CArg{count},\\
+  &\CType{IceTCommRequest}\textC{ *}&\CArg{array\_of\_requests}\quad\textC{);}
+\end{Table}
+
+\index{ICET\_COMM\_SIZE}
+\renewcommand{\currentmansection}{ICET\_COMM\_SIZE}
+\begin{Table}{3}
+  \textC{int }\CFunc{ICET\_COMM\_SIZE}\textC{(void);}
+\end{Table}
+
+\index{ICET\_COMM\_RANK}
+\renewcommand{\currentmansection}{ICET\_COMM\_RANK}
+\begin{Table}{3}
+  \textC{int }\CFunc{ICET\_COMM\_RANK}\textC{(void);}
+\end{Table}
+
+In each of these functions, the type parameter is set to one of the
+following: \CEnum{ICET\_BOOLEAN}, \CEnum{ICET\_BYTE}, \CEnum{ICET\_SHORT},
+\CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}
+
+\subsubsection{Transfering Images}
+
+Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
+opaque, they can be transferred as simple byte buffers.  To do so, you need
+only the size of the buffer.  The following sends an image stored in the
+variable \textC{image} of type \CType{IceTImage}.
+
+\index{icetFullImageSize}
+\index{icetGetImagePixelCount}
+\index{icetAddSentBytes}
+\index{ICET\_COMM\_SEND}
+\begin{code}
+  size = icetFullImageSize(icetGetImagePixelCount(image));
+  icetAddSentBytes(size);
+  ICET_COMM_SEND(image, size, ICET_BYTE, dest, tag);
+\end{code}
+
+And the following is the paired receive for the image.  Note that the
+number of pixels in \textC{pixel\_count} need to be as large or larger then
+the actual number of pixels sent, but it otherwise does not have to match
+exactly.  And, of course, \textC{image} must be allocated (generally with
+\CFunc{icetResizeBuffer} and \CFunc{icetReserveBufferMem}) with the
+appropriate amount of memory.
+
+\index{icetFullImageSize}
+\index{ICET\_COMM\_RECV}
+\begin{code}
+  size = icetFullImageSize(pixels);
+  ICET_COMM_RECV(image, size, ICET_BYTE, src, tag);
+\end{code}
+
+Most of the time, you will actually send compressed image data.  Compressed
+images are sent in the same mannor as full image.  The only difference is
+to make sure you give the communication function the actual size of the
+image.
+
+\index{icetCompressImage}
+\index{ICET\_COMM\_SEND}
+\begin{code}
+  size = icetCompressImage(image, compressed_image);
+  ICET_COMM_SEND(compressed_image, size, ICET_BYTE, dest, tag);
+\end{code}
+
+And the following is the paired receive for the sparse image.  Note that we
+do not need to know the actual number of bytes received.  Rather, we just
+need to know the maximum size of the image and have a buffer that large.
+
+\index{icetSparseImageSize}
+\index{ICET\_COMM\_RECV}
+\begin{code}
+  size = icetSparseImageSize(pixels);
+  ICET_COMM_RECV(compressed_image, size, ICET_BYTE, src tag);
+\end{code}
+
+\subsubsection{Helper Communication Functions}
+
+\index{common.h}\textC{common.h} (found in the strategies directory)
+contains some helper functions that implement common communication
+patterns.  They may be helpful in impementing your strategy.
+
+\index{manpage:icetRenderTransferFullImages}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRenderTransferFullImages}\textC{(}&\CType{IceTImage}&\CArg{imageBuffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{inImage}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{outImage}\textC{,}\\
+  &\textC{GLint}&\CArg{num\_receiving}\textC{,}\\
+  &\textC{GLint *}&\CArg{tile\_image\_dest}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetRenderTransferFullImage} renders all the tiles that are
+specified in the \CEnum{ICET\_CONTAINED\_TILES} state array and sends them
+to the processors with ranks specified in tile\_image\_dest.  This method is
+guaranteed not to deadlock.  It only uses memory given with the buffer
+arguments, and will make its best efforts to get the graphics and network
+hardware to run in parallel.
+
+\CArg{imageBuffer} is a buffer big enough to hold color and/or depth values
+that is \CEnum{ICET\_MAX\_PIXELS} big.  The size can be determined with the
+\CFunc{icetFullImageSize} function in image.h.  \CArg{inImage} and
+\CArg{outImage} are two buffers big enough to hold sparse color and depth
+information for an image that is \CEnum{ICET\_MAX\_PIXELS} big.  The size
+can be determined with the \CFunc{icetCompressedBufferSize} macro in
+\index{image.h}\textC{image.h}.  \CArg{num\_receiving} is the number of
+images this processor is receiving, and \CArg{tile\_image\_dest} is an
+array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES}, then the
+rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
+
+There is also a more general form for transferring images or other large
+data blocks.
+
+\index{manpage:icetSendRecvLargeMessages}
+\textC{typedef void *(*}\CType{IceTGenerateData}\textC{)(GLint id, GLint dest, GLint *size);}
+
+\textC{typedef void *(*}\CType{IceTHandleData}\textC{)(void *, GLint src);}
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSendRecvLargeMessages}\textC{(}&\textC{GLint}&\CArg{numMessagesSend}\textC{,}\\
+  &\textC{GLint *}&\CArg{messageDestinations}\textC{,}\\
+  &\textC{GLint}&\CArg{messagesInOrder}\textC{,}\\
+  &\CType{IceTGenerateData}&\CArg{generateDataFunc}\textC{,}\\
+  &\CType{IceTHandleData}&\CArg{handleDataFunc}\textC{,}\\
+  &\textC{void *}&\CArg{incomingBuffer}\textC{,}\\
+  &\textC{GLint}&\CArg{bufferSize}\textC{);}
+\end{Table}
+
+\CFunc{icetSendRecvLargeMessages} is similar to
+\CFunc{icetRenderTransferFullImages} except that it works with generic
+data, data generators, and data handlers.  It takes a count of a number of
+messages to be sent and an array of ranks to send to.  Two callbacks are
+required.  One generates the data (so large data may be generated JIT to
+save memory) and the other handles incoming data.  The generate callback is
+run right before the data it returns is sent to a particular destination.
+This callback will not be called again until the memory it returned is no
+longer in use, so the memory may be reused.  As large messages come in, the
+handle callback is called.  As an optimization, if a process sends to
+itself, then that will be the first message created.  This gives the
+callback an opertunity to build its local data while waiting for incoming
+data.  The handle callback returns a pointer to a buffer to be used for the
+next large message receive.  It should be common for this message buffer to
+be reused too.
+
+\CArg{numMessagesSending} is a count of the number of large messages this
+processor is sending out.  \CArg{messageDestinations} is an array of size
+numMessagesSending that contains the ranks of message destinations.
+\CArg{generateDataFunc} is a callback function that generates messages.
+The function is given the index in messageDestinations and the rank of the
+destination as arguments.  The data of the message and the size of the
+message (in bytes) are returned.  The \CArg{generateDataFunc} will not be
+called again until the returned data is no longer in use.  Thus the data
+may be reused.  \CArg{handleDataFunc} is a callback function that processes
+messages.  The function is given the data buffer and the rank of the
+process that sent it.  The function is expected to return a buffer to use
+for the next message receive.  If the callback is finished with the buffer
+it was given, it is perfectly acceptable to return it again for reuse.
+\CArg{incomingBuffer} is a buffer to use for the first incoming message.
+\CArg{bufferSize} is the maximum size of a message.
 
 \subsection{Internal Functions for Compositing}
+
+Stuff in image.h.
 
 icetComposite
 icetCompressedComposite
