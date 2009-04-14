@@ -1,4 +1,4 @@
-% -*- Index -*-
+% -*- latex -*-
 
 
 \chapter{Strategies}
@@ -54,6 +54,7 @@ display or vision deficiencies.  It should not be hard to follow the
 descriptions either way.)
 
 \section{Single Image Compositing}
+\label{sec:Strategies:SingleImageCompositing}
 
 \index{single~image~composite|(}
 \index{compositing!single~image|(}
@@ -427,7 +428,7 @@ strategy does, however, support ordered compositing.
 
 \section{Implementing New Strategies}
 
-The \IceT API was writen while its strategies were being developed.  As
+The \IceT API was written while its strategies were being developed.  As
 such, the design yields for the relatively simplistic addition of new
 strategies.  This section will provide the basic overview of how to add a
 new strategy.  It is probably easiest to start by modifying your \IceT
@@ -455,7 +456,7 @@ typedef struct _IceTStrategy {
 The \textC{name} field in the \CType{IceTStrategy} type is a short string
 identifying the strategy.  (It is the string returned by
 \CFunc{icetGetStrategyName} when the strategy is active.)  The
-\textC{supports\_ordering} field is a boolean value indicating whether the
+\textC{supports\_ordering} field is a Boolean value indicating whether the
 strategy supports ordered compositing.  Finally, and most importantly, the
 \textC{compose} field is a function that is called during an invocation of
 \CFunc{icetDrawFrame} to perform the rendering and compositing.  It takes
@@ -484,7 +485,7 @@ ICET_STRATEGY_EXPORT extern IceTStrategy ICET_STRATEGY_DIRECT;
 \end{code}
 
 The \CEnum{ICET\_STRATEGY\_DIRECT} name is intentionally formed to look
-like a C macro for an identifier, and it is entended to be used by the end
+like a C macro for an identifier, and it is intended to be used by the end
 user as such.  (\CEnum{ICET\_STRATEGY\_EXPORT} is a real C macro that
 performs library export magic.)  Your strategy should define a
 \CType{IceTStrategy} in a similar manner.  The remainder of this section
@@ -565,7 +566,7 @@ the \index{state.h}\textC{state.h} header file.
 The implementation for the \CFunc{icetGet} functions is to copy the data
 into a memory buffer you provide, performing type conversion as necessary.
 \CFunc{icetUnsafeStateGet} simply returns the internal pointer where the
-data is stored.  This can be faster and more convienient (since you do not
+data is stored.  This can be faster and more convenient (since you do not
 have to allocate your own memory), but is unsafe in two ways.  First, if
 the state variable is changed, the pointer you receive can become invalid.
 Second, no type conversion is performed.  You have to make sure you cast
@@ -640,11 +641,11 @@ the section on image functions.)
 
 \begin{code}
     icetResizeBuffer(  2*icetSparseImageSize(max_pixels)
-		     + icetFullImageSize(max_pixels)
-		     + num_tiles*sizeof(GLint));
+                     + icetFullImageSize(max_pixels)
+                     + num_tiles*sizeof(GLint));
     inImage     = icetReserveBufferMem(icetSparseImageSize(max_pixels));
     outImage    = icetReserveBufferMem(icetSparseImageSize(max_pixels));
-    image	= icetReserveBufferMem(icetFullImageSize(max_pixels));
+    image       = icetReserveBufferMem(icetFullImageSize(max_pixels));
     tile_image_dest = icetReserveBufferMem(num_tiles*sizeof(GLint));
 \end{code}
 
@@ -735,7 +736,7 @@ background.  In practice, \CFunc{icetClearImage} is coupled with a call to
 
 \label{manpage:icetGetImagePixelCount}
 Once you have an initialized image, whether initialized by you or some
-other \IceT function, you can retrive the number of pixels in it with
+other \IceT function, you can retrieve the number of pixels in it with
 \CFunc{icetGetImagePixelCount}.
 
 \begin{Table}{2}
@@ -743,7 +744,7 @@ other \IceT function, you can retrive the number of pixels in it with
 \end{Table}
 
 Unlike most functions, \CFunc{icetGetImagePixelCount} can take either a
-\CType{IcetImage} or a \CType{IceTSparseImage}.
+\CType{IceTImage} or a \CType{IceTSparseImage}.
 
 \label{manpage:icetGetImageColorBuffer}
 \label{manpage:icetGetImageDepthBuffer}
@@ -813,7 +814,8 @@ some amount of processes.  This can be most easily achieved by using the
 \CFunc{icetCompressSubImage}.
 
 \begin{Table}{3}
-  \textC{GLuint }\CFunc{icetCompressSubImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{imageBuffer},\\
+  \multicolumn{3}{l}{\textC{GLuint }\CFunc{icetCompressSubImage}\textC{(}}\\
+  \makebox[2in]{}&\textC{const }\CType{IceTImage}&\CArg{imageBuffer},\\
   &\textC{GLuint}&\CArg{offset},\\
   &\textC{GLuint}&\CArg{pixels},\\
   &\CType{IceTSparseImage}&\CArg{compressedBuffer}\textC{);}
@@ -830,7 +832,8 @@ A sparse image can be returned to its uncompressed form with
 \CFunc{icetDecompressImage}.
 
 \begin{Table}{3}
-  \textC{GLuint }\CFunc{icetDecompressImage}\textC{(}&\textC{const }\CType{IceTSparseImage}&\CArg{compressedBuffer},\\
+  \multicolumn{3}{l}{\textC{GLuint }\CFunc{icetDecompressImage}\textC{(}}\\
+  \makebox[2in]{}&\textC{const }\CType{IceTSparseImage}&\CArg{compressedBuffer},\\
   &\CType{IceTImage}&\CArg{imageBuffer}\quad\textC{);}
 \end{Table}
 
@@ -844,7 +847,7 @@ The first thing to know about communications in \IceT is to understand that
 it is up to the strategy to count how many bytes are being transmitted in
 your compose function and store this in the \CEnum{ICET\_BYTES\_SENT} state
 variable.  To make this easier, \index{common.h}\textC{common.h} (found in
-the strategies directory) provies \CFunc{icetAddSentBytes}.
+the strategies directory) provides \CFunc{icetAddSentBytes}.
 
 \label{manpage:icetAddSentBytes}
 \begin{Table}{3}
@@ -951,7 +954,8 @@ the current context's communicator.
 \index{ICET\_COMM\_WAITANY}
 \renewcommand{\currentmansection}{ICET\_COMM\_WAITANY}
 \begin{Table}{3}
-  \textC{void }\CFunc{ICET\_COMM\_WAITANY}\textC{(}&\textC{int}&\CArg{count},\\
+  \multicolumn{3}{l}{\textC{void }\CFunc{ICET\_COMM\_WAITANY}\textC{(}}\\
+  \makebox[1.8in]{}&\textC{int}&\CArg{count},\\
   &\CType{IceTCommRequest}\textC{ *}&\CArg{array\_of\_requests}\quad\textC{);}
 \end{Table}
 
@@ -971,7 +975,7 @@ In each of these functions, the type parameter is set to one of the
 following: \CEnum{ICET\_BOOLEAN}, \CEnum{ICET\_BYTE}, \CEnum{ICET\_SHORT},
 \CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}
 
-\subsubsection{Transfering Images}
+\subsubsection{Transferring Images}
 
 Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
 opaque, they can be transferred as simple byte buffers.  To do so, you need
@@ -1003,7 +1007,7 @@ appropriate amount of memory.
 \end{code}
 
 Most of the time, you will actually send compressed image data.  Compressed
-images are sent in the same mannor as full image.  The only difference is
+images are sent in the same manner as full image.  The only difference is
 to make sure you give the communication function the actual size of the
 image.
 
@@ -1029,30 +1033,31 @@ need to know the maximum size of the image and have a buffer that large.
 
 \index{common.h}\textC{common.h} (found in the strategies directory)
 contains some helper functions that implement common communication
-patterns.  They may be helpful in impementing your strategy.
+patterns.  They may be helpful in implementing your strategy.
 
-\index{manpage:icetRenderTransferFullImages}
+\label{manpage:icetRenderTransferFullImages}
 \begin{Table}{3}
-  \textC{void }\CFunc{icetRenderTransferFullImages}\textC{(}&\CType{IceTImage}&\CArg{imageBuffer}\textC{,}\\
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetRenderTransferFullImages}\textC{(}}\\
+  \makebox[2in]{}&\CType{IceTImage}&\CArg{imageBuffer}\textC{,}\\
   &\CType{IceTSparseImage}&\CArg{inImage}\textC{,}\\
   &\CType{IceTSparseImage}&\CArg{outImage}\textC{,}\\
   &\textC{GLint}&\CArg{num\_receiving}\textC{,}\\
   &\textC{GLint *}&\CArg{tile\_image\_dest}\quad\textC{);}
 \end{Table}
 
-\CFunc{icetRenderTransferFullImage} renders all the tiles that are
+\CFunc{icetRenderTransferFullImages} renders all the tiles that are
 specified in the \CEnum{ICET\_CONTAINED\_TILES} state array and sends them
-to the processors with ranks specified in tile\_image\_dest.  This method is
-guaranteed not to deadlock.  It only uses memory given with the buffer
-arguments, and will make its best efforts to get the graphics and network
-hardware to run in parallel.
+to the processors with ranks specified in \CArg{tile\_image\_dest}.  This
+method is guaranteed not to deadlock.  It only uses memory given with the
+buffer arguments, and will make its best efforts to get the graphics and
+network hardware to run in parallel.
 
 \CArg{imageBuffer} is a buffer big enough to hold color and/or depth values
 that is \CEnum{ICET\_MAX\_PIXELS} big.  The size can be determined with the
 \CFunc{icetFullImageSize} function in image.h.  \CArg{inImage} and
 \CArg{outImage} are two buffers big enough to hold sparse color and depth
 information for an image that is \CEnum{ICET\_MAX\_PIXELS} big.  The size
-can be determined with the \CFunc{icetCompressedBufferSize} macro in
+can be determined with the \CFunc{icetSparseImageSize} macro in
 \index{image.h}\textC{image.h}.  \CArg{num\_receiving} is the number of
 images this processor is receiving, and \CArg{tile\_image\_dest} is an
 array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES}, then the
@@ -1061,13 +1066,14 @@ rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
 There is also a more general form for transferring images or other large
 data blocks.
 
-\index{manpage:icetSendRecvLargeMessages}
+\label{manpage:icetSendRecvLargeMessages}
 \textC{typedef void *(*}\CType{IceTGenerateData}\textC{)(GLint id, GLint dest, GLint *size);}
 
 \textC{typedef void *(*}\CType{IceTHandleData}\textC{)(void *, GLint src);}
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetSendRecvLargeMessages}\textC{(}&\textC{GLint}&\CArg{numMessagesSend}\textC{,}\\
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetSendRecvLargeMessages}\textC{(}}\\
+  \makebox[2in]{}&\textC{GLint}&\CArg{numMessagesSend}\textC{,}\\
   &\textC{GLint *}&\CArg{messageDestinations}\textC{,}\\
   &\textC{GLint}&\CArg{messagesInOrder}\textC{,}\\
   &\CType{IceTGenerateData}&\CArg{generateDataFunc}\textC{,}\\
@@ -1087,19 +1093,19 @@ This callback will not be called again until the memory it returned is no
 longer in use, so the memory may be reused.  As large messages come in, the
 handle callback is called.  As an optimization, if a process sends to
 itself, then that will be the first message created.  This gives the
-callback an opertunity to build its local data while waiting for incoming
+callback an opportunity to build its local data while waiting for incoming
 data.  The handle callback returns a pointer to a buffer to be used for the
 next large message receive.  It should be common for this message buffer to
 be reused too.
 
 \CArg{numMessagesSending} is a count of the number of large messages this
 processor is sending out.  \CArg{messageDestinations} is an array of size
-numMessagesSending that contains the ranks of message destinations.
+\CArg{numMessagesSending} that contains the ranks of message destinations.
 \CArg{generateDataFunc} is a callback function that generates messages.
-The function is given the index in messageDestinations and the rank of the
-destination as arguments.  The data of the message and the size of the
-message (in bytes) are returned.  The \CArg{generateDataFunc} will not be
-called again until the returned data is no longer in use.  Thus the data
+The function is given the index in \CArg{messageDestinations} and the rank
+of the destination as arguments.  The data of the message and the size of
+the message (in bytes) are returned.  The \CArg{generateDataFunc} will not
+be called again until the returned data is no longer in use.  Thus the data
 may be reused.  \CArg{handleDataFunc} is a callback function that processes
 messages.  The function is given the data buffer and the rank of the
 process that sent it.  The function is expected to return a buffer to use
@@ -1110,14 +1116,252 @@ it was given, it is perfectly acceptable to return it again for reuse.
 
 \subsection{Internal Functions for Compositing}
 
-Stuff in image.h.
+In the strategies directory, the \index{common.h}\textC{common.h} header
+has prototypes for the single image compositing algorithms described in the
+Single Image Compositing section of this chapter.
 
-icetComposite
-icetCompressedComposite
-icetCompressedSubComposite
+\subsubsection{Parallel Compositing}
 
-\subsection{Other Convenience Functions}
+\label{manpage:icetTreeCompose}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetTreeCompose}\textC{(}&\textC{GLint *}&\CArg{compose\_group}\textC{,}\\
+  &\textC{GLint}&\CArg{group\_size}\textC{,}\\
+  &\textC{GLint}&\CArg{image\_dest}\textC{,}\\
+  &\CType{IceTImage}&\CArg{imageBuffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{compressedImageBuffer}\quad\textC{);}
+\end{Table}
 
-Everything else in common.h.
+\CFunc{icetTreeCompose} performs a binary tree composition of images
+amongst a subset of processes in the current communicator of the context.
+Rather than perform the composition on all the processes in the
+communicator, it performs them on a subset with arbitrary ordering. (Note
+that ordering matters when doing alpha blending as opposed to the z-buffer
+operation.)  \CArg{compose\_group} is the mapping of processes from the
+communicator ranks to the ``group'' ranks.  The size of the groups (and the
+length of the \CArg{compose\_group} array) is specified by
+\CArg{group\_size}.  The compose image ends up in the processor with rank
+$\CArg{compose\_group}[\CArg{image\_dest}]$.  \CArg{imageBuffer} should
+contain the partial input image to be composited. (Of course, each process
+should have its own partial image.  All processes should provide images of
+identical dimensions.)  On the process with the rank
+$\CArg{compose\_group}[\CArg{image\_dest}]$, the final image will be stored
+in this buffer.  \CArg{compressedImageBuffer} is a buffer that is used
+internally by \CFunc{icetTreeCompose} for compressing, sending, and
+receiving images.  It must be large enough to hold an image as large as the
+input, but its contents are ignored on the function invocation and the
+contents are garbage on return.
+
+The following is a very simple example of compositing the image on tile 0
+and providing the result on the process with rank 0.  If ordered
+compositing is enabled, then the order is respected.  This is similar to
+the \index{strategy!serial}serial strategy except that only the first tile
+is composited.
+
+\begin{code}
+IceTImage treeComposeTile0(void)
+{
+  GLint max_pixels;
+  GLint rank;
+  GLint num_proc;
+  GLint *display_node;
+  GLint image_dest;
+  GLboolean ordered_composite;
+  IceTImage image;
+  IceTSparseImage scratchImage;
+  GLint *compose_group;
+  int i;
+
+  icetGetIntegerv(ICET_NUM_TILES, &num_tiles);
+  icetGetIntegerv(ICET_TILE_MAX_PIXELS, &max_pixels);
+  icetGetIntegerv(ICET_RANK, &rank);
+  icetGetIntegerv(ICET_NUM_PROCESSES, &num_proc);
+  display_nodes = icetUnsafeStateGet(ICET_DISPLAY_NODES);
+  ordered_composite = icetIsEnabled(ICET_ORDERED_COMPOSITE);
+
+  icetResizeBuffer(  icetFullImageSize(max_pixels)
+                   + icetSparseImageSize(max_pixels)
+                   + sizeof(int)*num_proc);
+  image         = icetReserveBufferMem(icetFullImageSize(max_pixels));
+  scratchImage  = icetReserveBufferMem(icetSparseImageSize(max_pixels));
+  compose_group = icetReserveBufferMem(sizeof(GLint)*num_proc);
+
+  if (ordered_composite) {
+    icetGetIntegerv(ICET_COMPOSITE_ORDER, compose_group);
+    for (image_dest = 0; compose_group[image_dest] != display_nodes[i];
+         image_dest++);
+  } else {
+    for (i = 0; i < num_proc; i++) {
+      compose_group[i] = i;
+    }
+    image_dest = display_nodes[0];
+  }
+
+  icetGetTileImage(0, image);
+  icetTreeCompose(compose_group, num_proc, image_dest, image, scratchImage);
+
+  return image;
+}
+\end{code}
+
+A much more scalable image compositing algorithm is binary swap.  Usually
+you will use the binary-swap algorithm instead of tree compose.  The only
+exception is that binary-swap has a bit more overhead than tree compose, so
+for small amounts of processes it may be moderately faster to run tree
+compose.
+
+\label{manpage:icetBswapCompose}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetBswapCompose}\textC{(}&\textC{GLint *}&\CArg{compose\_group}\textC{,}\\
+  &\textC{GLint}&\CArg{group\_size}\textC{,}\\
+  &\textC{GLint}&\CArg{image\_dest}\textC{,}\\
+  &\CType{IceTImage}&\CArg{imageBuffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{scratchImage1}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{scratchImage2}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetBswapCompose} behaves very much like \CFunc{icetTreeCompose}
+except that it uses a different (and much more scalable) algorithm.  The
+arguments of the two functions are very similar. (The only difference is
+that \CFunc{icetBswapCompose} requires two \CType{IceTSparseImage} buffers
+whereas \CFunc{icetTreeCompose} requires only one.) 
+
+Rather than perform the composition on all the processes in the
+communicator, \CFunc{icetBswapCompose} performs them on a subset with
+arbitrary ordering. (Note that ordering matters when doing alpha blending
+as opposed to the z-buffer operation.)  \CArg{compose\_group} is the
+mapping of processes from the communicator ranks to the ``group'' ranks.
+The size of the groups (and the length of the \CArg{compose\_group} array)
+is specified by \CArg{group\_size}.  The compose image ends up in the
+processor with rank $\CArg{compose\_group}[\CArg{image\_dest}]$.
+\CArg{imageBuffer} should contain the partial input image to be
+composited. (Of course, each process should have its own partial image.
+All processes should provide images of identical dimensions.)  On the
+process with the rank $\CArg{compose\_group}[\CArg{image\_dest}]$, the
+final image will be stored in this buffer.  \CArg{scratchImage1} and
+\CArg{scratchImage2} are buffers that are used internally by
+\CFunc{icetBswapCompose} for compressing, sending, and receiving images.  It
+must be large enough to hold an image as large as the input, but its
+contents are ignored on the function invocation and the contents are
+garbage on return.
+
+The following is a very simple example of compositing the image on tile 0
+and providing the result on the process with rank 0.  It is identical to
+the previous example code except that it uses binary swap and is equally
+similar to the \index{strategy!serial}serial strategy.  If ordered
+compositing is enabled, then the order is respected.
+
+\begin{code}
+IceTImage bswapComposeTile0(void)
+{
+  GLint max_pixels;
+  GLint rank;
+  GLint num_proc;
+  GLint *display_node;
+  GLint image_dest;
+  GLboolean ordered_composite;
+  IceTImage image;
+  IceTSparseImage scratchImage1, scratchImage2;
+  GLint *compose_group;
+  int i;
+
+  icetGetIntegerv(ICET_NUM_TILES, &num_tiles);
+  icetGetIntegerv(ICET_TILE_MAX_PIXELS, &max_pixels);
+  icetGetIntegerv(ICET_RANK, &rank);
+  icetGetIntegerv(ICET_NUM_PROCESSES, &num_proc);
+  display_nodes = icetUnsafeStateGet(ICET_DISPLAY_NODES);
+  ordered_composite = icetIsEnabled(ICET_ORDERED_COMPOSITE);
+
+  icetResizeBuffer(  icetFullImageSize(max_pixels)
+                   + icetSparseImageSize(max_pixels)*2
+                   + sizeof(int)*num_proc);
+  image         = icetReserveBufferMem(icetFullImageSize(max_pixels));
+  scratchImage1 = icetReserveBufferMem(icetSparseImageSize(max_pixels));
+  scratchImage2 = icetReserveBufferMem(icetSparseImageSize(max_pixels));
+  compose_group = icetReserveBufferMem(sizeof(GLint)*num_proc);
+
+  if (ordered_composite) {
+    icetGetIntegerv(ICET_COMPOSITE_ORDER, compose_group);
+    for (image_dest = 0; compose_group[image_dest] != display_nodes[i];
+         image_dest++);
+  } else {
+    for (i = 0; i < num_proc; i++) {
+      compose_group[i] = i;
+    }
+    image_dest = display_nodes[0];
+  }
+
+  icetGetTileImage(0, image);
+  icetBswapCompose(compose_group, num_proc, image_dest, image,
+                   scratchImage1, scrachImage2);
+
+  return image;
+}
+\end{code}
+
+\subsubsection{Local Compositing}
+
+When developing a multi-tile compositing algorithm (or any parallel
+compositing algorithm for that matter), it is often cannot be broken into
+full composites of single images.  Instead, you must break the problem down
+further into image transfers and image combinations.  Image transfers have
+already been covered previously in this section.  The \IceT library
+contains multiple methods to locally composite two images together.
+
+\label{manpage:icetComposite}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetComposite}\textC{(}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{const }\CType{IceTImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetComposite} takes the images stored in \CArg{destBuffer} and
+\CArg{srcBuffer}, composites them together, and stores the result in
+\CArg{destBuffer}.  The compositing operation is automatically determined
+by the current state. (See
+Chapter~\ref{sec:Customizing_Compositing:Compositing_Operation} for
+information on how the compositing operation is determined.)  If the
+compositing operation is order dependent, then the Boolean argument
+\CArg{srcOnTop} determines whether \CArg{srcBuffer} or \CArg{destBuffer} is
+on top.
+
+If one of your images is compressed (stored in a \CType{IceTSparseImage},
+it is faster to perform the compositing operation on the compressed image
+rather than decompressing first.  In fact, it is faster to composite a
+compressed image than two full image because the
+\index{active-pixel~encoding}active-pixel encoding allows the composite
+algorithm to skip over groups of background pixels.  This gives you the
+double win of faster image transfer and faster compositing.
+
+\label{manpage:icetCompressedComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedComposite}\textC{(}}\\
+  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetCompressedComposite} behaves just like \CFunc{icetComposite}
+except that \CArg{srcBuffer} is a compressed image rather than a full
+image.  The images in \CArg{destBuffer} and \CArg{srcBuffer} are composited
+together, and the results are stored in \CArg{destBuffer}.
+
+Many parallel compositing algorithms break images into pieces, distribute
+amongst processes, and composite the pieces.  To facilitate the compositing
+image pieces, \IceT provides \CFunc{icetCompressedSubComposite}.
+
+\label{manpage:icetCompressedSubComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedSubComposite}\textC{(}}\\
+  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{GLuint}&\CArg{offset}\textC{,}\\
+  &\textC{GLuint}&\CArg{pixels}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\textC{);}
+\end{Table}
+
+The \CArg{destBuffer}, \CArg{srcBuffer} and \CArg{srcOnTop} arguments are
+the same as those in \CFunc{icetCompressedComposite}.  The \CArg{offset}
+and \CArg{pixels} arguments specify a region of contiguous pixels in
+\CArg{destBuffer} to perform the compositing in.
 
 \index{strategy|)}

@@ -238,20 +238,23 @@ collecting dust on a crashed RAID somewhere.
 
 \input{Strategies.tex}
 
-
-\chapter{Communicators}
-\label{chap:Communicators}
-
-\section{MPI Communicators}
-\label{sec:Communicators:MPI_Communicators}
-
-\section{User Defined Communicators}
-\label{sec:Communicators:User_Defined_Communicators}
+\input{Communicators.tex}
 
 
 \chapter{Future Work}
 
-Stuff that would be good to change.
+The majority of the development for \IceT was finished by 2004.  Since
+then, \IceT has proven to be a stable and versatile library that is
+currently being used in several production applications.
+
+The following is a list of potential changes to \IceT.  As of this writing,
+none of these are currently under development.  Rather, these are
+identified shortcomings of various degrees in \IceT.  These features will
+be handled on an as needed basis, assuming the need should arise.
+
+\begin{dictionary}
+\item[Hello] world
+\end{dictionary}
 
 \begin{itemize}
 \item Update scalability tests (especially with respect to single image
@@ -262,6 +265,8 @@ Stuff that would be good to change.
   thread safety.
 \item Decouple from OpenGL.
 \item Automatically count network communication.
+\item Pass context as self object reference.
+\item Source file names.
 \end{itemize}
 
 % -----------------------------------------------------------------------------

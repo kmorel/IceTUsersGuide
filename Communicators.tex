@@ -1,0 +1,195 @@
+% -*- Index -*-
+
+
+\chapter{Communicators}
+\label{chap:Communicators}
+
+\IceT implements an abstract communication layer.  As we will see later in
+this chapter, this communication layer is a message passing interface based
+heavily on \MPI.\footnote{In fact, the original implementation of \IceT
+  used \MPI directly.  The abstract layer was inserted later as a
+  more-or-less cut-and-paste operation.}  As an end user to \IceT, you need
+to know almost nothing about this communication layer.  You need only to
+get a reference to an \CType{IceTCommunicator} object.  This object is
+opaque.  You only need to get one, pass it to the
+\index{context!\IceT}\CFunc{icetCreateContext}, and then delete it.
+\CFunc{icetCreateContext} will duplicate the communicator, so you need not
+worry about when you delete the context you created.
+
+Most of the time you will use the built-in \MPI implementation of the
+communicator, which is discussed in the first section.  If necessary, you
+can write your own communicator, which is discussed in the following section.
+
+\section{MPI Communicators}
+\label{sec:Communicators:MPI_Communicators}
+
+Using the \MPI implementation of a communicator, you simply include
+\index{ice-t\_mpi.h}\index{GL/ice-t\_mpi.h}\textC{GL/ice-t\_mpi.h} in your
+source and link \index{icet\_mpi~(library)}icet\_mpi into your
+own library or executable.  The only function you need to use is
+\CFunc{icetCreateMPICommunicator}.
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{\CType{IceTCommunicator}\textC{ }\CFunc{icetCreateMPICommunicator}\textC{(}}\\
+  \makebox[3.5in]{}&\CType{MPI\_Comm}&\CArg{mpi\_comm}\quad\textC{);}
+\end{Table}
+
+Quite simply, \CFunc{icetCreateMPICommunicator} converts an
+\CType{MPI\_Comm}, an \MPI communicator, into an \CType{IceTCommunicator},
+an \IceT communicator.  \CFunc{icetCreateMPICommunicator} duplicates the
+\MPI communicator.  Thus, you can delete the \CArg{mpi\_comm} communicator
+as soon as \CFunc{icetCreateMPICommunicator} as soon as it exits.
+Furthermore, the returned \CType{IceTCommunicator} will internally manage
+the \MPI communicator it created.
+
+Once created, the \CType{IceTCommunicator} may be deleted with
+\CFunc{icetDestroyMPICommunicator}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetDestroyMPICommunicator}\textC{(}&\CType{IceTCommunicator}&\CArg{comm}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetDestroyMPICommunicator} will release all the resources used by
+\CArg{comm}.  This includes the internal \MPI communicator, which you do
+not have direct access to.  \CArg{comm} will be invalid once you call
+\CFunc{icetDestroyMPICommunicator}.  However, you do not have to worry
+about any \IceT context you have passed it to since they will have
+duplicated the communicator.
+
+Using the \MPI communicator is easy.  First, you include the
+\index{ice-t\_mpi.h}\index{GL/ice-t\_mpi.h}\textC{GL/ice-t\_mpi.h} header.
+
+\index{ice-t.h}\index{GL/ice-t.h}
+\begin{code}
+#include <GL/ice-t.h>
+#include <GL/ice-t_mpi.h>
+\end{code}
+
+When you are ready to create an \IceT context (usually during the
+initialization of your program), create the \MPI-based communicator, use it
+to initialize the context, and then destroy the communicator.
+
+\index{context!\IceT}
+\index{icetCreateMPICommunicator}
+\index{icetCreateContext}
+\index{icetDestroyMPICommunicator}
+\begin{code}
+  icetComm = icetCreateMPICommunicator(MPI_COMM_WORLD);
+  icetContext = icetCreateContext(icetComm);
+  icetDestroyMPICommunicator(icetComm);
+\end{code}
+
+Once you have a context, you can use \IceT as explained throughout this
+document.  When you are ready, destroy the context as you normally would.
+
+\index{icetDestroyContext}
+\begin{code}
+  icetDestroyContext(icetContext);
+\end{code}
+
+Finally, do not forget to use the \index{icet\_mpi~(library)}icet\_mpi
+library when linking your executable or library.
+
+A more detailed example of using the \MPI communicator is in the
+Chapter~\ref{chap:Tutorial} tutorial.
+
+\section{User Defined Communicators}
+\label{sec:Communicators:User_Defined_Communicators}
+
+Occasionally, it may be necessary to provide your own version of a parallel
+communicator.  This may be because you are using a communication library
+other than \MPI.  It may also be because you wish to augment the behavior
+of \MPI when it is used by \IceT.  To provide your own communicator, you
+need only to create an \CType{IceTCommunicator} object.  In previous
+sections we have discussed \CType{IceTCommunicator} as an opaque type, and
+unless you are implementing your own you should treat it as such.  If you
+are implementing a \CType{IceTCommunicator}, you will see that it is simply
+a pointer to a structure containing references to several communication
+functions.
+
+\begin{code}
+struct IceTCommunicatorStruct {
+    struct IceTCommunicatorStruct *
+         (*Duplicate)(struct IceTCommunicatorStruct *self);
+    void (*Destroy)(struct IceTCommunicatorStruct *self);
+    void (*Send)(struct IceTCommunicatorStruct *self,
+                 const void *buf, int count, GLenum datatype, int dest,
+                 int tag);
+    void (*Recv)(struct IceTCommunicatorStruct *self,
+                 void *buf, int count, GLenum datatype, int src, int tag);
+
+    void (*Sendrecv)(struct IceTCommunicatorStruct *self,
+                     const void *sendbuf, int sendcount, GLenum sendtype,
+                     int dest, int sendtag,
+                     void *recvbuf, int recvcount, GLenum recvtype,
+                     int src, int recvtag);
+    void (*Allgather)(struct IceTCommunicatorStruct *self,
+                      const void *sendbuf, int sendcount, int type,
+                      void *recvbuf);
+
+    IceTCommRequest (*Isend)(struct IceTCommunicatorStruct *self,
+                             const void *buf, int count, GLenum datatype,
+                             int dest, int tag);
+    IceTCommRequest (*Irecv)(struct IceTCommunicatorStruct *self,
+                             void *buf, int count, GLenum datatype,
+                             int src, int tag);
+
+    void (*Wait)(struct IceTCommunicatorStruct *self, IceTCommRequest *request);
+    int  (*Waitany)(struct IceTCommunicatorStruct *self,
+                    int count, IceTCommRequest *array_of_requests);
+
+    int  (*Comm_size)(struct IceTCommunicatorStruct *self);
+    int  (*Comm_rank)(struct IceTCommunicatorStruct *self);
+    void *data;
+};
+
+typedef struct IceTCommunicatorStruct *IceTCommunicator;
+\end{code}
+
+To create a custom \CType{IceTCommunicator} simply allocate the structure
+and fill in the function pointers.  An implementation for a function that
+creates an \IceT communicator might look like the following.  In this
+example, the \textC{my*} functions are implementations of the communication
+functions. 
+
+\begin{code}
+IceTCommunicator myCreateCommunicator(myCommType myComm)
+{
+  IceTCommunicator comm = malloc(sizeof(struct IceTCommunicatorStruct));
+
+  comm->Duplicate = myDuplicate;
+  comm->Destroy = myDestroy;
+  comm->Send = mySend;
+  /* And so on... */
+
+  comm->data = malloc(sizeof(myComm))
+  /* Making a duplicate here would be better. */
+  memcpy(comm->data, myComm, sizeof(myComm));
+
+  return comm;
+}
+\end{code}
+
+The paired destruction function should probably just call the Destroy
+function of the communicator (or vice versa) to ensure that destroy works
+either way.
+
+\begin{code}
+void myDestroyCommunicator(IceTCommunicator comm)
+{
+  comm->Destroy(comm);
+}
+\end{code}
+
+\begin{code}
+static void myDestroy(IceTCommunicator self)
+{
+  myCommType *myComm = (myCommType *)self->data;
+  /* Release resources of myComm. */
+  free(myComm);
+  free(self);
+}
+\end{code}
+
+For a more concrete example of implementing an \IceT communicator, see the
+\IceT code for the \MPI communicator.
