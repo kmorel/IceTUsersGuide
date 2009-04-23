@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{December  1, 2006}
+\setDate{April 22, 2009}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetGet}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGet} -- get an \IceT state parameter}
 
@@ -59,12 +59,18 @@
     24 bits or less cast the maximum value to something smaller.
   \item[\CEnum{ICET\_BACKGROUND\_COLOR}] The color that \IceT is currently
     assuming is the background color.  It is an RGBA value that is stored
-    as four floating point values.
+    as four floating point values.  This value is generally taken from the
+    \OpenGL background color on a call to \CFunc{icetDrawFrame}, but is
+    also occasionally set to black to make sure that color blending happens
+    correctly. (The correct background color is restored later.)
   \item[\CEnum{ICET\_BACKGROUND\_COLOR\_WORD}] The same as
     \CEnum{ICET\_BACKGROUND\_COLOR} except that each component is stored as
     8-bit values and packed in a 4-byte integer as specified by
     \CEnum{ICET\_COLOR\_FORMAT}.  The idea is to rapidly fill the
-    background of color buffers.
+    background of color buffers.  This value is generally taken from the
+    \OpenGL background color on a call to \CFunc{icetDrawFrame}, but is
+    also occasionally set to black to make sure that color blending happens
+    correctly. (The correct background color is restored later.)
   \item[\CEnum{ICET\_BLEND\_TIME}] The total time, in seconds, spent in
     performing color blending of images during the last call to
     \CFunc{icetDrawFrame}.  Stored as a double.  An alias for this value is
@@ -172,7 +178,7 @@
     the current strategy supports ordered compositing.
   \item[\CEnum{ICET\_TILE\_DISPLAYED}] The index of the tile the local
     process is displaying.  The index will correspond to the tile entry in
-    the \CEnum{ICET\_DISPLAY\_NODES} and \CEnum{ICET\_TILE\_VIEWPORT}
+    the \CEnum{ICET\_DISPLAY\_NODES} and \CEnum{ICET\_TILE\_VIEWPORTS}
     arrays.  If set to $0 <= i < \CEnum{ICET\_NUM\_PROCESSES}$, then the
     $i^{\mathrm{th}}$ entry of \CEnum{ICET\_DISPLAY\_NODES} is equal to
     \CEnum{ICET\_RANK}.  If the local process is not displaying any tile,

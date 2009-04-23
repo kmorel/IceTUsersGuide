@@ -8,8 +8,8 @@
 \usepackage{xspace}
 \usepackage{fancyvrb}
 
-% Uncomment this if not a draft.
-\usepackage[all,light]{draftcopy}
+%%% % Comment this if not a draft.
+%%% \usepackage[all,light]{draftcopy}
 
 \usepackage{color}
 \definecolor{yellow}{rgb}{1,1,0}
@@ -252,22 +252,56 @@ none of these are currently under development.  Rather, these are
 identified shortcomings of various degrees in \IceT.  These features will
 be handled on an as needed basis, assuming the need should arise.
 
-\begin{dictionary}
-\item[Hello] world
-\end{dictionary}
-
-\begin{itemize}
-\item Update scalability tests (especially with respect to single image
-  compositing).
-\item Render aborts.
-\item Allow higher precision color buffers.
-\item Pass context into functions (as an object).  Help to maintain
-  thread safety.
-\item Decouple from OpenGL.
-\item Automatically count network communication.
-\item Pass context as self object reference.
-\item Source file names.
-\end{itemize}
+\begin{description}
+\item[Update scalability tests.] The scalability tests for \IceT were run
+  during its major development, which was several years ago.  At the time,
+  64 nodes was considered a pretty enormous big visualization cluster.
+  Nowadays, \IceT is sometimes used to run visualization on supercomputers
+  containing thousands of processes.  Verifying the scalability of the
+  system occasionally is always a good idea.  Also, the
+  \index{strategy!reduce}reduce strategy makes assumptions about the
+  relative performance of the binary tree and binary swap composition
+  algorithms.  The performance point might have changed.  Also, given that
+  binary swap is reducing the image with each step, it might be worthwhile
+  to switch to binary tree in the middle of the binary swap algorithm.
+\item[Render aborts.] In interactive applications, it is often convenient
+  to be able to abort a render that takes some time to finish.  Aborting a
+  render in the middle of a composite is tricky, because you need to make
+  sure that everyone is aware of the abort and that all communication is
+  correctly canceled.  This could be partially implemented in \IceT's
+  communication layer, but all the strategies still have to be ready to
+  quit once a communication is canceled due to an abort (or at the very
+  least ignore it without crashing).
+\item[Decouple from OpenGL.] In retrospect, tying the \IceT library so
+  closely to \OpenGL was a mistake.  Although most graphical applications,
+  even today, use \OpenGL for their rendering, it unnecessarily precludes
+  the use of any other graphics library (such as \index{DirectX}DirectX,
+  for example) or any application that does not use a graphics API to
+  create images.  The direct interfacing with \OpenGL can even complicate
+  the integration with applications that also use \OpenGL.  Although there
+  should always be a layer to simplify the interface with \OpenGL, ideally
+  you should be able to use a compositing library like \IceT independently
+  of \OpenGL.
+\item[Allow higher precision color buffers.]  The internal representation
+  of images in \IceT uses 8-bit colors.  This was an intentional design so
+  that RGBA colors can be treated as single 32-bit integers and greatly
+  speed up compositing operations.  Even today, this is fine representation
+  for colors.  Few display devices can provide more color resolution.
+  However, when blending colors stored as 8-bit values, quantization errors
+  can occur.  Most of the time this is not an issue with \IceT, but it can
+  create seams in images with very low opacity.
+\item[Automatically count network communication.] The way \IceT builds the
+  communication metric stored in \CEnum{ICET\_BYTES\_SENT} is to require
+  each strategy to count how many bytes they send.  This is a rather
+  fragile implementation.  A better approach would be to have the
+  communications layer count bytes.
+\item[Source file names.]  The names of the internal \IceT source files are
+  a bit too generic.  Names like image.c and draw.c are not clearly part of
+  \IceT and might conflict with other source file names in projects where
+  the libraries are used.  Although this will not cause any namespace
+  collisions in linking, it can be irritating while debugging if the file
+  names are not easily resolved.
+\end{description}
 
 % -----------------------------------------------------------------------------
 % This chapter contains all of the man pages.

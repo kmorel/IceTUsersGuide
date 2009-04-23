@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{January 31, 2007}
+\setDate{April 22, 2009}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetDrawFunc}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDrawFunc} -- set a callback for drawing.}
 
@@ -53,6 +53,9 @@
   \CArg{func}.  Any matrices or attributes pushed in \CArg{func} should be
   popped before \CArg{func} returns, and any state that is assumed to be
   true on entrance to \CArg{func} should also be true on return.
+
+  The \CArg{func} function pointer is placed in the
+  \CEnum{ICET\_DRAW\_FUNCTION} state variable.
 
 
   \mansection{Errors}
