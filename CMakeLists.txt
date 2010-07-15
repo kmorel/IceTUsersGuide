@@ -13,6 +13,7 @@ SET(CHAPTERS
   CustomizingCompositing.tex
   Strategies.tex
   Communicators.tex
+  Transitioning.tex
   )
 
 LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/SANDreport/*.cls .)
