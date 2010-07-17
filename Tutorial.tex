@@ -6,31 +6,34 @@
 In this chapter we outline the steps required to create a simple \IceT
 application from building the \IceT source, using the created libraries,
 and writing your own applications.  \IceT is solely responsible for the
-image composition part of parallel rendering.  Thus, it relies on two other
-APIs: \index{OpenGL}\keyterm{OpenGL} for rendering and a communication
-layer for passing messages such as \index{MPI}\keyterm{MPI}, the Message
-Passing Interface.  Both have implementations in nearly every computer
-architecture.
+image composition part of parallel rendering.  Thus, it relies on separate
+systems for rendering and communication.  The two most common libraries
+for these features are \index{OpenGL}\keyterm{OpenGL} and
+\index{MPI}\keyterm{MPI} (the Message Passing Interface), respectively.
+\IceT has support libraries for directly using these two systems and we
+will use them for this tutorial.
 
-This tutorial assumes the reader is familiar with OpenGL.  If this is your
-first experience with OpenGL programing, consider trying some typical
-serial rendering before jumping into the parallel rendering domain.  A
-familiarity with MPI is also helpful.
+This tutorial assumes the reader is familiar with \OpenGL or some similar
+rendering system.  If this is your first experience with \OpenGL programing,
+consider trying some typical serial rendering before jumping into the
+parallel rendering domain.  A familiarity with \MPI is also helpful.
 
 \section{Building \IceT}
 \label{sec:Tutorial:Building_IceT}
 
-The \IceT build process is very portable.  It can be compiled on Microsoft
-Windows, Macintosh OS X, and a wide variety of Unix implementations.  \IceT
-can be built on just about any platform that has an
-\index{OpenGL}OpenGL~1.1 compliant installation.  Most modern operating
-systems come distributed with OpenGL.  For those that are not, you can
-usually use the \index{Mesa~3D}\keyterm{Mesa 3D} library
+The \IceT build process is very portable.  It is regularly compiled on
+Microsoft Windows, Macintosh OS X, and a wide variety of Unix
+implementations.  \IceT can be built with any \index{OpenGL}OpenGL~1.1
+compliant installation.  Most modern operating systems come distributed
+with \OpenGL.  For those that are not, you can usually use the
+\index{Mesa~3D}\keyterm{Mesa 3D} library
 (\href{www.mesa3d.org}{www.mesa3d.org}), a software implementation of
-OpenGL.  An installation of MPI is also almost always needed, although not
+\OpenGL.  An installation of \MPI is also almost always needed, although not
 strictly required.  \index{MPICH}\keyterm{MPICH}
 (\href{http://www-unix.mcs.anl.gov/mpi/mpich2/}{http://www-unix.mcs.anl.gov/mpi/mpich2/})
-is a free and widely portable implementation of MPI.
+is a free and widely portable implementation of \MPI.
+
+% TODO: add OpenMPI.
 
 \IceT uses \index{CMake}\keyterm{CMake} to build across so many different
 platforms.  As such, you will have to download the CMake build tools from
@@ -62,29 +65,31 @@ optionally, install \IceT.
 \section{Linking to \IceT Libraries}
 \label{sec:Tutorial:Linking_to_IceT_Libraries}
 
-\IceT comes with three libraries: \index{icet (library)}\keyterm{icet},
-\index{icet\_strategies~(library)}\keyterm{icet\_strategies}, and
-\index{icet\_mpi~(library)}\keyterm{icet\_mpi}.  The actual filenames of
-these libraries varies depending on the filesystem and build type.  For
-example, on most Unix systems, a static build results in filenames of
-\index{libicet.a}libicet.a and the like whereas shared libraries are
-libicet.so.  Windows has libraries with names like icet.lib as well as
-icet.dll if building shared libraries.  However, the difference in these
-filenames usually hidden by the build system, especially if you use a
-portable build system like \index{CMake}CMake.
+\IceT comes with four libraries: \index{IceT (library)}\keyterm{IceT},
+\index{IceTStrategies~(library)}\keyterm{IceTStrategies},
+\index{IceTGL~(library)}\keyterm{IceTGL}, and
+\index{IceTMPI~(library)}\keyterm{IceTMPI}.  The actual filenames of these
+libraries varies depending on the filesystem and build type.  For example,
+on most Unix systems, a static build results in filenames of
+\index{libIceT.a}libIceT.a and the like whereas shared libraries are
+\index{libIceT.so}libIceT.so.  Windows has libraries with names like
+\index{IceT.lib}IceT.lib as well as \index{IceT.dll}IceT.dll if building
+shared libraries.  However, the difference in these filenames usually
+hidden by the build system, especially if you use a portable build system
+like \index{CMake}CMake.
 
 You are, of course, free to use whatever build system you like, whether it
 be system specific or cross platform.  Using \IceT is simply a matter of
 finding the header and library files.  However, because \IceT is built with
-CMake, it comes with some extra facilities for helping other CMake builds
-find it.  This section will give you the bare minimum you need to set up
-CMake to build an application using \IceT.  Readers interested more about
-CMake should pick up a copy of \emph{Mastering CMake} by Ken Martin and
-Bill Hoffman.
+\index{CMake}CMake, it comes with some extra facilities for helping other
+CMake builds find it.  This section will give you the bare minimum you need
+to set up CMake to build an application using \IceT.  Readers interested in
+learning more about CMake should pick up a copy of \emph{Mastering CMake}
+by Ken Martin and Bill Hoffman.
 
 You define a build system with CMake by creating a
 \index{CMakeLists.txt}\keyterm{CMakeLists.txt} file.  The CMakeLists.txt
-file is basically a simple script that gives commands the CMake to tell it
+file is basically a simple script that gives commands to CMake to tell it
 how to build your project.  Most CMakeLists.txt files start with the
 \textC{PROJECT} command, which associates a name with your project and
 optionally specifies a language.
@@ -92,27 +97,32 @@ optionally specifies a language.
 PROJECT(IceT_Tutorial)
 \end{code}
 
-Distributed with the \IceT source code is a file called
-\index{FindIceT.cmake}\keyterm{FindIceT.cmake} that provides all the CMake
-facilities needed to find and use an \IceT build.  It works by finding a
-file called \index{ICETConfig.cmake}\keyterm{ICETConfig.cmake}, which is
-written when \IceT is built and contains all the necessary build settings.
-The FindIceT.cmake script can be invoked with the \textC{FIND\_PACKAGE}
-command.  After the \IceT package is found, a variable named
-\textC{ICET\_USE\_FILE} is set to a file that may be \textC{INCLUDE}d in
-your project to point it to the directories containing the header and
-library files.
+To use \IceT from within your CMake project, run the
+\index{FIND\_PACKAGE}\textC{FIND\_PACKAGE} command.  This command instructs
+CMake to find the \index{IceTConfig.cmake}IceTConfig.cmake file, which is
+written to \IceT's build or install directory and contains all the
+necessary build settings.
 \begin{code}
 FIND_PACKAGE(IceT REQUIRED)
-INCLUDE(${ICET_USE_FILE})
+
+INCLUDE_DIRECTORIES(${ICET_INCLUDE_DIRECTORIES})
 \end{code}
 %$
 
-Any application using \IceT will also be using \index{OpenGL}OpenGL and
-almost all will be using \index{MPI}MPI.  In addition, the example in the
-following section also uses \index{GLUT}GLUT for window management.  CMake
-comes with modules to find all three of these libraries, which makes it
-easy to include in our project.
+Assuming that CMake finds \IceT, the CMake variable
+\CEnum{ICET\_INCLUDE\_DIRS} is defined and can be passed to the
+\index{INCLUDE\_DIRECTORIES}\textC{INCLUDE\_DIRECTORIES} CMake command.
+The variables \CEnum{ICET\_CORE\_LIBS}, \CEnum{ICET\_GL\_LIBS}, and
+\CEnum{ICET\_MPI\_LIBS} are also defined and can be used with a
+\index{TARGET\_LINK\_LIBRARIES}TARGET\_LINK\_LIBRARIES command to link in
+the respective \IceT libraries.
+
+Any application using \IceT will probably also be using \OpenGL and \MPI.
+In addition, the example in the following section also uses
+\index{GLUT}GLUT for window management.  CMake comes with modules to find
+all three of these libraries, which makes it easy to include in our
+project.
+
 \begin{code}
 FIND_PACKAGE(OpenGL REQUIRED)
 FIND_PACKAGE(GLUT REQUIRED)
@@ -132,9 +142,11 @@ INCLUDE_DIRECTORIES(
 \end{code}
 %$
 
-The only think left to do is to tell CMake to build a program from a set of
-sources and libraries specified with the \textC{ADD\_EXECUTABLE} and
-\textC{TARGET\_LINK\_LIBRARIES} commands, respectively.
+The only thing left to do is to tell CMake to build a program from a set of
+sources and libraries specified with the
+\index{ADD\_EXECUTABLE}\textC{ADD\_EXECUTABLE} and
+\index{TARGET\_LINK\_LIBRARIES}\textC{TARGET\_LINK\_LIBRARIES} commands,
+respectively.
 \begin{code}
 ADD_EXECUTABLE(Tutorial Tutorial.c)
 TARGET_LINK_LIBRARIES(Tutorial
@@ -143,38 +155,51 @@ TARGET_LINK_LIBRARIES(Tutorial
   ${MPI_LIBRARY}
   ${MPI_EXTRA_LIBRARY}
   ${ICET_CORE_LIBS}
+  ${ICET_GL_LIBS}
   ${ICET_MPI_LIBS}
   )
 \end{code}
+%$
 
 \section{Creating \IceT Enabled Applications}
 \label{sec:Tutorial:Creating_IceT_Enabled_Applications}
 
-To use \IceT, include it's header:
-\index{ice-t.h}\index{GL/ice-t.h}\textC{GL/ice-t.h}.  You will almost
-always need to also include the header containing an MPI version of an
-\IceT communicator:
-\index{ice-t\_mpi.h}\index{GL/ice-t\_mpi.h}\textC{GL/ice-t\_mpi.h}.  On the
-rare occasion that you need to use \IceT with a communication layer other
-than MPI, you can define a custom communicator as described in
+To use \IceT, include its header: \index{IceT.h}\textC{IceT.h}.  If you are
+using \OpenGL for rendering, you will probably also want to use \IceT's
+\OpenGL integration functions in \index{IceTGL.h}\textC{IceTGL.h}.  You will
+almost always need to also include the header containing an \MPI version of
+an \IceT communicator: \index{IceTMPI.h}\textC{IceTMPI.h}.  On the rare
+occasion that you need to use \IceT with a communication layer other than
+\MPI, you can define a custom communicator as described in
 Chapter~\ref{chap:Communicators}.
 \begin{code}
-#include <GL/ice-t.h>
-#include <GL/ice-t_mpi.h>
+#include <IceT.h>
+#include <IceTGL.h>
+#include <IceTMPI.h>
 \end{code}
 
-Before you call any \IceT functions, you need to initialize MPI by calling
-\textC{MPI\_Init}\index{MPI\_Init}.  You will also need to create an OpenGL
-context (that is, open an OpenGL window).  Do this by first creating an
-\IceT \index{communicator}\keyterm{communicator} from an MPI communicator
-and then using that to create an
-\index{context!\IceT}{\keyterm{\IceT context}.
+Before you call any \IceT functions, you need to initialize \MPI by calling
+\textC{MPI\_Init}\index{MPI\_Init}.  You will also need to create an
+\index{context!\OpenGL}\keyterm{\OpenGL context}.  In other words, you need
+to make the rendering window in which the \OpenGL rendering commands will
+go.  The process for doing this is greatly dependent on the windowing
+system and beyond the scope of this document.  It is usually easiest to use
+a third party API to do this.  If you are not already using a GUI tool that
+generates \OpenGL windows for you, then the \index{GLUT}\keyterm{GLUT} API
+is a popular choice for simple applications.
+
+You will then need to initialize \IceT itself.  Do this by first creating
+an \IceT \index{communicator}\keyterm{communicator} from an \MPI
+communicator and then using that to create an
+\index{context!\IceT}\keyterm{\IceT context}.
+
 \index{icetCreateMPICommunicator}
 \index{icetCreateContext}
 \begin{code}
     comm = icetCreateMPICommunicator(MPI_COMM_WORLD);
     context = icetCreateContext(comm);
 \end{code}
+
 In the proceeding code, \textC{comm} is of type
 \index{IceTCommunicator}\textC{IceTCommunicator} and \textC{context} is of
 type \index{IceTContext}\textC{IceTContext}.
@@ -184,30 +209,27 @@ initialized the \IceT \index{state}\keyterm{state}, we can start using
 \IceT.  It is often useful to first query \IceT on the size of the parallel
 job it is running in and what is the local process id, or
 \index{rank}\keyterm{rank}.  The values are stored in variables of type
-\textC{GLint}.
+\index{IceTInt}\textC{IceTInt}.
+
+\index{icetGetIntegerv}
+\index{ICET\_RANK}
+\index{ICET\_NUM\_PROCESSES}
 \begin{code}
     icetGetIntegerv(ICET_RANK, &rank);
     icetGetIntegerv(ICET_NUM_PROCESSES, &num_proc);
 \end{code}
 
-In addition to an \IceT context, you will also need an
-\index{context!\OpenGL}\keyterm{\OpenGL context}.  In other words, you need
-to make the rendering window in which the \OpenGL rendering commands will
-go.  The process for doing this is greatly dependent on the windowing
-system and beyond the scope of this document.  It is usually easiest to use
-a third party API to do this.  If you are not already using a GUI tool that
-generates \OpenGL windows for you, then the \index{GLUT}\keyterm{GLUT} API
-is a popular choice for simple applications.
-
-Before rendering, we need to tell \IceT the layout of the tile display
+Before rendering, we need to tell \IceT the layout of the tiled display
 using the \CFunc{icetResetTiles} and \CFunc{icetAddTile} functions.  These
 commands must be executed with the same arguments on all processes of the
 parallel job.  \IceT will assume that you setup the same display layout
 everywhere.
 
-If you are not actually driving a tile display and instead just generating
+If you are not actually driving a tiled display and instead just generating
 a desktop-sized image, the following commands will correctly establish the
-\IceT state.
+\IceT state (assuming \textC{WINDOW\_WIDTH} and \textC{WINDOW\_HEIGHT}
+correctly reflect the desired image dimensions).
+
 \begin{code}
     icetResetTiles();
     icetAddTile(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
@@ -226,18 +248,18 @@ section in Chapter~\ref{chap:Customizing_Compositing} describes other usage
 for these parameters.  The final argument is the rank of the
 \index{display~process}\keyterm{display process}.  After a rendering the
 final complete image will available only on this process.  In the example
-above, we have direct the image to go to process zero, often referred to as
-the \index{root~process}\keyterm{root process}.
+above, we have directed the image to go to process zero, often referred to
+as the \index{root~process}\keyterm{root process}.
 
-To define an actual tile display, simply call the \CFunc{icetAddTile}
+To define an actual tiled display, simply call the \CFunc{icetAddTile}
 function multiple times.  When describing tiles in a display, the first two
 arguments of \CFunc{icetAddTile} describe where the lower left corner of
 the tile is located in respect to the overall display.  All together, the
 first four arguments specify a viewport for the tile in an a single,
 cohesive high resolution display (which is what we are trying to achieve
-with our tile display).  The code below defines a $2 \times 2$ tile display
-with the top two tiles displayed by processes 0 and 1 and the bottom two
-tiles displayed by processes 2 and 3.
+with our tiled display).  The code below defines a $2 \times 2$ tiled
+display with the top two tiles displayed by processes 0 and 1 and the
+bottom two tiles displayed by processes 2 and 3.
 \begin{code}
     icetResetTiles();
     icetAddTile(0,           WINDOW_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
@@ -279,37 +301,41 @@ The second and final piece of information \IceT needs is a way to draw your
 geometry.  \IceT achieves this through a
 \index{drawing~callback}\index{callback|see{drawing~callback}}\index{rendering~callback|see{drawing~callback}}\keyterm{drawing
   callback}.
+
+\index{icetGLDrawCallback}
 \begin{code}
-    icetDrawFunc(drawScene);
+    icetGLDrawCallback(drawScene);
 \end{code}
-The drawing callback is a pointer to any function that issues
-\OpenGL commands that render geometry to the active frame buffer.  The
-callback is free to issue most \OpenGL so long as it restores all the
-\OpenGL state (except, of course, frame buffer contents).  Also, the
-callback function should modify neither the projection matrix nor the
-clear color.  Care needs to be taken if the callback modifies the model view
-matrix.  More details are given in the
+
+The drawing callback is a pointer to any function that issues \OpenGL
+commands that render geometry to the active frame buffer.  The callback is
+free to issue most \OpenGL commands so long as it restores all the \OpenGL
+state (except, of course, frame buffer contents).  Also, the callback
+function should modify neither the projection matrix nor the clear color.
+Care needs to be taken if the callback modifies the model view matrix.
+More details are given in the
 \hyperref[sec:Basic_Usage::Drawing_Callback]{Drawing Callback} section of
 Chapter~\ref{chap:Basic_Usage}.
 
 \IceT is now ready to render.  Rendering is initiated with a call to
-\CFunc{icetDrawFrame}.  The \CFunc{icetDrawFrame} must be called on all
+\CFunc{icetGLDrawFrame}.  The \CFunc{icetGLDrawFrame} must be called on all
 processes.  The function will render the scene using the provided
 \index{drawing~callback}drawing callback, composite the image, and place
 the appropriate images in the back \OpenGL buffers of the appropriate
 \index{display~process}display processes.
 \begin{code}
-    icetDrawFrame();
+    icetGLDrawFrame();
 \end{code}
 
 Parallel rendering is now enabled in your application.  Simply call
-\CFunc{icetDrawFrame} every time you wish to draw a new image.  The
+\CFunc{icetGLDrawFrame} every time you wish to draw a new image.  The
 geometry rendered by your \index{drawing~callback} may change from frame to
 frame so long as you ensure that you also update \IceT with the bounds of
 your geometry if it changes.
 
 The following code is a full example of a simple \IceT application.  Do not
 be alarmed by the length.  The majority of the code is spent in setting up
-the supporting libraries (OpenGL, GLUT, and MPI) and in comments.
+the supporting libraries (\OpenGL, \index{GLUT}GLUT, and \MPI) and in
+comments.
 
 \codeinput{examples/Tutorial.c}

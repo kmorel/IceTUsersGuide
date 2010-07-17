@@ -5,9 +5,9 @@
 \label{chap:Transitioning}
 
 In the transition from \IceT version 1 to \IceT version 2, one of the major
-goals was to make the core \IceT library independent of
-\index{OpenGL}OpenGL.  All of \IceT's abilities to interface with OpenGL
-are retained but isolated in a separate library.
+goals was to make the core \IceT library independent of \OpenGL.  All of
+\IceT's abilities to interface with \OpenGL are retained but isolated in a
+separate library.
 
 This change and others necessitated changes in the \IceT interface.  This
 chapter provides simple instructions for transitioning existing code to the
@@ -16,7 +16,7 @@ new \IceT interface.
 \section{Header File Changes}
 \label{sec:Transitioning:Header_File_Changes}
 
-Because previous versions of \IceT were considered an OpenGL library,
+Because previous versions of \IceT were considered an \OpenGL library,
 public header files were placed in a \textC{GL} subdirectory.  Previous
 code included \index{ice-t.h}\index{GL/ice-t.h}\textC{GL/ice-t.h} and often
 also included
@@ -30,7 +30,7 @@ These header files no longer exist.  The header files are now no longer in
 the \textC{GL} directory and have changed in case and spelling to
 \index{IceT.h}\textC{IceT.h} and \index{IceTMPI.h}\textC{IceTMPI.h}.  There
 is also a new header file called \index{IceTGL.h}\textC{IceTGL.h} that
-contains the specific OpenGL functionality.  A straight transition to
+contains the specific \OpenGL functionality.  A straight transition to
 \IceT~2 will require this header file as well.
 \begin{code}
 #include <IceT.h>
@@ -38,10 +38,19 @@ contains the specific OpenGL functionality.  A straight transition to
 #include <IceTMPI.h>
 \end{code}
 
+\section{Basic Type Changes}
+\label{sec:Transitioning:Basic_Type_Changes}
+
+\IceT~1 used the basic types defined by \OpenGL such as
+\index{GLint}\textC{GLint} and \index{GLfloat}\textC{GLfloat}.  \IceT now
+defines its own basic types such as \index{IceTInt}\textC{IceTInt} and
+\index{IceTFloat}\textC{IceTFloat}, and these new types should be used in
+place of the \OpenGL types with respect to data passed to and from \IceT.
+
 \section{Function Name Changes}
 \label{sec:Transitioning:Function_Name_Changes}
 
-To make the OpenGL layer explicit, all functions in this layer are prefixed
+To make the \OpenGL layer explicit, all functions in this layer are prefixed
 with \textC{icetGL}.  This along with some other minor implementation
 details require slight changes in existing code.
 
@@ -54,7 +63,7 @@ icetGLInitialize();
 \end{code}
 
 Make certain to call \CFunc{icetGLInitialize} for \emph{each} context for
-which you use the OpenGL layer.
+which you use the \OpenGL layer.
 
 Apart from adding a function call for \CFunc{icetGLInitialize}, there are
 only two function names that have changed:
@@ -64,8 +73,8 @@ respectively.
 
 Technically, a function called \CFunc{icetDrawFrame} still exists, but its
 interface has changed (so you should get a compiler error if you try to use
-it) and it behavior now skips any OpenGL specific operations (specifically
-reading and adjusting OpenGL state).
+it) and it behavior now skips any \OpenGL specific operations (specifically
+reading and adjusting \OpenGL state).
 
 The function \index{icetInputOutputBuffers}\textCF{icetInputOutputBuffers}
 has also been removed.  It has been replaced with the two functions
@@ -102,7 +111,7 @@ Also note that \IceT now uses floating point numbers for depth values.
 Previous versions of \IceT used 32-bit integers.  Although using these
 integers was fast, \IceT had problems with identifying background pixels.
 Different graphics hardware used different values for the maximum depths.
-However, the OpenGL specification places the maximum depth value at $1.0$
+However, the \OpenGL specification places the maximum depth value at $1.0$
 if using floating point values.
 
 \section{Miscellaneous Changes}
@@ -123,7 +132,7 @@ The names of the libraries have changed from \index{icet (library)}icet,
 \index{IceTStrategies~(library)}IceTStrategies, and
 \index{IceTMPI~(library)}IceTMPI, respectively.  Additionally, there is
 also an \index{IceTGL~(library)}IceTGL library that contains code for
-the OpenGL layer.
+the \OpenGL layer.
 
 \section{CMake Configuration}
 \label{sec:Transitioning:CMake_Configuration}
@@ -139,7 +148,7 @@ Instead, you will need to insert your own commands to specify the \IceT
 header and library locations.
 
 There is a new variable called \CEnum{ICET\_GL\_LIBS} that specifies the
-libraries used for the OpenGL layer.  The variables
+libraries used for the \OpenGL layer.  The variables
 \CEnum{ICET\_CORE\_LIBS} and \CEnum{ICET\_MPI\_LIBS} still exist to specify
 the core and MPI layer libraries, respectively.
 
@@ -157,5 +166,6 @@ TARGET_LINK_LIBRARIES(myproc
   ${ICET_GL_LIBS}
   ${ICET_MPI_LIBS}
   )
-\end{code} %$
+\end{code}
+%$
 

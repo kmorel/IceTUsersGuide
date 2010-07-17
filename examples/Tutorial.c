@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
 static void InitIceT()
 {
-  GLint rank, num_proc;
+  IceTInt rank, num_proc;
 
   /* We could get these directly from MPI, but it's just as easy to get them
    * from IceT. */
@@ -167,7 +167,7 @@ static void DoFrame()
   /* In this idle callback, we do a simple animation loop and then exit. */
   static float angle = 0;
 
-  GLint rank, num_proc;
+  IceTInt rank, num_proc;
 
   /* We could get these directly from MPI, but it's just as easy to get them
    * from IceT. */
@@ -216,7 +216,7 @@ static void DoFrame()
 
 static void Draw()
 {
-  GLint rank, num_proc;
+  IceTInt rank, num_proc;
 
   /* We could get these directly from MPI, but it's just as easy to get them
    * from IceT. */
