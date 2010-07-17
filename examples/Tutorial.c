@@ -1,6 +1,4 @@
 /* -*- c -*- *****************************************************************
-** $Id$
-**
 ** Copyright (C) 2007 Sandia Corporation
 ** Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 ** license for use of this work by or on behalf of the U.S. Government.
@@ -24,8 +22,9 @@
 #include <OpenGL/gl.h>
 #endif
 
-#include <GL/ice-t.h>
-#include <GL/ice-t_mpi.h>
+#include <IceT.h>
+#include <IceTGL.h>
+#include <IceTMPI.h>
 
 #define NUM_TILES_X 2
 #define NUM_TILES_Y 2
@@ -66,11 +65,14 @@ int main(int argc, char **argv)
   icetContext = icetCreateContext(icetComm);
   icetDestroyMPICommunicator(icetComm);
 
+  /* Prepare for using the OpenGL layer. */
+  icetGLInitialize();
+
   glutDisplayFunc(InitIceT);
   glutIdleFunc(DoFrame);
 
   /* Glut will only draw in the main loop.  This will simply call our idle
-   * callback which will in turn call icetDrawFrame. */
+   * callback which will in turn call icetGLDrawFrame. */
   glutMainLoop();
 
   return 0;
@@ -86,18 +88,18 @@ static void InitIceT()
   icetGetIntegerv(ICET_NUM_PROCESSES, &num_proc);
 
   /* We should be able to set any color we want, but we should do it BEFORE
-   * icetDrawFrame() is called, not in the callback drawing function.
+   * icetGLDrawFrame() is called, not in the callback drawing function.
    * There may also be limitations on the background color when performing
    * color blending. */
   glClearColor(0.2f, 0.5f, 0.1f, 1.0f);
 
-  /* Give ICE-T a function that will issue the OpenGL drawing commands. */
-  icetDrawFunc(Draw);
+  /* Give IceT a function that will issue the OpenGL drawing commands. */
+  icetGLDrawCallback(Draw);
 
-  /* Give ICE-T the bounds of the polygons that will be drawn.  Note that
+  /* Give IceT the bounds of the polygons that will be drawn.  Note that
    * we must take into account any transformation that happens within the
-   * draw function (but ICE-T will take care of any transformation that
-   * happens before icetDrawFrame). */
+   * draw function (but IceT will take care of any transformation that
+   * happens before icetGLDrawFrame). */
   icetBoundingBoxf(-0.5f+rank, 0.5f+rank, -0.5, 0.5, -0.5, 0.5);
 
   /* Set up the tiled display.  Normally, the display will be fixed for a
@@ -136,7 +138,7 @@ static void InitIceT()
     icetAddTile(TILE_WIDTH, 0,           TILE_WIDTH, TILE_HEIGHT, 3);
     }
 
-  /* Tell ICE-T what strategy to use.  The REDUCE strategy is an all-around
+  /* Tell IceT what strategy to use.  The REDUCE strategy is an all-around
    * good performer. */
   icetStrategy(ICET_STRATEGY_REDUCE);
 
@@ -174,12 +176,12 @@ static void DoFrame()
 
   if (angle <= 360)
     {
-    /* We can set up a modelview matrix here and ICE-T will factor this
+    /* We can set up a modelview matrix here and IceT will factor this
      * in determining the screen projection of the geometry.  Note that
-     * there is further transformation in the draw function that ICE-T
+     * there is further transformation in the draw function that IceT
      * cannot take into account.  That transformation is handled in the
      * application by deforming the bounds before giving them to
-     * ICE-T. */
+     * IceT. */
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glRotatef(angle, 0.0, 1.0, 0.0);
@@ -187,11 +189,11 @@ static void DoFrame()
     glTranslatef(-(num_proc-1)/2.0f, 0.0, 0.0);
 
     /* Instead of calling Draw() directly, call it indirectly through
-     * icetDrawFrame().  ICE-T will automatically handle image compositing. */
-    icetDrawFrame();
+     * icetGLDrawFrame().  IceT will automatically handle image compositing. */
+    icetGLDrawFrame();
 
-    /* For obvious reasons, ICE-T should be run in double-buffered frame
-     * mode.  After calling icetDrawFrame, the application should do a
+    /* For obvious reasons, IceT should be run in double-buffered frame
+     * mode.  After calling icetGLDrawFrame, the application should do a
      * synchronize (a barrier is often about as good as you can do) and
      * then a swap buffers. */
     glutSwapBuffers();
@@ -228,7 +230,7 @@ static void Draw()
    * to what is was when the function is called.  Remember, the draw
    * function may be called multiple times and transformations may be
    * commuted.  Also, the bounds of the drawn geometry must be correctly
-   * transformed before given to ICE-T.  ICE-T has no way of knowing about
+   * transformed before given to IceT.  IceT has no way of knowing about
    * transformations done here.  It is an error to change the projection
    * matrix in the draw function. */
   glMatrixMode(GL_MODELVIEW);
