@@ -53,7 +53,7 @@ int main(int argc, char **argv)
    * display, but since this is an example we are assuming that they are all
    * going to one screen for display. */
   glutInit(&argc, argv);
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_ALPHA);
   glutInitWindowPosition((rank%NUM_TILES_X)*(TILE_WIDTH+10),
                          (rank/NUM_TILES_Y)*(TILE_HEIGHT+50));
   glutInitWindowSize(TILE_WIDTH, TILE_HEIGHT);
