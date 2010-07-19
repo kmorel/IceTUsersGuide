@@ -191,13 +191,16 @@ is a popular choice for simple applications.
 You will then need to initialize \IceT itself.  Do this by first creating
 an \IceT \index{communicator}\keyterm{communicator} from an \MPI
 communicator and then using that to create an
-\index{context!\IceT}\keyterm{\IceT context}.
+\index{context!\IceT}\keyterm{\IceT context}.  When using \OpenGL, you also
+need to initialize the OpenGL-specific code in \IceT by calling
+\CFunc{icetGLInitialize}.
 
 \index{icetCreateMPICommunicator}
 \index{icetCreateContext}
 \begin{code}
     comm = icetCreateMPICommunicator(MPI_COMM_WORLD);
     context = icetCreateContext(comm);
+    icetGLInitialize();
 \end{code}
 
 In the proceeding code, \textC{comm} is of type
