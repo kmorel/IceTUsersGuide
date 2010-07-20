@@ -1,44 +1,44 @@
 % -*- latex -*-
 
 
-\setDate{April 22, 2009}
+\setDate{July 30, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetGet}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGet} -- get an \IceT state parameter}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \textC{void }\icetGetDoublev\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLdouble *}&\CArg{params}\quad\textC{);}
+    \textC{void }\icetGetDoublev\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+      &\textC{IceTDouble *}&\CArg{params}\quad\textC{);}
   \end{Table}
 
   \begin{Table}{3}
-    \textC{void }\icetGetFloatv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLfloat *}&\CArg{params}\quad\textC{);}
+    \textC{void }\icetGetFloatv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+      &\textC{IceTFloat *}&\CArg{params}\quad\textC{);}
   \end{Table}
 
   \begin{Table}{3}
-    \textC{void }\icetGetIntegerv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLint *}&\CArg{params}\quad\textC{);}
+    \textC{void }\icetGetIntegerv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+      &\textC{IceTInt *}&\CArg{params}\quad\textC{);}
   \end{Table}
 
   \begin{Table}{3}
-    \textC{void }\icetGetBooleanv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLboolean *}&\CArg{params}\quad\textC{);}
+    \textC{void }\icetGetBooleanv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+      &\textC{IceTBoolean *}&\CArg{params}\quad\textC{);}
   \end{Table}
 
   \begin{Table}{3}
-    \textC{void }\icetGetPointerv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLvoid **}&\CArg{params}\quad\textC{);}
+    \textC{void }\icetGetPointerv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+      &\textC{IceTVoid **}&\CArg{params}\quad\textC{);}
   \end{Table}
 
   
   \mansection{Description}
 
   Like \OpenGL, the operation of \IceT is defined by a large state machine.
-  Also like OpenGL, the state parameters can be retrieved through the
+  Also like \OpenGL, the state parameters can be retrieved through the
   \CFunc{icetGet} functions.  Each function takes a symbolic constant,
   \CArg{pname}, which identifies the state parameter to retrieve.  They
   also each take an array, \CArg{params}, which will be filled with the
@@ -52,52 +52,44 @@
   description of the associated state parameter.
 
   \begin{Description}[xxxxxxxx]
-  \item[\CEnum{ICET\_ABSOLUTE\_FAR\_DEPTH}] The maximum possible value in
-    the depth buffer (i.e. the value in a cleared depth buffer), as stored
-    as an unsigned 32 bit integer.  Usually, this is the expected
-    \textC{0xFFFFFFFF}.  However, some systems that use buffer values with
-    24 bits or less cast the maximum value to something smaller.
   \item[\CEnum{ICET\_BACKGROUND\_COLOR}] The color that \IceT is currently
     assuming is the background color.  It is an RGBA value that is stored
-    as four floating point values.  This value is generally taken from the
-    \OpenGL background color on a call to \CFunc{icetDrawFrame}, but is
-    also occasionally set to black to make sure that color blending happens
-    correctly. (The correct background color is restored later.)
+    as four floating point values.  This value is set either to the last
+    value passed to \CFunc{icetDrawFrame}, the \OpenGL background color if
+    \CFunc{icetGLDrawFrame} was called, or to black for color blending.
+    (The correct background color is restored later.)
   \item[\CEnum{ICET\_BACKGROUND\_COLOR\_WORD}] The same as
     \CEnum{ICET\_BACKGROUND\_COLOR} except that each component is stored as
-    8-bit values and packed in a 4-byte integer as specified by
-    \CEnum{ICET\_COLOR\_FORMAT}.  The idea is to rapidly fill the
-    background of color buffers.  This value is generally taken from the
-    \OpenGL background color on a call to \CFunc{icetDrawFrame}, but is
-    also occasionally set to black to make sure that color blending happens
-    correctly. (The correct background color is restored later.)
+    8-bit RGBA values and packed in a 4-byte integer.  The idea is to
+    rapidly fill the background of color buffers.
   \item[\CEnum{ICET\_BLEND\_TIME}] The total time, in seconds, spent in
     performing color blending of images during the last call to
     \CFunc{icetDrawFrame}.  Stored as a double.  An alias for this value is
     \CEnum{ICET\_COMPARE\_TIME}.
   \item[\CEnum{ICET\_BUFFER\_READ\_TIME}] The total time, in seconds, spent
-    reading from OpenGL buffers during the last call to
+    reading from \OpenGL buffers during the last call to
     \CFunc{icetDrawFrame}.  Stored as a double.
   \item[\CEnum{ICET\_BUFFER\_WRITE\_TIME}] The total time, in seconds, spent
-    writing to OpenGL buffers during the last call to
+    writing to \OpenGL buffers during the last call to
     \CFunc{icetDrawFrame}.  Stored as a double.
   \item[\CEnum{ICET\_BYTES\_SENT}] The total number of bytes sent by the
     calling process for transferring image data during the last call to
     \CFunc{icetDrawFrame}.  Stored as an integer.
-  \item[\CEnum{ICET\_COLOR\_BUFFER\_VALID}] True if a color buffer was
-    computed during the last call to \CFunc{icetDrawFrame} and is available
-    with a call to \icetGetColorBuffer.
-  \item[\CEnum{ICET\_COLOR\_FORMAT}] The OpenGL symbolic constant
-    describing the format in which \IceT reads and stores color buffers.
-    Currently always set to \CEnum{GL\_RGBA}, \CEnum{GL\_BGRA}, or
-    \CEnum{GL\_BGRA\_EXT}.
+  \item[\CEnum{ICET\_COLOR\_FORMAT}] The color format of images to be
+    created by the rendering subsystem and composited by \IceT.  Use
+    \CFunc{icetSetColorFormat} to set the color format.  Use
+    \CFunc{icetImageGetColorFormat} to safely get the color format for a
+    particular image.
   \item[\CEnum{ICET\_COMPARE\_TIME}] The total time, in seconds, spent in
     performing Z comparisons of images during the last call to
     \CFunc{icetDrawFrame}.  Stored as a double.  An alias for this value is
     \CEnum{ICET\_BLEND\_TIME}.
+  \item[\CEnum{ICET\_COMPOSITE\_MODE}] The composite mode set by
+    \CFunc{icetCompositeMode}.  A single entry stored as an
+    \textC{IceTEnum}.
   \item[\CEnum{ICET\_COMPOSITE\_ORDER}] The order in which images are to be
     composited if \CEnum{ICET\_ORDERED\_COMPOSITE} is enabled and the
-    current startegy supports ordered compositing.  The parameter contains
+    current strategy supports ordered compositing.  The parameter contains
     \CEnum{ICET\_NUM\_PROCESSES} entries.  The value of this parameter is
     set with \CFunc{icetCompositeOrder}.  If the element of index $i$ in
     the array is set to $j$, then there are $i$ images ``on top'' of the
@@ -114,13 +106,15 @@
     There are \CEnum{ICET\_DATA\_REPLICATION\_GROUP\_SIZE} entries in the
     array.  \IceT assumes that all processes in the list will create the
     exact same image with their draw functions (set with
-    \CFunc{icetDrawFunc}).  The local process id (\CEnum{ICET\_RANK}) will
-    be part of this list.
+    \CFunc{icetDrawCallback} or \CFunc{icetGLDrawCallback}).  The local
+    process id (\CEnum{ICET\_RANK}) will be part of this list.
   \item[\CEnum{ICET\_DATA\_REPLICATION\_GROUP\_SIZE}] The length of the
     \CEnum{ICET\_DATA\_REPLICATION\_GROUP} array.
-  \item[\CEnum{ICET\_DEPTH\_BUFFER\_VALID}] True if a depth buffer was
-    computed during the last call to \CFunc{icetDrawFrame} and is available
-    with a call to \icetGetDepthBuffer.
+  \item[\CEnum{ICET\_DEPTH\_FORMAT}] The depth format of images to be
+    created by the rendering subsystem and composited by \IceT.  Use
+    \CFunc{icetSetDepthFormat} to set the depth format.  Use
+    \CFunc{icetImageGetDepthFormat} to safely get the depth format for a
+    particular image.
   \item[\CEnum{ICET\_DIAGNOSTIC\_LEVEL}] The diagnostics flags set with
     \CFunc{icetDiagnostics}.
   \item[\CEnum{ICET\_DISPLAY\_NODES}] An array of process ranks.  The size
@@ -129,11 +123,7 @@
     the process that is displaying the tile described by the
     $i^{\mathrm{th}}$ entry in \CEnum{ICET\_TILE\_VIEWPORTS}.
   \item[\CEnum{ICET\_DRAW\_FUNCTION}] A pointer to the drawing callback
-    function, as set by \CFunc{icetDrawFunc}.
-  \item[\CEnum{ICET\_INPUT\_BUFFERS}] A bitmask specifying the the buffers
-    which \IceT will read from OpenGL and perform composition.  The value
-    is set with \CFunc{icetInputOutputBuffers}.  See the documentation of
-    that function for valid bit flags.
+    function, as set by \CFunc{icetDrawCallback}.
   \item[\CEnum{ICET\_FRAME\_COUNT}] The number of times
     \CFunc{icetDrawFrame} has been called for the current context.
   \item[\CEnum{ICET\_GEOMETRY\_BOUNDS}] An array of vertices whose convex
@@ -143,12 +133,11 @@
     \CEnum{ICET\_NUM\_BOUNDING\_VERTS}$.
   \item[\CEnum{ICET\_GLOBAL\_VIEWPORT}] Defines a viewport in an infinite
     logical display that covers all tile viewports (listed in
-    \CEnum{ICET\_TILE\_VIEWPORTS}).  The viewport, like an OpenGL viewport,
+    \CEnum{ICET\_TILE\_VIEWPORTS}).  The viewport, like an \OpenGL viewport,
     is given as the integer four-tuple $\langle x, y, width, height
     \rangle$.  $x$ and $y$ are placed at the leftmost and lowest position
     of all the tiles, and $width$ and $height$ are just big enough for the
-    viewport to cover all tiles.  The viewports are listed in the same
-    order as the tiles were defined with \CFunc{icetAddTile}.
+    viewport to cover all tiles.
   \item[\CEnum{ICET\_NUM\_BOUNDING\_VERTS}] The number of bounding vertices
     listed in the \CEnum{ICET\_GEOMETRY\_BOUNDS} parameter.
   \item[\CEnum{ICET\_NUM\_TILES}] The number of tiles in the defined
@@ -157,10 +146,16 @@
   \item[\CEnum{ICET\_NUM\_PROCESSES}] The number of processes in the
     parallel job as given by the \CType{IceTCommunicator} object associated
     with the current context.
-  \item[\CEnum{ICET\_OUTPUT\_BUFFERS}] A bitmask specifying the the buffers
-    which \IceT will generate from composition.  The value is set with
-    \CFunc{icetInputOutputBuffers}.  See the documentation of that function
-    for valid bit flags.
+  \item[\CEnum{ICET\_PHYSICAL\_RENDER\_HEIGHT}] The height of the images
+    generated by the rendering system.  This is set to the \OpenGL viewport
+    height by \CFunc{icetGLDrawFrame} or otherwise by explicitly setting it
+    with \CFunc{icetPhysicalRenderSize} or otherwise implicitly to the
+    largest tile height specified with \CFunc{icetAddTile}.
+  \item[\CEnum{ICET\_PHYSICAL\_RENDER\_WIDTH}] The width of the images
+    generated by the rendering system.  This is set to the \OpenGL viewport
+    width by \CFunc{icetGLDrawFrame} or otherwise by explicitly setting it
+    with \CFunc{icetPhysicalRenderSize} or otherwise implicitly to the
+    largest tile width specified with \CFunc{icetAddTile}.
   \item[\CEnum{ICET\_PROCESS\_ORDERS}] Basically, the inverse of
     \CEnum{ICET\_COMPOSITE\_ORDER}.  The parameter contains
     \CEnum{ICET\_NUM\_PROCESSES} entries.  If the element of index $i$ in
@@ -168,12 +163,16 @@
     image generated by process $i$.
   \item[\CEnum{ICET\_RANK}] The rank of the process as given by the
     \CType{IceTCommunicator} object associated with the current context.
-  \item[\CEnum{ICET\_READ\_BUFFER}] Set to the OpenGL symbolic constant
-    that \IceT will use to read back buffers.  Currently always set to
-    \CEnum{GL\_BACK}.
   \item[\CEnum{ICET\_RENDER\_TIME}] The total time, in seconds, spent in
     the drawing callback during the last call to \CFunc{icetDrawFrame}.
     Stored as a double.
+  \item[\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY}] The single image
+    sub-strategy set with \CFunc{icetSingleImageStrategy}.  Use
+    \CFunc{icetGetSingleImageStrategyName} to get a user-readable name for
+    the single image strategy.
+  \item[\CEnum{ICET\_STRATEGY}] The strategy set with
+    \CFunc{icetStrategy}.  Use \CFunc{icetGetStrategyName} to get a
+    user-readable name for the strategy.
   \item[\CEnum{ICET\_STRATEGY\_SUPPORTS\_ORDERING}] Is true if and only if
     the current strategy supports ordered compositing.
   \item[\CEnum{ICET\_TILE\_DISPLAYED}] The index of the tile the local
@@ -184,21 +183,27 @@
     \CEnum{ICET\_RANK}.  If the local process is not displaying any tile,
     then \CEnum{ICET\_TILE\_DISPLAYED} is set to $-1$.
   \item[\CEnum{ICET\_TILE\_MAX\_HEIGHT}] The maximum $height$ of any tile.
-  \item[\CEnum{ICET\_TILE\_MAX\_PIXELS}] The maximum number of pixels in
-    any tile.  This number is actually set to
-    $(\CEnum{ICET\_TILE\_MAX\_WIDTH} \times
-    \CEnum{ICET\_TILE\_MAX\_HEIGHT}) + \CEnum{ICET\_NUM\_PROCESSES}$.  The
-    number of processes is added to provide sufficient padding such that
-    the max tile image may be divided evenly amongst any group of processes
-    without dropping any real pixels.
   \item[\CEnum{ICET\_TILE\_MAX\_WIDTH}] The maximum $width$ of any tile.
   \item[\CEnum{ICET\_TILE\_VIEWPORTS}] A list of viewports in the logical
     global display defining the tiles.  Each viewport is the four-tuple
     $\langle x, y, width, height \rangle$ defining the position and
     dimensions of a tile in pixels, much like a viewport is defined in
-    OpenGL.  The size of the array is $4 * \CEnum{ICET\_NUM\_TILES}$.
+    \OpenGL.  The size of the array is $4 * \CEnum{ICET\_NUM\_TILES}$.  The
+    viewports are listed in the same order as the tiles were defined with
+    \CFunc{icetAddTile}.
   \item[\CEnum{ICET\_TOTAL\_DRAW\_TIME}] Time spent in the last call to
     \CFunc{icetDrawFrame}.  Stored as a double.
+  \end{Description}
+
+  In addition, if you are using the \OpenGL layer (i.e., have called
+  \CFunc{icetGLInitialize}), these variables, defined in \textC{IceTGL.h},
+  are also available.
+
+  \begin{Description}[xxxxxxxx]
+  \item[\CEnum{ICET\_GL\_DRAW\_FUNCTION}] A pointer to the \OpenGL drawing
+    callback function, as set by \CFunc{icetGLDrawCallback}.
+  \item[\CEnum{ICET\_GL\_READ\_BUFFER}] The \OpenGL buffer to read from
+    (and write to).  Set with \CFunc{icetGLSetReadBuffer}.
   \end{Description}
 
 

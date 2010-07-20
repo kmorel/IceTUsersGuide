@@ -1,0 +1,71 @@
+% -*- latex -*-
+
+
+\setDate{July 29, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetGLInitialize}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGLInitialize} -- initialize the \IceT \OpenGL layer}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceTGL.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetGLInitialize}\textC{(}&\textC{void}&\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Initializes the \OpenGL layer of \IceT.  \CFunc{icetGLInitialize} must be
+  called before any other function starting with \textC{icetGL} (except
+  \CFunc{icetGLIsInitialized}).
+
+  Management for the \OpenGL layer is held in the state of the current
+  \IceT context.  Thus, \CFunc{icetGLInitialize} must be called once per
+  \IceT context.  If you are using a context for rendering with \OpenGL, it
+  is recommended that you call \CFunc{icetGLInitialize} immediately after
+  calling \CFunc{icetCreateContext}.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
+    \CFunc{icetGLInitialize} is called twice for the same context.
+  \end{Description}
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetCreateContext},
+  \CFuncSeeAlso{icetGLIsInitialized}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

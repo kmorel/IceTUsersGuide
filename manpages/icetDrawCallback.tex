@@ -1,0 +1,185 @@
+% -*- latex -*-
+
+
+\setDate{July 28, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetDrawCallback}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDrawCallback} -- set a callback for drawing.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  %% \textC{typedef void (*}\CType{IceTCallback}\textC{)(void);}
+  \begin{Table}{3}
+    %@% IF notlatex2man %@%
+    \multicolumn{3}{l}{
+    %@% END-IF %@%
+      \textC{typedef void (*}\CType{IceTDrawCallbackType}\textC{)(}
+    %@% IF notlatex2man %@%
+    } \\
+    \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+    %@% END-IF %@%
+    &\textC{const IceTDouble *}&\CArg{projection\_matrix}\textC{,} \\
+    &\textC{const IceTDouble *}&\CArg{modelview\_matrix}\textC{,} \\
+    &\textC{const IceTFloat *}&\CArg{background\_color}\textC{,} \\
+    &\textC{const IceTInt *}&\CArg{readback\_viewport}\textC{,} \\
+    &\CType{IceTImage}&\CArg{result}\quad\textC{)}
+  \end{Table}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetDrawCallback}\textC{(}&\CType{IceTDrawCallbackType}&\CArg{callback}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \CFunc{icetDrawCallback} function sets a callback that is used to
+  draw the geometry from a given viewpoint.  If you are using \OpenGL, you
+  should probably use the \CFunc{icetGLDrawCallback} function and
+  associated \CFunc{icetGLDrawFrame}.  These alternative functions
+  automatically set up the \OpenGL state and retreive \OpenGL buffers.
+
+  \CArg{callback} should be a function that renders an image of the local
+  geometry based on the provided transformation matrices and background
+  color.  \IceT will call \CArg{callback} during a call to
+  \CFunc{icetDrawFrame} to create the images for compositing.
+  \CArg{callback} will be called a minimum amount of times.  It may be
+  called once.  If none of the geometry projects on the display, it may not
+  be called at all.  If rendering to a tiled display and the geometry
+  projects on multiple tiles, it may be called many times.  The code in
+  \CArg{callback} should be prepared to be called an unpredictable amount
+  of times.  For example, it should not attept to increment a frame counter
+  and it should leave the rendering system's state such that another view
+  to the geometry may be rendered.
+
+  \CArg{callback} takes two projection matrices: \CArg{projection\_matrix}
+  and \CArg{modelview\_matrix}.  Each of these arguments is a 16-value
+  array that represents a $4 \times 4$ transformation of homogeneous
+  coordinates.  The arrays store the matrices in
+  \index{column-major~order}column-major order.
+  %@% IF notlatex2man %@%
+  Thus, if the values in \CArg{projection\_matrix} are $(p[0],
+  p[1],... p[15])$ and the values in \CArg{modelview\_matrix} are $(m[0],
+  m[1],... m[15])$, then a vertex in object space is transformed into
+  normalized screen coordinates by the sequence of operations
+
+  \begin{displaymath}
+    \left[
+      \begin{array}{cccc}
+        p[0] & p[4] & p[8] & p[12] \\
+        p[1] & p[5] & p[9] & p[13] \\
+        p[2] & p[6] & p[10] & p[14] \\
+        p[3] & p[7] & p[11] & p[15]
+      \end{array}
+    \right]
+    \left[
+      \begin{array}{cccc}
+        m[0] & m[4] & m[8] & m[12] \\
+        m[1] & m[5] & m[9] & m[13] \\
+        m[2] & m[6] & m[10] & m[14] \\
+        m[3] & m[7] & m[11] & m[15]
+      \end{array}
+    \right]
+    \left[
+      \begin{array}{c}
+        v[0] \\ v[1] \\ v[2] \\ v[3]
+      \end{array}
+    \right]
+  \end{displaymath}
+
+  Normalized screen coordinates are such that everything projected onto the
+  image has coordinates in the range $[-1,1]$.  The x and y coordinates
+  have to be shifted to get the corresponding pixel location.  The
+  normalized screen coordinates are projected to span the physical render
+  size (see \CFunc{icetPhysicalRenderSize}), which may differ from the size
+  of any particular tile.
+
+  %@% END-IF %@%
+
+  Note that the \CArg{projection\_matrix} passed to \CArg{callback} is
+  liable to be different than that passed to \CFunc{icetDrawFrame}.  Make
+  certain that \CArg{callback} uses the modified \CArg{projection\_matrix}
+  passed to it.  \CArg{modelview\_matrix} is the same as that passed to
+  \CFunc{icetDrawFrame}, but also passed along for convienient reference.
+
+  Any pixel that does not have geometry rendered to it should be set to the
+  \CArg{background\_color} passed to \CArg{callback}.  Likewise, any
+  transparent geometry should be blended against the
+  \CArg{background\_color}.  Note that the \CArg{background\_color} passed
+  to \CArg{callback} is liable to be different than that passed to
+  \CFunc{icetDrawFrame}.
+
+  \CArg{callback} is given \CArg{result}, an image object allocated to the
+  size of the physical render size (see \CFunc{icetPhysicalRenderSize}).
+  The dimensions of the image can be queried with \CFunc{icetImageGetWidth}
+  and \CFunc{icetImageGetHeight}.  Pixels can be put in \CArg{result} by
+  getting the color and/or depth buffers using the
+  \CFunc{icetImageGetColor} and \CFunc{icetImageGetDepth} functions.
+  Anything written to these buffers is captured in the image object.
+
+  \IceT passes \CArg{callback} an image sized to the physical render space
+  to make indexing into it clearer and safer and to possibly render
+  directly into the image buffers.  That said, \IceT might only be
+  interested in a subregion of the data.  To make your callback more
+  efficient, \IceT provides \CArg{readback\_viewport} to specify the region
+  of the image it will read.  \CArg{readback\_viewport} has four values.
+  The first two values specify the x and y pixel location of the lower left
+  corner of the region of interest.  The last two values specify the width
+  and height of the region of interest.  The callback only has to write
+  valid pixels for this region of the image.  It is not an error to write
+  values outside this region, but they will be completely ignored.
+
+  The \CArg{callback} function pointer is placed in the
+  \CEnum{ICET\_DRAW\_FUNCTION} state variable.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  \CArg{callback} is tightly coupled with the bounds set with
+  \CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox}.  If the geometry
+  drawn by \CArg{callback} is dynamic (changes from frame to frame), then the
+  bounds may need to be changed as well.  Incorrect bounds may cause the
+  geometry to be culled in surprising ways.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetBoundingBox},
+  \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetDrawFrame},
+  \CFuncSeeAlso{icetPhysicalRenderSize}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

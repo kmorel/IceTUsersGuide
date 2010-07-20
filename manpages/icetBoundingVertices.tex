@@ -1,20 +1,20 @@
 % -*- latex -*-
 
 
-\setDate{April 12, 2006}
+\setDate{July 20, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetBoundingVertices}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetBoundingVertices} -- set bounds of geometry.}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \textC{void }\CFunc{icetBoundingVertices}\textC{(}&\textC{GLint}&\CArg{size}\textC{,} \\
-      &\textC{GLenum}&\CArg{type}\textC{,} \\
-      &\textC{GLsizei}&\CArg{stride}\textC{,} \\
-      &\textC{GLsizei}&\CArg{count}\textC{,} \\
-      &\textC{const GLvoid *}&\CArg{pointer}\quad\textC{);}
+    \textC{void }\CFunc{icetBoundingVertices}\textC{(}&\textC{IceTInt}&\CArg{size}\textC{,} \\
+      &\textC{IceTEnum}&\CArg{type}\textC{,} \\
+      &\textC{IceTSizeType}&\CArg{stride}\textC{,} \\
+      &\textC{IceTSizeType}&\CArg{count}\textC{,} \\
+      &\textC{const IceTVoid *}&\CArg{pointer}\quad\textC{);}
   \end{Table}
 
   
@@ -38,8 +38,8 @@
   The \CArg{type} parameter specifies in what data type the coordinates are
   given.  Valid \CArg{type}s are \CEnum{ICET\_SHORT}, \CEnum{ICET\_INT},
   \CEnum{ICET\_FLOAT}, and \CEnum{ICET\_DOUBLE}, which correspond to types
-  \textC{GLshort}, \textC{GLint}, \textC{GLfloat}, and \textC{GLdouble},
-  respectively.
+  \textC{IceTShort}, \textC{IceTInt}, \textC{IceTFloat}, and
+  \textC{IceTDouble}, respectively.
 
   The \CArg{stride} parameter specifies the offset between consecutive
   vertices in bytes.  If \CArg{stride} is $0$, the array is assumed to be
@@ -60,7 +60,7 @@
   \mansection{Errors}
 
   \begin{Description}[ICET\_INVALID\_OPERATION]
-  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
+  \item[\CErrorEnum{ICET\_INVALID\_ENUM}]
     Raised if \CArg{type} is not one of \CEnum{ICET\_SHORT},
     \CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}.
   \end{Description}

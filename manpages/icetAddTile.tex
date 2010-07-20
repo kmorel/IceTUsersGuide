@@ -1,19 +1,19 @@
 % -*- latex -*-
 
 
-\setDate{December  1, 2006}
+\setDate{July 20, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetAddTile}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetAddTile} -- add a tile to the logical display.}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \textC{int }\CFunc{icetAddTile}\textC{(}&\textC{GLint}&\CArg{x}\textC{,} \\
-      &\textC{GLint}&\CArg{y}\textC{,} \\
-      &\textC{GLsizei}&\CArg{width}\textC{,} \\
-      &\textC{GLsizei}&\CArg{height}\textC{,} \\
+    \textC{int }\CFunc{icetAddTile}\textC{(}&\textC{IceTInt}&\CArg{x}\textC{,} \\
+      &\textC{IceTInt}&\CArg{y}\textC{,} \\
+      &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+      &\textC{IceTSizeType}&\CArg{height}\textC{,} \\
       &\textC{int}&\CArg{display\_rank}\quad\textC{);}
   \end{Table}
 
@@ -27,12 +27,12 @@
   display, and all processes must declare them in the same order.
 
   The parameters \CArg{x}, \CArg{y}, \CArg{width}, and \CArg{height} define
-  the tiles viewport in the logical global display much in the same way
-  \CFuncExternal{glViewport} declares a region in a physical display.
-  \IceT places no limits on the extents of the logical global display.
-  That is, there are no limits on the values of \CArg{x} and \CArg{y}.
-  They can extend as far as they want in both the positive and negative
-  directions.
+  the tile's viewport in the logical global display much in the same way
+  \CFuncExternal{glViewport} declares a region in a physical display in
+  \OpenGL.  \IceT places no limits on the extents of the logical global
+  display.  That is, there are no limits on the values of \CArg{x} and
+  \CArg{y}.  They can extend as far as they want in both the positive and
+  negative directions.
 
   \IceT will project its images onto the region of the logical global
   display that just covers all of the tiles.  Therefore, shifting all the
@@ -50,7 +50,8 @@
 
   \mansection{Return Value}
 
-  Returns the index of the tile created.
+  Returns the index of the tile created or $-1$ if the tile could not be
+  created.
 
 
   \mansection{Errors}
@@ -90,7 +91,8 @@
 
   \mansection{See Also}
 
-  \CFuncSeeAlso{icetResetTiles}
+  \CFuncSeeAlso{icetResetTiles},
+  \CFuncSeeAlso{icetPhysicalRenderSize}
 
 \end{Name}
 

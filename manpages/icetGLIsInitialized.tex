@@ -1,30 +1,30 @@
 % -*- latex -*-
 
 
-\setDate{July 20, 2010}
+\setDate{July 29, 2010}
 % The following must all be on one line for latex2man to work.
-\begin{Name}{3}{icetGetContext}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGetContext} -- retrieves the current context}
+\begin{Name}{3}{icetGLIsInitialized}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGLIsInitialized} -- determine if the \IceT \OpenGL layer is initialized}
 
   \mansection{Synopsis}
 
-  \textC{\#include <IceT.h>}
+  \textC{\#include <IceTGL.h>}
 
   \begin{Table}{3}
-    \CType{IceTContext}\textC{ }\CFunc{icetGetContext}\textC{(}&\textC{void}&\textC{);}
+    \textC{IceTBoolean }\CFunc{icetGLIsInitialized}\textC{(}&\textC{void}&\textC{);}
   \end{Table}
 
   
   \mansection{Description}
 
-  The \CFunc{icetGetContext} function retrieves the handle for the current
-  context.  This handle may be stored and set for later use with
-  \CFunc{icetSetContext} (assuming the context has not been since
-  destroyed).
+  Used to determine whether \CFunc{icetGLInitialize} was called for the
+  current \IceT context.  If \CFunc{icetGLIsInitialized} returns false,
+  then rendering with the \OpenGL layer will not work.
 
 
   \mansection{Return Value}
 
-  A handle for the current context.
+  Returns \CEnum{ICET\_TRUE} if the \OpenGL layer has been initialized for
+  the current context, \CEnum{ICET\_FALSE} otherwise.
 
 
   \mansection{Errors}
@@ -43,7 +43,7 @@
 
 
   \mansection{Copyright}
-  Copyright \copyright 2003 Sandia Corporation
+  Copyright \copyright 2010 Sandia Corporation
 
   Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
   license for use of this work by or on behalf of the U.S. Government.
@@ -54,8 +54,7 @@
 
   \mansection{See Also}
 
-  \CFuncSeeAlso{icetSetContext}, \CFuncSeeAlso{icetCreateContext},
-  \CFuncSeeAlso{icetDestroyContext}, \CFuncSeeAlso{icetCopyState}
+  \CFuncSeeAlso{icetGLInitialize}
 
 \end{Name}
 

@@ -165,19 +165,86 @@
 % Functions that have aliases for cross referencing and indexing.
 \newcommand{\icetBoundingBoxf}{\CFunc[icetBoundingBox]{icetBoundingBoxf}\xspace}
 \newcommand{\icetBoundingBoxd}{\CFunc[icetBoundingBox]{icetBoundingBoxd}\xspace}
+
 \newcommand{\icetEnable}{\CFunc[icetEnable]{icetEnable}\xspace}
 \newcommand{\icetDisable}{\CFunc[icetEnable]{icetDisable}\xspace}
+
 \newcommand{\icetGetBooleanv}{\CFunc[icetGet]{icetGetBooleanv}\xspace}
 \newcommand{\icetGetDoublev}{\CFunc[icetGet]{icetGetDoublev}\xspace}
 \newcommand{\icetGetFloatv}{\CFunc[icetGet]{icetGetFloatv}\xspace}
 \newcommand{\icetGetIntegerv}{\CFunc[icetGet]{icetGetIntegerv}\xspace}
 \newcommand{\icetGetPointerv}{\CFunc[icetGet]{icetGetPointerv}\xspace}
-\newcommand{\icetGetColorBuffer}{\CFunc{icetGetColorBuffer}\xspace}
-\newcommand{\icetGetDepthBuffer}{%
+
+\newcommand{\icetSetColorFormat}{\CFunc{icetSetColorFormat}\xspace}
+\newcommand{\icetSetDepthFormat}{%
   \ifthenelse%
-    {\equal{\currentmansection}{icetGetColorBuffer}}%
-    {\CFunc[icetGetColorBuffer]{icetGetDepthBuffer}}%
-    {\CFunc{icetGetDepthBuffer}}%
+    {\equal{\currentmansection}{icetSetColorFormat}}%
+    {\CFunc[icetSetColorFormat]{icetSetDepthFormat}}%
+    {\CFunc{icetSetDepthFormat}}%
+    \xspace%
+}
+
+\newcommand{\icetImageGetColorFormat}{\CFunc{icetImageGetColorFormat}\xspace}
+\newcommand{\icetImageGetDepthFormat}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetColorFormat}}%
+    {\CFunc[icetImageGetColorFormat]{icetImageGetDepthFormat}}%
+    {\CFunc{icetImageGetDepthFormat}}%
+    \xspace%
+}
+
+\newcommand{\icetImageGetNumPixels}{\CFunc{icetImageGetNumPixels}\xspace}
+\newcommand{\icetImageGetWidth}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetNumPixels}}%
+    {\CFunc[icetImageGetNumPixels]{icetImageGetWidth}}%
+    {\CFunc{icetImageGetWidth}}%
+    \xspace%
+}
+\newcommand{\icetImageGetHeight}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetNumPixels}}%
+    {\CFunc[icetImageGetNumPixels]{icetImageGetHeight}}%
+    {\CFunc{icetImageGetHeight}}%
+    \xspace%
+}
+
+\newcommand{\icetImageGetColor}{\CFunc{icetImageGetColor}}
+\newcommand{\icetImageGetColorub}{\CFunc[icetImageGetColor]{icetImageGetColorub}\xspace}
+\newcommand{\icetImageGetColorui}{\CFunc[icetImageGetColor]{icetImageGetColorui}\xspace}
+\newcommand{\icetImageGetColorf}{\CFunc[icetImageGetColor]{icetImageGetColorf}\xspace}
+
+\newcommand{\icetImageGetDepth}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetColor}}%
+    {\CFunc[icetImageGetColor]{icetImageGetDepth}}%
+    {\CFunc{icetImageGetDepth}}%
+    \xspace%
+}
+\newcommand{\icetImageGetDepthf}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetColor}}%
+    {\CFunc[icetImageGetColor]{icetImageGetDepthf}}%
+    {\CFunc[icetImageGetDepth]{icetImageGetDepthf}}%
+    \xspace%
+}
+
+\newcommand{\icetImageCopyColor}{\CFunc{icetImageCopyColor}}
+\newcommand{\icetImageCopyColorub}{\CFunc[icetImageCopyColor]{icetImageCopyColorub}\xspace}
+\newcommand{\icetImageCopyColorf}{\CFunc[icetImageCopyColor]{icetImageCopyColorf}\xspace}
+
+\newcommand{\icetImageCopyDepth}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageCopyColor}}%
+    {\CFunc[icetImageCopyColor]{icetImageCopyDepth}}%
+    {\CFunc{icetImageCopyDepth}}%
+    \xspace%
+}
+\newcommand{\icetImageCopyDepthf}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageCopyColor}}%
+    {\CFunc[icetImageCopyColor]{icetImageCopyDepthf}}%
+    {\CFunc[icetImageCopyDepth]{icetImageCopyDepthf}}%
     \xspace%
 }
 

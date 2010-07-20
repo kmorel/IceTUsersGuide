@@ -1,30 +1,32 @@
 % -*- latex -*-
 
 
-\setDate{July 20, 2010}
+\setDate{July 28, 2010}
 % The following must all be on one line for latex2man to work.
-\begin{Name}{3}{icetGetContext}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGetContext} -- retrieves the current context}
+\begin{Name}{3}{icetImageIsNull}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetImageIsNull} -- check for a null image}
 
   \mansection{Synopsis}
 
   \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \CType{IceTContext}\textC{ }\CFunc{icetGetContext}\textC{(}&\textC{void}&\textC{);}
+    \textC{IceTBoolean}\textC{ }\CFunc{icetImageIsNull}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
   \end{Table}
 
   
   \mansection{Description}
 
-  The \CFunc{icetGetContext} function retrieves the handle for the current
-  context.  This handle may be stored and set for later use with
-  \CFunc{icetSetContext} (assuming the context has not been since
-  destroyed).
+  Tests whether \CArg{image} is a null image.  A null image is one that has
+  no memory allocated to it.  Null images have no pixels and empty pixel
+  formats.
+
+  Null images are created with the \CFunc{icetImageNull} function.
 
 
   \mansection{Return Value}
 
-  A handle for the current context.
+  Returns \CEnum{ICET\_TRUE} if \CArg{image} is a null image,
+  \CEnum{ICET\_FALSE} otherwise.
 
 
   \mansection{Errors}
@@ -43,7 +45,7 @@
 
 
   \mansection{Copyright}
-  Copyright \copyright 2003 Sandia Corporation
+  Copyright \copyright 2010 Sandia Corporation
 
   Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
   license for use of this work by or on behalf of the U.S. Government.
@@ -54,8 +56,7 @@
 
   \mansection{See Also}
 
-  \CFuncSeeAlso{icetSetContext}, \CFuncSeeAlso{icetCreateContext},
-  \CFuncSeeAlso{icetDestroyContext}, \CFuncSeeAlso{icetCopyState}
+  \CFuncSeeAlso{icetImageNull}
 
 \end{Name}
 

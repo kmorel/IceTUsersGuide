@@ -1,16 +1,16 @@
 % -*- latex -*-
 
 
-\setDate{December  1, 2006}
+\setDate{July 20, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetResetTiles}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetResetTiles} -- clears out all tile definitions.}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \textC{void }\CFunc{icetResetTiles}\textC{(}&\textC{void}&\textC{)}
+    \textC{void }\CFunc{icetResetTiles}\textC{(}&\textC{void}&\textC{);}
   \end{Table}
 
   
@@ -21,8 +21,10 @@
   \CFunc{icetAddTile}.
 
   As a side effect, \CFunc{icetResetTiles} will also zero out the
-  renderable window size.  The size will be reset with calls to
-  \CFunc{icetAddTile}.
+  renderable window size (specified with state variables
+  \CEnum{ICET\_PHYSICAL\_RENDER\_WIDTH} and
+  \CEnum{ICET\_PHYSICAL\_RENDER\_HEIGHT}).  The size will be reset with
+  calls to \CFunc{icetAddTile}.
 
 
   \mansection{Errors}

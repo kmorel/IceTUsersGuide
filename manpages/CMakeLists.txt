@@ -1,8 +1,14 @@
+# This directory contains manpage documentation.  The manpages are written
+# in LaTeX and included in the main document.  A latex2man perl script is
+# used to convert the LaTeX documents into man pages.  There are many
+# restrictions placed on the format of the LaTeX document to ensure that
+# this conversion happens correctly.
 
 SET(man3pages
   icetAddTile
   icetBoundingBox
   icetBoundingVertices
+  icetCompositeMode
   icetCompositeOrder
   icetCopyState
   icetCreateContext
@@ -12,18 +18,31 @@ SET(man3pages
   icetDestroyContext
   icetDestroyMPICommunicator
   icetDiagnostics
+  icetDrawCallback
   icetDrawFrame
-  icetDrawFunc
   icetEnable
   icetGet
-  icetGetColorBuffer
   icetGetContext
   icetGetError
+  icetGetSingleImageStrategyName
   icetGetStrategyName
-  icetInputOutputBuffers
+  icetGLDrawCallback
+  icetGLDrawFrame
+  icetGLInitialize
+  icetGLIsInitialized
+  icetGLSetReadBuffer
+  icetImageCopyColor
+  icetImageGetColor
+  icetImageGetColorFormat
+  icetImageGetNumPixels
+  icetImageIsNull
+  icetImageNull
   icetIsEnabled
+  icetPhysicalRenderSize
   icetResetTiles
   icetSetContext
+  icetSetColorFormat
+  icetSingleImageStrategy
   icetStrategy
   icetWallTime
   )
@@ -37,6 +56,16 @@ FIND_PACKAGE(Perl REQUIRED)
 SET(MAN3DIR ${CMAKE_BINARY_DIR}/man/man3)
 MAKE_DIRECTORY(${MAN3DIR})
 
+# The latex2man script supports neither \input nor \include commands
+# (grumble).  To get around that, use CMake configuration to insert blocks
+# of LaTeX into the man pages that are defined in the enumeration
+# directory.
+FILE(GLOB enumeration_files ../enumerations/*.tex)
+FOREACH (enum_file ${enumeration_files})
+  GET_FILENAME_COMPONENT(enum_name ${enum_file} NAME_WE)
+  FILE(READ ${enum_file} enum_${enum_name})
+ENDFOREACH(enum_file)
+
 #Create a tex file that includes all of the tex manpages.
 SET(MANPAGES_TEX ${CMAKE_CURRENT_BINARY_DIR}/manpages.tex)
 FILE(WRITE ${MANPAGES_TEX} "%Include all of the tex manpages.\n\n")
@@ -46,7 +75,7 @@ FOREACH(page ${man3pages})
   CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/${page}.tex
     ${CMAKE_CURRENT_BINARY_DIR}/${page}.tex
-    COPYONLY)
+    @ONLY)
   SET(man3page ${MAN3DIR}/${page}.3)
   ADD_CUSTOM_COMMAND(OUTPUT ${man3page}
     COMMAND ${PERL_EXECUTABLE}
@@ -68,10 +97,28 @@ MACRO(ICET_ALIAS_MAN_PAGE original alias)
 ENDMACRO(ICET_ALIAS_MAN_PAGE)
 
 ICET_ALIAS_MAN_PAGE(icetEnable icetDisable)
-ICET_ALIAS_MAN_PAGE(icetGetColorBuffer icetGetDepthBuffer)
+
+ICET_ALIAS_MAN_PAGE(icetSetColorFormat icetSetDepthFormat)
+
+ICET_ALIAS_MAN_PAGE(icetImageGetColorFormat icetImageGetDepthFormat)
+
+ICET_ALIAS_MAN_PAGE(icetImageGetNumPixels icetImageGetWidth)
+ICET_ALIAS_MAN_PAGE(icetImageGetNumPixels icetImageGetHeight)
+
+ICET_ALIAS_MAN_PAGE(icetImageGetColor icetImageGetColorub)
+ICET_ALIAS_MAN_PAGE(icetImageGetColor icetImageGetColorui)
+ICET_ALIAS_MAN_PAGE(icetImageGetColor icetImageGetColorf)
+ICET_ALIAS_MAN_PAGE(icetImageGetColor icetImageGetDepth)
+ICET_ALIAS_MAN_PAGE(icetImageGetColor icetImageGetDepthf)
+
+ICET_ALIAS_MAN_PAGE(icetImageCopyColor icetImageCopyColorub)
+ICET_ALIAS_MAN_PAGE(icetImageCopyColor icetImageCopyColorf)
+ICET_ALIAS_MAN_PAGE(icetImageCopyColor icetImageCopyDepth)
+ICET_ALIAS_MAN_PAGE(icetImageCopyColor icetImageCopyDepthf)
 
 ICET_ALIAS_MAN_PAGE(icetBoundingBox icetBoundingBoxd)
 ICET_ALIAS_MAN_PAGE(icetBoundingBox icetBoundingBoxf)
+
 ICET_ALIAS_MAN_PAGE(icetGet icetGetDoublev)
 ICET_ALIAS_MAN_PAGE(icetGet icetGetFloatv)
 ICET_ALIAS_MAN_PAGE(icetGet icetGetIntegerv)

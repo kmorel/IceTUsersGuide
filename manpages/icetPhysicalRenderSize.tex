@@ -1,0 +1,80 @@
+% -*- latex -*-
+
+
+\setDate{July 28, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetPhysicalRenderSize}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetPhysicalRenderSize} -- set the size of images that are rendered}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetPhysicalRenderSize}\textC{(}&\textC{IceTInt}&\CArg{width}\textC{,} \\
+      &\textC{IceTInt}&\CArg{height}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Specify the size of images that are rendered with
+  \CFunc{icetPhysicalRenderSize}.  This is the size of image that is
+  expected to be rendered by the draw callback (specified with
+  \CFunc{icetDrawCallback}).  The width and height are captured in the
+  \CEnum{ICET\_PHYSICAL\_RENDER\_WIDTH} and
+  \CEnum{ICET\_PHYSICAL\_RENDER\_HEIGHT} state variables.
+
+  The size of images that are rendered do not have to be the same size as
+  the tile they are rendering so long as they are not smaller in any
+  dimension.  In fact, when rendering multiple tiles it can often save time
+  to render larger images.  Nevertheless, by default the physical render
+  size is set to the size of the tiles in \CFunc{icetAddTile} because this
+  is the most common use case.
+
+  When using the \OpenGL rendering layer, the physical rendering size is
+  overridden to the size of the \OpenGL viewport in each call to
+  \CFunc{icetGLDrawFrame}.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
+    The \CArg{width} or \CArg{height} specified is smaller than that for
+    the largest tile.
+  \end{Description}
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetAddTile}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

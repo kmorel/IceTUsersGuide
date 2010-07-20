@@ -1,0 +1,141 @@
+% -*- latex -*-
+
+
+\setDate{July 28, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetImageGetColor}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetImageGetColor}, \icetImageGetDepth -- retrieve pixel data buffer from image}
+
+  \label{manpage:icetImageGetDepth}
+  \index{icetImageGetDepth|(textbf}
+  
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{4}
+    \textC{IceTUByte *}&\icetImageGetColorub&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \textC{IceTUInt *}&\icetImageGetColorui&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \textC{IceTFloat *}&\icetImageGetColorf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \\
+    \textC{IceTFloat *}&\icetImageGetDepthf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)};
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \icetImageGetColor suite of functions retrieve color data from images
+  and the \icetImageGetDepth functions retrieve depth data from images.
+  Each function returns a pointer to an internal buffer within the image.
+  Writing to this data changes the data within the image object itself.
+  Use the \icetImageGetColor and \icetImageGetDepth functions from within
+  drawing callbacks to pass image data back to \IceT.
+
+  The pixel data is always tightly packed in horizontal major order.  Color
+  data that comprises tuples such as RGBA have the components for each
+  pixel packed together in that order.  The first entry in the array
+  corresponds to the pixel in the lower left corner of the image.  The next
+  entry is immediately to the right of the first pixel, and so on.  The
+  dimensions of the array can be retrieved with the \icetImageGetWidth and
+  \icetImageGetHeight functions.
+
+  Each of these functions returns a typed version of the image data array.
+  They can only succeed if the type the request matches the internal type
+  of the array.  It is an error, for example, to request unsigned byte
+  color data when the image stores images as floating point colors.  You
+  can use the \icetImageGetColorFormat and \icetImageGetDepthFormat to
+  retrieve the format for the internal data storage (which also implies the
+  base data type).  You can also use the \icetImageCopyColor and
+  \icetImageCopyDepth functions to convert the image data to whatever
+  format you like.
+
+  Use \icetImageGetColorub to retrieve an array of 8-bit unsigned bytes.
+  Using this function is only valid if the color format is
+  \CEnum{ICET\_IMAGE\_COLOR\_RGBA\_UBYTE}.
+
+  Use \icetImageGetColorui to retrieve an array of 32-bit unsigned
+  integers.  Using this function is only valid if the color format is
+  \CEnum{ICET\_IMAGE\_COLOR\_RGBA\_UBYTE}.  In this case, each 32-bit
+  integer represents all four RGBA channels.  Accessing each pixel's color
+  values as a single 32-bit integer is often faster than accessing it as 4
+  independent 8-bit integers as most modern architectures can access 32-bit
+  memory boundaries faster than independent 8-bit boundaries.
+
+  Use \icetImageGetColorf to retrieve an array of floating point color
+  values.  Using this function is only valid if the color format is
+  \CEnum{ICET\_IMAGE\_COLOR\_RGBA\_FLOAT}.
+
+  Use \icetImageGetDepthf to retrieve an array of floating point depth
+  values.  Using this function is only valid if the depth format is
+  \CEnum{ICET\_IMAGE\_DEPTH\_FLOAT}.
+
+
+  \mansection{Return Value}
+
+  Returns an appropriately typed array pointing to the internal color or
+  depth values stored in the image object.  If there is an error,
+  \textC{NULL} is returned.
+
+  The memory returned should not be freed.  It is managed internally by
+  \IceT.
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
+    The internal color or depth format is incompatible with the type of
+    array the function retrieves.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  There is no mechanism to automatically determine the data type from the
+  color or depth format enumeration (returned from \icetImageGetColorFormat
+  or \icetImageGetDepthFormat).  Instead, you must code internal logic to
+  use an array of the appropriate type.  The reasoning behind this decision
+  is that the format encodes the data layout in addition to the data type,
+  and your code most understand the basic semantics of the data to do
+  anything worthwhile with it.  If you want to write code that is
+  indifferent to the underlying format of the image, use the
+  \CFunc{icetImageCopyColor} and \CFunc{icetImageCopyDepth} functions to
+  copy the data to a known format.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+  license for use of this work by or on behalf of the U.S. Government.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that this Notice and any statement
+  of authorship are reproduced on all copies.
+
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetImageCopyColor},
+  \CFuncSeeAlso{icetImageCopyDepth},
+  \CFuncSeeAlso{icetImageGetColorFormat},
+  \CFuncSeeAlso{icetImageGetDepthFormat}
+
+  \index{icetImageGetDepth|)textbf}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

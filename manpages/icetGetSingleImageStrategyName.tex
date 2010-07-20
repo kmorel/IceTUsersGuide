@@ -1,38 +1,35 @@
 % -*- latex -*-
 
 
-\setDate{July 22, 2010}
+\setDate{July 28, 2010}
 % The following must all be on one line for latex2man to work.
-\begin{Name}{3}{icetGetStrategyName}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGetStrategyName} -- retrieve strategy name.}
+\begin{Name}{3}{icetGetSingleImageStrategyName}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGetSingleImageStrategyName} -- retrieve single image sub-strategy name.}
 
   \mansection{Synopsis}
 
   \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \textC{const char *}\CFunc{icetGetStrategyName}\textC{(}&\textC{void}&\textC{);}
+    \textC{const char *}\CFunc{icetGetSingleImageStrategyName}\textC{(}&\textC{void}&\textC{);}
   \end{Table}
 
   
   \mansection{Description}
 
-  \CFunc{icetGetStrategyName} retrieves a human readable name for the
-  current strategy.
+  \CFunc{icetGetSingleImageStrategyName} retrieves a human readable name
+  for the current single image sub-strategy.
 
 
   \mansection{Return Value}
 
-  Returns a short, null terminated string identifying the strategy
-  currently in effect.  Helpful for printing out debugging or diagnostic
-  statements.  If no strategy is set, \textC{NULL} is returned.
+  Returns a short, null terminated string identifying the single image
+  strategy currently in effect.  Helpful for printing out debugging or
+  diagnostic statements.
 
 
   \mansection{Errors}
 
-  \begin{Description}[ICET\_INVALID\_OPERATION]
-  \item[\CErrorEnum{ICET\_INVALID\_ENUM}]
-    A strategy was never set with \CFunc{icetStrategy}.
-  \end{Description}
+  None.
 
 
   \mansection{Warnings}
@@ -48,13 +45,14 @@
   \mansection{Notes}
 
   The string returned does \emph{not} contain the identifier used in a C
-  program.  For example, if the current strategy is
-  \CEnum{ICET\_STRATEGY\_REDUCE}, \CFunc{icetGetStrategyName} returns
-  ``Reduce,'' not ``ICET\_STRATEGY\_REDUCE.''
+  program.  For example, if the current single image strategy is
+  \CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_BSWAP},
+  \CFunc{icetGetSingleImageStrategyName} returns ``Binary Swap,'' not
+  ``ICET\_SINGLE\_IMAGE\_STRATEGY\_BSWAP.''
 
 
   \mansection{Copyright}
-  Copyright \copyright 2003 Sandia Corporation
+  Copyright \copyright 2010 Sandia Corporation
 
   Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
   license for use of this work by or on behalf of the U.S. Government.
@@ -65,8 +63,8 @@
 
   \mansection{See Also}
 
-  \CFuncSeeAlso{icetGetSingleImageStrategyName},
-  \CFuncSeeAlso{icetStrategy}
+  \CFuncSeeAlso{icetGetStrategyName},
+  \CFuncSeeAlso{icetSingleImageStrategy}
 
 \end{Name}
 
