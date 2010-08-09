@@ -60,11 +60,14 @@ MAKE_DIRECTORY(${MAN3DIR})
 # (grumble).  To get around that, use CMake configuration to insert blocks
 # of LaTeX into the man pages that are defined in the enumeration
 # directory.
-FILE(GLOB enumeration_files ../enumerations/*.tex)
+FILE(GLOB enumeration_files ${CMAKE_SOURCE_DIR}/enumerations/*.tex)
 FOREACH (enum_file ${enumeration_files})
   GET_FILENAME_COMPONENT(enum_name ${enum_file} NAME_WE)
   FILE(READ ${enum_file} enum_${enum_name})
 ENDFOREACH(enum_file)
+
+# Also include a copyright statement
+FILE(READ ${CMAKE_CURRENT_SOURCE_DIR}/copyright.tex copyright)
 
 #Create a tex file that includes all of the tex manpages.
 SET(MANPAGES_TEX ${CMAKE_CURRENT_BINARY_DIR}/manpages.tex)
