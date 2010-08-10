@@ -10,14 +10,16 @@ later ones for more details on the operations as well as descriptions of
 further features.
 
 Prototypes for the majority of \IceT types, functions, and identifiers can
-be found in the \index{ice-t.h}\index{GL/ice-t.h}\textC{GL/ice-t.h} header
-file.  You will also almost always need to include the header
-\index{ice-t\_mpi.h}\index{GL/ice-t\_mpi.h}\textC{GL/ice-t\_mpi.h}.
-Chapter~\ref{chap:Communicators} provides more details on this latter
+be found in the \index{IceT.h}\textC{IceT.h} header file.  If you are using
+\OpenGL for rendering, which is common, you will probably want to include
+the header \index{IceTGL.h}\textC{IceTGL.h}.  You will also almost always
+need to include the header \index{IceTMPI.h}\textC{IceTMPI.h}.
+Chapter~\ref{chap:Communicators} provides more details on this last
 header file's function.
 \begin{code}
-#include <GL/ice-t.h>
-#include <GL/ice-t_mpi.h>
+#include <IceT.h>
+#include <IceTGL.h>
+#include <IceTMPI.h>
 \end{code}
 
 \section{The State Machine}
@@ -66,12 +68,28 @@ you can create one from an MPI communicator using the
   \textC{void }\CFunc{icetDestroyMPICommunicator}\textC{(}&\CType{IceTCommunicator}&\CArg{comm}\quad\textC{);}
 \end{Table}
 
+Also be aware that if you plan to use \IceT's \OpenGL layer, you will need
+to initialize it with \CFunc{icetGLInitialize}.  You can query whether the
+\OpenGL layer has be initialized with \CFunc{icetGLIsInitialized}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetGLInitialize}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+\begin{Table}{3}
+  \textC{IceTBoolean }\CFunc{icetGLIsInitialized}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+
+It is good practice to call \CFunc{icetGLInitialize} immediately after
+creating a context with \CFunc{icetCreateContext} to always ensure that the
+\OpenGL layer is ready to be used (assuming you plan to use it).
+
 The following code gives the common boilerplate for setting up your initial
 \IceT context.
 
 \begin{code}
-#include <GL/ice-t.h>
-#include <GL/ice-t_mpi.h>
+#include <IceT.h>
+#include <IceTGL.h>
+#include <IceTMPI.h>
 
 int main(int argc, char **argv)
 {
@@ -86,6 +104,9 @@ int main(int argc, char **argv)
   icetComm = icetCreateMPICommunicator(MPI_COMM_WORLD);
   icetContext = icetCreateContext(icetComm);
   icetDestroyMPICommunicator(icetComm);
+
+  /* Initialize the OpenGL layer. */
+  icetGLInitialize();
 
   /* Start your parallel rendering program here. */
 
@@ -126,7 +147,7 @@ to another using the \CFunc{icetCopyState} function.
 
 \begin{Table}{3}
   \textC{void }\CFunc{icetCopyState}\textC{(}&\CType{IceTContext}&\CArg{dest}\textC{,} \\
-      &\CType{IceTContext}&\CArg{src}\quad\textC{);}
+  &\textC{const }\CType{IceTContext}&\CArg{src}\quad\textC{);}
 \end{Table}
 
 \index{context!\IceT|)}
@@ -135,28 +156,28 @@ The state of a context comprises a group of key/value pairs.  The state can
 be queried by using any of the \CFunc{icetGet} functions.
 
 \begin{Table}{3}
-  \textC{void }\icetGetDoublev\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-    &\textC{GLdouble *}&\CArg{params}\quad\textC{);}
+  \textC{void }\icetGetDoublev\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTDouble *}&\CArg{params}\quad\textC{);}
 \end{Table}
 
 \begin{Table}{3}
-  \textC{void }\icetGetFloatv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLfloat *}&\CArg{params}\quad\textC{);}
+  \textC{void }\icetGetFloatv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTFloat *}&\CArg{params}\quad\textC{);}
 \end{Table}
 
 \begin{Table}{3}
-  \textC{void }\icetGetIntegerv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLint *}&\CArg{params}\quad\textC{);}
+  \textC{void }\icetGetIntegerv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTInt *}&\CArg{params}\quad\textC{);}
 \end{Table}
 
 \begin{Table}{3}
-  \textC{void }\icetGetBooleanv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLboolean *}&\CArg{params}\quad\textC{);}
+  \textC{void }\icetGetBooleanv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTBoolean *}&\CArg{params}\quad\textC{);}
 \end{Table}
 
 \begin{Table}{3}
-  \textC{void }\icetGetPointerv\textC{(}&\textC{GLenum}&\CArg{pname}\textC{,} \\
-      &\textC{GLvoid **}&\CArg{params}\quad\textC{);}
+  \textC{void }\icetGetPointerv\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTVoid **}&\CArg{params}\quad\textC{);}
 \end{Table}
 
 The valid keys that can be used in the \CFunc{icetGet} functions are listed
@@ -175,15 +196,15 @@ state variables, these variables can be directly manipulated with the
 \CFunc{icetEnable} and \CFunc{icetDisable} functions.
 
 \begin{Table}{4}
-  \textC{GLboolean }\CFunc{icetIsEnabled}\textC{(}&\textC{GLenum}&\CArg{pname}&\textC{);}
+  \textC{IceTBoolean }\CFunc{icetIsEnabled}\textC{(}&\textC{IceTEnum}&\CArg{pname}&\textC{);}
 \end{Table}
 
 \begin{Table}{4}
-  \textC{void }\icetEnable&\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
+  \textC{void }\icetEnable&\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
 \end{Table}
 
 \begin{Table}{4}
-  \textC{void }\icetDisable&\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
+  \textC{void }\icetDisable&\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
 \end{Table}
 
 The options queried with \CFunc{icetIsEnabled} and manipulated with
@@ -220,7 +241,7 @@ develop or debug \IceT operations.
 \IceT diagnostics are controlled with the \CFunc{icetDiagnostics} function.
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetDiagnostics}\textC{(}&\textC{GLbitfield}&\CArg{mask}\quad\textC{);}
+  \textC{void }\CFunc{icetDiagnostics}\textC{(}&\textC{IceTBitField}&\CArg{mask}\quad\textC{);}
 \end{Table}
 
 The \CFunc{icetDiagnostics} function takes a set of flags that can me or-ed
@@ -270,10 +291,11 @@ APIs. %\lcite{Buck00,Humphreys00,Humphreys02,Samanta99}
   can possibly conceive, so conceptually we call it infinite.} number of
 pixels in both the horizontal and vertical directions.  The definition of
 each tile comprises the identifier for the process connected to the
-physical projection and the viewport (position and size) of the tile in the
-global display.  \IceT implicitly defines the rectangle that tightly
-encompasses all of the tile viewports as the viewable area and snaps the
-viewing region (defined by the OpenGL viewing matrices) to this area.
+physical projection and the \index{viewport}\keyterm{viewport} (position
+and size) of the tile in the global display.  \IceT implicitly defines the
+rectangle that tightly encompasses all of the tile viewports as the
+viewable area and snaps the viewing region (defined by the OpenGL viewing
+matrices) to this area.
 
 \begin{figure}
   \centering
@@ -307,10 +329,10 @@ time, using \CFunc{icetAddTile}.
 \end{Table}
 
 \begin{Table}{3}
-  \textC{int }\CFunc{icetAddTile}\textC{(}&\textC{GLint}&\CArg{x}\textC{,} \\
-    &\textC{GLint}&\CArg{y}\textC{,} \\
-    &\textC{GLsizei}&\CArg{width}\textC{,} \\
-    &\textC{GLsizei}&\CArg{height}\textC{,} \\
+  \textC{int }\CFunc{icetAddTile}\textC{(}&\textC{IceTInt}&\CArg{x}\textC{,} \\
+    &\textC{IceTInt}&\CArg{y}\textC{,} \\
+    &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+    &\textC{IceTSizeType}&\CArg{height}\textC{,} \\
     &\textC{int}&\CArg{display\_rank}\quad\textC{);}
 \end{Table}
 
@@ -378,8 +400,8 @@ with \CFunc{icetGet}.  \CEnum{ICET\_NUM\_TILES} stores the number of tiles
 that are defined (the number of times \CFunc{icetAddTile} was called).
 \CEnum{ICET\_TILE\_VIEWPORTS} stores an array with all of the dimensions of
 each tile.  For each tile, \CEnum{ICET\_TILE\_VIEWPORTS} contains the four
-values $\langle x, y, width, height \rangle$, stored consecutively,
-corresponding to the values passed to \CFunc{icetAddTile}.
+\index{viewport}values $\langle x, y, width, height \rangle$, stored
+consecutively, corresponding to the values passed to \CFunc{icetAddTile}.
 \CEnum{ICET\_DISPLAY\_NODES} stores an array giving the rank of the
 \index{display~process}display process displaying that tile.  Each process
 can also query the \CEnum{ICET\_TILE\_DISPLAYED} variable to see which tile
@@ -392,33 +414,42 @@ $\langle x, y, width, height \rangle$.  $x$ and $y$ are placed at the
 leftmost and lowest position of all the tiles, and $width$ and $height$ are
 just big enough for the viewport to cover all tiles.
 
-Calling \CFunc{icetAddTile} will not create a display context for the tile.
-That responsibility is left to the calling application.  \IceT will use
-whatever \index{context!OpenGL}OpenGL context is current.  When using \IceT
-in \index{single-tile~rendering}single-tile rendering mode, the OpenGL
-context should simply be set to the image size.  When driving a physical
-tile display, each display process must create a window that covers the
-entire display.  It is also a good idea to disable the mouse cursor in
-these windows.
+The \IceT image compositor remains decoupled from the rendering system.
+Calling \CFunc{icetAddTile} will not create a display context or renderable
+window for the tile.  That responsibility is left to the calling
+application.  When using \IceT in \index{single-tile~rendering}single-tile
+rendering mode, the rendering system should be set to produce images of
+that single tile's size.  When driving a physical tiled display, each
+display process must create a window that covers the entire display.  It is
+also a good idea to disable the mouse cursor in these windows.
 
 Note that the size of the tiles do not have to match each other.  Also, the
-size of the OpenGL viewport does not have to match the size of any of the
-tiles.  There is, however, a constraint that the OpenGL viewport on all
-processes must be at least as large as the largest tile in each dimension.
-To help you maintain that constraint, \IceT stores the largest tile
-dimensions in the \CEnum{ICET\_TILE\_MAX\_WIDTH} and
-\CEnum{ICET\_TILE\_MAX\_HEIGHT} state variables.  The overall maximum tile
-size is provided in \CEnum{ICET\_TILE\_MAX\_PIXELS} so that you can
-allocate buffers big enough for any tile image.
+size of the images that your application generates do not have to match the
+size of any of the tiles.  There is, however, a constraint that the
+generated images on all processes must be at least as large as the largest
+tile in each dimension.  To help you maintain that constraint, \IceT stores
+the largest tile dimensions in the \CEnum{ICET\_TILE\_MAX\_WIDTH} and
+\CEnum{ICET\_TILE\_MAX\_HEIGHT} state variables.
 
-Although counterintuitive, it is often more efficient to create OpenGL
-viewports that are larger than any tile.  This situation may be necessary
-when using \index{image~inflation}image inflation (see
+\IceT must know in advanced the size of images that your application will
+render.  If you are using \IceT's \OpenGL layer, \IceT will automatically
+know the size of the images you generate based off of the current \OpenGL
+viewport (retreived with the \CEnum{GL\_VIEWPORT} \OpenGL state variable).
+Otherwise, you can specify the size of images the application generates
+with \CFunc{icetPhysicalRenderSize}.  If you are not using the \OpenGL
+layer and you have not called \CFunc{icetPhysicalRenderSize}, \IceT assumes
+that you will generate images of width \CEnum{ICET\_TILE\_MAX\_WIDTH} and
+height \CEnum{ICET\_TILE\_MAX\_HEIGHT}.  The actual expected rendered image
+size is stored in the \CEnum{ICET\_PHYSICAL\_RENDER\_WIDTH} and
+\CEnum{ICET\_PHYSICAL\_RENDER\_HEIGHT} state variables.
+
+Although counterintuitive, it is often more efficient to create images that
+are larger than any tile.  This situation may be necessary when using
+\index{image~inflation}image inflation (see
 Chapter~\ref{sec:Customizing_Compositing:Image_Inflation}).  Even when not
-using image inflation, larger rendering viewports can save a significant
-amount of rendering time.  \IceT can use the larger OpenGL image buffer to
-potentially render in one shot an object that is larger than any of the
-tiles.
+using image inflation, larger rendered images can save a significant amount
+of rendering time.  \IceT can use the larger images to potentially render
+in one shot an object that is larger than any of the tiles.
 
 \index{display~definition|)}
 \index{tile~definition|)}
@@ -426,6 +457,8 @@ tiles.
 
 \section{Strategies}
 \label{sec:Basic_Usage:Strategies}
+
+HEREHEREHERE!!!!
 
 \index{strategy|(}
 
