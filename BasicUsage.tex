@@ -458,8 +458,6 @@ in one shot an object that is larger than any of the tiles.
 \section{Strategies}
 \label{sec:Basic_Usage:Strategies}
 
-HEREHEREHERE!!!!
-
 \index{strategy|(}
 
 \IceT contains several algorithms for performing image compositing.  The
@@ -470,7 +468,7 @@ strategy, named after the ``Gang of Four'' strategy pattern.\footnote{Erich
 is set using the \CFunc{icetStrategy} function.
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetStrategy}\textC{(}&\CType{IceTStrategy}&\CArg{strategy}\quad\textC{);}
+  \textC{void }\CFunc{icetStrategy}\textC{(}&\textC{IceTEnum}&\CArg{strategy}\quad\textC{);}
 \end{Table}
 
 \IceT defines the following strategies that can be passed to
@@ -479,6 +477,42 @@ Chapter~\ref{chap:Strategies}.
 
 \input{enumerations/strategy.tex}
 
+You can get a human-readable name using the \CFunc{icetGetStrategyName}
+function.
+
+\begin{Table}{3}
+  \textC{const char *}\CFunc{icetGetStrategyName}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+
+The algorithms in \IceT's strategies are specially designed to composite
+data defined on multiple tiles.  Some of these algorithms, namely
+\CEnum{ICET\_STRATEGY\_REDUCE} and \CEnum{ICET\_STRATEGY\_SEQUENTIAL},
+operate at least in part by compositing single images together.  \IceT also
+comes with multiple separate strategies for performing this single image
+compositing, and this can be selected with the
+\CFunc{icetSingleImageStrategy} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSingleImageStrategy}\textC{(}&\textC{IceTEnum}&\CArg{strategy}\quad\textC{);}
+\end{Table}
+
+\IceT defines the following single image strategies that can be passed to
+\CFunc{icetSingleImageStrategy}.  These strategies are discussed in more
+detail in Chapter~\ref{chap:Strategies}.
+
+\input{enumerations/single_image_strategy.tex}
+
+By default \IceT sets the single image strategy to
+\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_AUTOMATIC} when a context is created.
+This is the single image strategy that will be used if no other is
+selected.
+
+You can get a human-readable name using the
+\CFunc{icetGetSingleImageStrategyName} function.
+
+\begin{Table}{3}
+  \textC{const char *}\CFunc{icetGetSingleImageStrategyName}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
 
 \index{strategy|)}
 
