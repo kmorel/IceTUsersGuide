@@ -516,6 +516,7 @@ You can get a human-readable name using the
 
 \index{strategy|)}
 
+
 \section{Drawing Callback}
 \label{sec:Basic_Usage::Drawing_Callback}
 
@@ -535,19 +536,209 @@ the application with the most flexible way to define the rendering process:
 with a \keyterm{drawing callback}.
 
 A drawing callback is simply a function that your application provides
-\IceT.  When \IceT needs an image, it will establish the appropriate OpenGL
-transformation matrices for the section of the overall display it needs.
-The application's drawing callback will issue the appropriate OpenGL
-commands to draw the geometry.  The drawing callback leaves its image in
-the OpenGL buffers upon exiting.
+\IceT.  When \IceT needs an image, it will provide the drawing callback
+with the projection matrices for the section of the display being
+rendered.  The drawing callback then returns the image rendered to those
+projection matrices.
 
-The drawing callback is set with the \CFunc{icetDrawFunc}.
+\IceT may call the drawing callback several times to create a single tiled
+image or not at all if the current bounds lie outside the current view
+frustum.  This can have a subtle but important impact on the behavior of
+the drawing callback.  For example, counting frames by incrementing a frame
+counter in the drawing callback is obviously wrong (although you could
+count how many times a render occurs).  The drawing callback should also
+leave the rendering system in a state such that it will be correct for a
+subsequent run of the drawing callback.  Any state that is assumed to be
+true on entrance to the drawing callback should also be true on return.
 
-\textC{typedef void (*}\CType{IceTCallback}\textC{)(void);}
+\subsection{Generic Drawing Callback}
+\label{sec:Basic_Usage:Drawing_Callback:Generic}
+
+There are two versions of drawing callbacks.  The first version is a
+generic callback set with \CFunc{icetDrawCallback}.  This callback is used
+in conjunction with the \CFunc{icetDrawFrame} function (described in the
+next section).
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetDrawFunc}\textC{(}&\CType{IceTCallback}&\CArg{func}\quad\textC{);}
+  \multicolumn{3}{l}{
+    \textC{typedef void (*}\CType{IceTDrawCallbackType}\textC{)(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const IceTDouble *}&\CArg{projection\_matrix}\textC{,} \\
+  &\textC{const IceTDouble *}&\CArg{modelview\_matrix}\textC{,} \\
+  &\textC{const IceTFloat *}&\CArg{background\_color}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{readback\_viewport}\textC{,} \\
+  &\CType{IceTImage}&\CArg{result}\quad\textC{)}
 \end{Table}
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetDrawCallback}\textC{(}&\CType{IceTDrawCallbackType}&\CArg{callback}\quad\textC{);}
+\end{Table}
+
+\CArg{callback} takes two projection matrices: \CArg{projection\_matrix}
+and \CArg{modelview\_matrix}.  Each of these arguments is a 16-value array
+that represents a $4 \times 4$ transformation of homogeneous coordinates.
+The arrays store the matrices in \index{column-major~order}column-major
+order.  Thus, if the values in \CArg{projection\_matrix} are $(p[0],
+p[1],... p[15])$ and the values in \CArg{modelview\_matrix} are $(m[0],
+m[1],... m[15])$, then a vertex in object space is transformed into
+normalized screen coordinates by the sequence of operations
+
+\begin{displaymath}
+  \left[
+    \begin{array}{cccc}
+      p[0] & p[4] & p[8] & p[12] \\
+      p[1] & p[5] & p[9] & p[13] \\
+      p[2] & p[6] & p[10] & p[14] \\
+      p[3] & p[7] & p[11] & p[15]
+    \end{array}
+  \right]
+  \left[
+    \begin{array}{cccc}
+      m[0] & m[4] & m[8] & m[12] \\
+      m[1] & m[5] & m[9] & m[13] \\
+      m[2] & m[6] & m[10] & m[14] \\
+      m[3] & m[7] & m[11] & m[15]
+    \end{array}
+  \right]
+  \left[
+    \begin{array}{c}
+      v[0] \\ v[1] \\ v[2] \\ v[3]
+    \end{array}
+  \right]
+\end{displaymath}
+
+More explicitly, if you have a point $(x, y, z, 1)$ in object space stored
+in a variable \textC{object\_coord}, you could transform that to world
+space in the callback with code like this.
+
+\begin{code}
+for (row = 0; row < 4; row++) {
+    world_coord[row] = 0.0;
+    for (i = 0; i < 4; i++) {
+        world_coord[row] += modelview_matrix[row + 4*i] * object_coord[i];
+    }
+}
+\end{code}
+
+Likewise, to transform the \textC{world\_coord} to normalized screen
+coordinates, you could apply the following code.
+
+\begin{code}
+for (row = 0; row < 4; row++) {
+    screen_coord[row] = 0.0;
+    for (i = 0; i < 4; i++) {
+        screen_coord[row] += projection_matrix[row + 4*i] * world_coord[i];
+    }
+}
+\end{code}
+
+If your rendering system has no need to find the world coordinates of
+points, you can combine the two matrices by multipling them together like
+this.
+
+\begin{code}
+for (row = 0; row < 4; row++) {
+    for (column = 0; column < 4; column++) {
+        full_matrix[row + 4*column] = 0.0;
+        for (i = 0; i < 4; i++) {
+            full_matrix[row + 4*column] +=
+                projection_matrix[row + 4*i] * modelview_matrix[k + 4*column];
+        }
+    }
+}
+\end{code}
+
+Normalized screen coordinates are such that everything projected onto the
+image has coordinates in the range $[-1,1]$ (after dividing by the ``w''
+homogeneous coordinate).  The x and y coordinates have to be shifted to get
+the corresponding pixel location.  The normalized screen coordinates are
+projected to span the physical render size (see
+\CFunc{icetPhysicalRenderSize}), which may differ from the size of any
+particular tile.  Also, if you are outputting depth values, \IceT expects
+values in the range $[0,1]$, so you will have to shift those as well.  Here
+is a pedantic code segment to do this final transformation.
+
+\begin{code}
+icetGetIntegerv(ICET_PHYSICAL_RENDER_WIDTH, &image_width);
+icetGetIntegerv(ICET_PHYSICAL_RENDER_HEIGHT, &image_height);
+/* Alternatively, you could get the width and height from the image passed */
+/* to the callback like this.                                              */
+/* image_width = icetImageGetWidth(result);                                */
+/* image_height = icetImageGetHeight(result);                              */
+pixel_x = (int)(image_width*0.5*(screen_coord[0]/screen_coord[3] + 1.0));
+pixel_y = (int)(image_height*0.5*(screen_coord[1]/screen_coord[3] + 1.0));
+depth = 0.5*(screen_coord[2]/screen_coord[3] + 1.0);
+\end{code}
+
+The drawing callback should initialize its backdrop to the
+\CArg{background\_color}, which may be different than the background color
+passed to \CFunc{icetDrawFrame}.
+
+The resulting image should be rendered (or copied) into the
+\CType{IceTImage}, \CArg{result}, passed to the callback.  The image will
+be sized by the phyiscal render width and height and its format will
+conform to that set by \CFunc{icetSetColorFormat} and
+\CFunc{icetSetDepthFormat}.  You can get the buffers of the image with the
+\icetImageGetColor and \icetImageGetDepth functions.  Data written to these
+buffers will become part of the image.  \IceT's image functions are
+described in more detail in the following section starting on
+page~\pageref{sec:Basic_Usage:Image_Objects}.
+
+\IceT will always send the drawing callback an image sized by the physical
+render viewport specified by \CFunc{icetPhysicalRenderSize} for
+convenience.  However, \IceT often needs only a subset of these pixels.
+\IceT tells the drawing callback the pixels it actually uses with the
+\CArg{readback\_viewport} parameter.  \CArg{readback\_viewport} contains 4
+integers specifying a region of pixels that \IceT will use.  The first two
+value specify the lower-left corner of the region and the next two specify
+the width and height of the region.
+
+For example, if the \CArg{readback\_viewport} is set to $(10, 15, 100,
+75)$, then \IceT will use only the pixels in the square between x values 10
+and 109 and y values between 15 and 89 (both inclusive).  All other pixels
+in the image will be ignored.  It is not an error to provide values for the
+other pixels, but it is a waste of computation.
+
+\subsection{OpenGL Drawing Callback}
+\label{sec:Basic_Usage:Drawing_Callback:OpenGL}
+
+If you are rendering with \OpenGL, then you can remove many of the
+complexities of defining a callback by using \CFunc{icetGLDrawCallback} in
+conjunction with \CFunc{icetGLDrawFrame}.
+
+\textC{typedef void (*} \CType{IceTGLDrawCallbackType}\textC{)( void );}
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetGLDrawCallback}\textC{(}&\CType{IceTGLDrawCallbackType}&\CArg{callback}\quad\textC{);}
+\end{Table}
+
+The \OpenGL version of the drawing callback takes no arguments.  It simply
+issues the appropriate \OpenGL calls to render the geometry.  \IceT
+internally takes care of setting the appropriate transformations and clear
+color, and then reads back your data from the buffer specified by
+\CFunc{icetGLSetReadBuffer} after the drawing callback returns.
+
+The \OpenGL drawing callback should \emph{not} modify the
+\CEnum{GL\_PROJECTION\_MATRIX} as this would cause \IceT to place image
+data in the wrong location in the tiled display and improperly cull
+geometry.  It is acceptable to add transformations to
+\CEnum{GL\_MODELVIEW\_MATRIX}, but the bounding vertices given with
+\CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox} (see the following
+section) are assumed to already be transformed by any such changes to the
+modelview matrix.  Also, \CEnum{GL\_MODELVIEW\_MATRIX} must be restored
+before the draw function returns.  Therefore, any changes to
+\CEnum{GL\_MODELVIEW\_MATRIX} are to be done with care and should be
+surrounded by a pair of glPushMatrix and glPopMatrix functions.
+
+It is also important that the \OpenGL drawing callback \emph{not} attempt
+the change the clear color.  In some compositing modes, \IceT needs to
+read, modify, and change the background color.  These operations will be
+lost if the drawing callback changes the background color, and severe color
+blending artifacts may result.
+
+\subsection{Specifying Geometry Bounds}
+\label{sec:Basic_Usage:Drawing_Callback:Bounds}
 
 \IceT can nominally call the drawing callback for every tile in the
 display.  However, in almost any real application each process has data
@@ -587,36 +778,6 @@ With the \CFunc{icetBoundingVertices} function, you specify a set of
 vertices whose convex hull completely contains the geometry.  The
 \CFunc{icetBoundingBox} function is a convenience function that defines the
 container as an axis aligned bounding box.
-
-The drawing callback should \emph{not} modify the
-\CEnum{GL\_PROJECTION\_MATRIX} as this would cause \IceT to place image
-data in the wrong location in the tiled display and improperly cull
-geometry.  It is acceptable to add transformations to
-\CEnum{GL\_MODELVIEW\_MATRIX}, but the bounding vertices given with
-\CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox} are assumed to
-already be transformed by any such changes to the modelview matrix.  Also,
-\CEnum{GL\_MODELVIEW\_MATRIX} must be restored before the draw function
-returns.  Therefore, any changes to \CEnum{GL\_MODELVIEW\_MATRIX} are to be
-done with care and should be surrounded by a pair of glPushMatrix and
-glPopMatrix functions.
-
-It is also important that the drawing callback \emph{not} attempt the
-change the clear color.  In some compositing modes, \IceT needs to read,
-modify, and change the background color.  These operations will be lost if
-the drawing callback changes the background color, and severe color
-blending artifacts may result.
-
-\IceT may call the drawing callback several times to create a single tiled
-image or not at all if the current bounds lie outside the current
-view frustum.  This can have a subtle but important impact on the behavior of
-the drawing callback.  For example, counting frames by incrementing a frame
-counter in the drawing callback is obviously wrong (although you could
-count how many times a render occurs).  The drawing callback should also
-leave \OpenGL in a state such that it will be correct for a subsequent run
-of the drawing callback.  Any matrices or attributes pushed in the drawing
-callback should be popped before the drawing callback returns, and any
-state that is assumed to be true on entrance to the drawing callback should
-also be true on return.
 
 \index{drawing~callback|)}
 
@@ -710,3 +871,7 @@ The memory returned by \CFunc{icetGetColorBuffer} and \CFunc{icetGetDepthBuffer}
 not, and should not, be freed.  It will be reclaimed in the next call to
 \CFunc{icetDrawFrame}.  Expect the data returned to be obliterated on the
 next call to \CFunc{icetDrawFrame}.
+
+
+\section{Image Objects}
+\label{sec:Basic_Usage:Image_Objects}

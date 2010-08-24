@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{August  9, 2010}
+\setDate{August 23, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetDrawCallback}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDrawCallback} -- set a callback for drawing.}
 
@@ -9,7 +9,6 @@
 
   \textC{\#include <IceT.h>}
 
-  %% \textC{typedef void (*}\CType{IceTCallback}\textC{)(void);}
   \begin{Table}{3}
     %@% IF notlatex2man %@%
     \multicolumn{3}{l}{
@@ -92,7 +91,9 @@
   have to be shifted to get the corresponding pixel location.  The
   normalized screen coordinates are projected to span the physical render
   size (see \CFunc{icetPhysicalRenderSize}), which may differ from the size
-  of any particular tile.
+  of any particular tile.  Also, if you are outputting depth values, \IceT
+  expects values in the range $[0,1]$, so you will have to shift those as
+  well.
 
   %@% END-IF %@%
 
