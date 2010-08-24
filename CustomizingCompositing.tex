@@ -303,16 +303,16 @@ frame rate that can be achieved.
 A simple way to increase the frame rate is to reduce the resolution of the
 images being displayed.  If the display resolution is larger than necessary
 (and ``larger than necessary'' is a flexible metric that can change
-regularly as an application runs), then you can tell \IceT to render
-smaller images and then \keyterm{inflate} the images to fill the display.
-A major use case for a reduced resolution image is for maintaining
-application interactivity.  Many applications, particularly visualization
-applications, contain bursts of interactivity.  The user will interact with
-the data (move the camera or objects) and then hold still and analyse the
-results.  While interacting, application responsiveness is much more
-important than image details, so during this time a lower resolution image
-can be rendered and inflated.  When the user stops interacting and starts
-analysing, a full resolution image can be created.
+regularly as an application runs), then you can render smaller images and
+then \keyterm{inflate} the images to fill the display.  A major use case
+for a reduced resolution image is for maintaining application
+interactivity.  Many applications, particularly visualization applications,
+contain bursts of interactivity.  The user will interact with the data
+(move the camera or objects) and then hold still and analyse the results.
+While interacting, application responsiveness is much more important than
+image details, so during this time a lower resolution image can be rendered
+and inflated.  When the user stops interacting and starts analysing, a full
+resolution image can be created.
 
 You can instruct \IceT to render and composite smaller images by simply
 specifying a lower resolution display with the \CFunc{icetAddTile}
@@ -328,28 +328,30 @@ using these functions.
 Between rendering and display, the smaller images must be inflated to fill
 the display.  An application can always perform this inflation itself (and
 that is probably necessary if the images are shipped to a remote display).
-When \IceT is displaying the data (i.e. \CEnum{ICET\_DISPLAY} is enabled),
-\IceT has the ability to automatically inflate the images.  Turn on this
-feature by enabling \CEnum{ICET\_DISPLAY\_INFLATE}.  \IceT contains two
-modes for inflating images: using the CPU or using texture mapping in
-OpenGL.  When \CEnum{ICET\_DISPLAY\_INFLATE\_WITH\_HARDWARE} is enabled
-(the default), then texture mapping is used.  In either case,
-\CFunc{icetGetColorBuffer} and \CFunc{icetGetDepthBuffer} return the
-smaller image size specified by \CFunc{icetAddTile}.
+When using \IceT's \OpenGL layer (i.e. rendering with calls to
+\CFunc{icetGLDrawFrame}) and \IceT is displaying the data
+(i.e. \CEnum{ICET\_GL\_DISPLAY} is enabled), \IceT has the ability to
+automatically inflate the images.  Turn on this feature by enabling
+\CEnum{ICET\_GL\_DISPLAY\_INFLATE}.  \IceT contains two modes for inflating
+images: using the CPU or using texture mapping in OpenGL.  When
+\CEnum{ICET\_GL\_DISPLAY\_INFLATE\_WITH\_HARDWARE} is enabled (the
+default), then texture mapping is used.  In either case,
+\CFunc{icetGLDrawFrame} returns the smaller image size specified by
+\CFunc{icetAddTile}.
 
 One final note: Regardless of what size you set for the displays in
-\CFunc{icetAddTile}, you should keep the viewport (specified by
-\CFuncExternal{glViewport}) as large as possible.  The size of the graphics
-viewport and the size of the tile images can be different so long as each
-viewport is at least as large as the largest tile image.  In fact, it is
-advantageous to have the viewport larger than the specified tiles.  The
-first reason is that the \CEnum{ICET\_DISPLAY\_INFLATE} feature fills the
-image to the OpenGL viewport.  If the dimensions the two are the same, then
-no inflation will actually take place.  The second reason is that \IceT
-will use the entire OpenGL viewport for rendering.  For a multi-tile
-display, this can dramatically reduce the number of times the render
-callback needs to be called.  Thus, in general it is best to keep the
-OpenGL viewport as large as possible.
+\CFunc{icetAddTile}, you should render images as large as possible (by
+setting \CFunc{icetPhysicalRenderSize} or \CFuncExternal{glViewport} as
+large as possible).  The size of the rendered images and the size of the
+tile images can be different so long as each rendered image is at least as
+large as the largest tile image.  In fact, it is advantageous to have the
+rendered images larger than the specified tiles.  The first reason is that
+the \CEnum{ICET\_GL\_DISPLAY\_INFLATE} feature fills the image to the
+OpenGL viewport.  If the dimensions the two are the same, then no inflation
+will actually take place.  The second reason is that \IceT will use the
+entire renderable space.  For a multi-tile display, this can dramatically
+reduce the number of times the render callback needs to be called.  Thus,
+in general it is best to keep the rendered images as large as possible.
 
 \index{image!inflation|)}
 
@@ -370,17 +372,16 @@ Consider the geometry shown in Figure~\ref{fig:FloatingViewport} that
 projects onto a screen space that fits within a single tile but is moved in
 the horizontal and vertical directions so that it straddles four tiles.  If
 the system limits itself to projecting onto physical tiles, the processor
-must render and read back four images; although it could generate a single
+must render four images even though it could generate a single
 image that contains the entire geometry with the exact same pixel spacing.
-Instead of rendering four tiles, the system can \keyterm{float} the
+Instead of rendering four tiles, \IceT can \keyterm{float} the
 viewport in the global display to the space straddling the tiles.  That is,
-the system may project the geometry to the space shown by the dotted line
+\IceT may project the geometry to the space shown by the dotted line
 in Figure~\ref{fig:FloatingViewport} and split the resulting image back
 into pieces that can be displayed directly on each tile.  Hence, the system
-does not need to render any polygon more than once, and the frame buffer is
-read back one time instead of four.
+does not need to render any polygon more than once.
 
-When a processor’s geometry fits within the floating viewport, it can cut
+When a processor's geometry fits within the floating viewport, it can cut
 the rendering time dramatically.  This is most likely to happen when the
 number of tiles is small compared to the number of processors and the
 spatial coherency of the data is good.
@@ -405,21 +406,21 @@ geometry often occupies only a fraction of the screen space in some or all
 of the tiles in which it lies.  Consequently, the initial images
 distributed between processors at the beginning of composition often have a
 significant amount of blank space within them.  Explicitly sending this
-information between processors is a waste of bandwidth.  Transferring
+data between processors is a waste of bandwidth.  Transferring
 sparse image data rather than full image data is a well-known way to reduce
 network overhead.  So far, our best method to do this has been with
 active-pixel encoding.
 
 Active-pixel encoding is a form of run-length encoding.  A traditional
 run-length encoding groups pixels into contiguous groups where the color
-and/or depth does not change.  However, in a practical 3D rendering, both
+or depth does not change.  However, in a practical 3D rendering, both
 the color and depth change almost everywhere except in the background areas
 where nothing is rendered.  To take advantage of this, images are grouped
 into alternating run lengths of \keyterm{active pixels}, pixels that
 contain geometry information, and \keyterm{inactive pixels}, pixels that
 have no geometry drawn on them.  The active-pixel run length is followed by
 pairs of color and depth values (or just one of the two if that is the only
-data available)..  The inactive pixels are not accompanied by any color or
+data available).  The inactive pixels are not accompanied by any color or
 depth information.  The depth information is assumed to be of maximum
 depth, and the color values are ignored since they contain no geometry
 information.
@@ -431,30 +432,26 @@ properties:
 
 \begin{description}
 \item[Fast encoding]  Image encoding requires each pixel to be visited
-  exactly once.  Each visit includes a single depth buffer comparison, a
+  exactly once.  Each visit includes a single alpha or depth comparison, a
   single addition, and at most one copy.
-\item[Free decoding]  Processors typically perform a depth comparison as
-  soon as they receive incoming data.  The depth comparison can be done
+\item[Free decoding]  Processors typically perform a compositing as
+  soon as they receive incoming data.  The compositing can be done
   directly against an image that is still encoded in sparse form.  In fact,
-  the depth comparison can skip the comparisons for the inactive pixels.
-  Thus doing depth comparisons against encoded images is often faster than
+  the compositing can skip the comparisons for the inactive pixels.
+  Thus doing compositing against encoded images is often faster than
   against unencoded images.
 \item[Effective compression]  During the early stages of composition when
-  the largest images must be transferred, the sparse data is commonly less
+  the most image data must be transferred, the sparse data is commonly less
   than one fifth the size of the original data.
-\item[Good worst case behavior] No image with both color and depth
-  information (the most common case) will ever grow by more than a few
+\item[Good worst case behavior] No image will ever grow by more than a few
   bytes of header information.  Images that have geometry drawn on every
   pixel will only have one run length.  Even images that alternate between
   active and inactive status for every pixel, and hence have a run length
   for every pixel, do not grow when encoded.  The number of bytes required
-  to record two run lengths is equal to the number of bytes saved by not
-  recording color and depth information for a single inactive pixel.  Thus,
-  there is no penalty for recording run lengths of size one.  If only color
-  or only depth is being recorded, it is possible to grow data in the
-  pathological case where pixels alternate between active and inactive, but
-  in practice background pixels are grouped and the data never really
-  grows.
+  to record two run lengths, which are stored as 16-bit integers each, is
+  no more than the number of bytes saved by not recording either color or
+  depth data for a single inactive pixel, which is at least 32-bits.  Thus,
+  there is no penalty for recording run lengths of size one.
 \end{description}
 
 Active-pixel encoding is performed automatically during the compositing
