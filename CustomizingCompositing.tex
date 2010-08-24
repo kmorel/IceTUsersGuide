@@ -27,17 +27,49 @@ To combine two images together, a \keyterm{compositing operation} is
 applied to every corresponding pair of pixels.  Three or more images are
 combined by applying the compositing operation multiple times to eventually
 reduce everything to one image.  (The compositing operations supported by
-\IceT are associative, so order does not matter.  \IceT takes advantage of
+\IceT are associative, so the order is flexible.  \IceT takes advantage of
 this fact to efficiently perform the compositing in parallel.)
 
-\IceT supports two compositing operations.  The first type of compositing
-operation is a depth comparison and the other is an alpha blend.    The
-depth comparison is a bit faster and is easier to use, but only works for
-opaque surfaces.  If you are performing
-\index{volume~rendering}\keyterm{volume rendering}, the translucent
-rendering of 3-dimensional volumes, or any other rendering that involves
-transparent data, then you will have to use the alpha blend compositing
-operation.
+\IceT supports two compositing operations, set with
+\CFunc{icetCompositeMode}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCompositeMode}\textC{(}&\textC{IceTEnum}&\CArg{mode}\quad\textC{);}
+\end{Table}
+
+The first type of compositing operation,
+\CEnum{ICET\_COMPOSITE\_MODE\_Z\_BUFFER}, is a depth comparison and the
+other, \CEnum{ICET\_COMPOSITE\_MODE\_BLEND}, is an alpha blend.  The depth
+comparison is a bit faster and is easier to use, but only works for opaque
+surfaces.  If you are performing \index{volume~rendering}\keyterm{volume
+  rendering}, the translucent rendering of 3-dimensional volumes, or any
+other rendering that involves transparent data, then you will have to use
+the alpha blend compositing operation.
+
+Each compositing operation relies on certain buffers to exist (or not
+exist) in images.  For example, z-buffer compositing can use a color buffer
+and requires a depth buffer whereas blended compositing requires a color
+buffer and cannot work with a depth buffer.  The buffers created in images
+by \IceT, and their formats, is controlled by the
+\CFunc{icetSetColorFormat} and \CFunc{icetSetDepthFormat} functions.  It is
+important to ensure that the setting for \CFunc{icetCompositeMode} is
+compatible with the settings for \CFunc{icetSetColorFormat} and
+\CFunc{icetSetDepthFormat}.
+
+\begin{Table}{3}
+  \textC{void }\icetSetColorFormat\textC{(}&\textC{IceTEnum}&\CArg{color\_format}\quad\textC{);} \\
+  \textC{void }\icetSetDepthFormat\textC{(}&\textC{IceTEnum}&\CArg{depth\_format}\quad\textC{);}
+\end{Table}
+
+The following \CArg{color\_format}s are valid for use in
+\CFunc{icetSetColorFormat}.
+
+\input{enumerations/image_color}
+
+The following \CArg{depth\_format}s are valid for use in
+\CFunc{icetSetDepthFormat}.
+
+\input{enumerations/image_depth}
 
 \subsection{Z-Buffer Compositing}
 \label{sec:Customizing_Compositing:User_Defined_Communicators}
@@ -52,33 +84,39 @@ removal already taking place in the OpenGL pipeline.  \IceT pulls the
 from the OpenGL image buffers.  The compositing operation then just
 compares the depth values of two pixels and chooses the one that is closer.
 
-Z-buffer compositing is used whenever the depth buffer is chosen as one of
-the input buffers.  The input (and output) buffers are chosen with the
-\CFunc{icetInputOutputBuffers} function.
+Z-buffer compositing is used when the composite mode (set with
+\CFunc{icetCompositeMode}) is \CEnum{ICET\_COMPOSITE\_MODE\_Z\_BUFFER}.
+Z-buffer compositing also requires a depth buffer.  An error will occur
+during compositing if z-buffer compositing is being used without a depth
+buffer (i.e. \CFunc{icetSetDepthFormat} is set to
+\CEnum{ICET\_IMAGE\_DEPTH\_NONE}.)
 
-\begin{Table}{3}
-  \textC{void }\CFunc{icetInputOutputBuffers}\textC{(}&\textC{GLenum}&\CArg{inputs}\textC{,} \\
-  &\textC{GLenum}&\CArg{outputs}\quad\textC{);}
-\end{Table}
-
-By default, both the the color and the depth buffer are selected as input
-buffers and the color buffer is selected as the only output buffer.  This
-means that the depth buffer will be used to do z-buffer compositing, but
-only the color buffer will be fully composited.  (Not computing the depth
-buffer may save some network transfer time.)
+By default, z-buffer compositing is enabled and both the the color and the
+depth buffer are selected as input buffers.  Also by default \IceT will
+\emph{not} produce a depth buffer.  (Not computing the depth buffer may
+save some network transfer time.)  This behavior is controlled by the
+\CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option, which is enabled by default.
 
 If you need the depth buffer composited in addition to the color buffer
 (for example, to help with a picking operation), you can do so by simply
-setting the depth buffer as one of the output buffers.
+disabling the \CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option.
+
 \begin{code}
-  icetInputOutputBuffers(ICET_COLOR_BUFFER_BIT | ICET_DEPTH_BUFFER_BIT,
-                         ICET_COLOR_BUFFER_BIT | ICET_DEPTH_BUFFER_BIT);
+icetCompositeMode(ICET_COMPOSITE_MODE_Z_BUFFER);
+icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_UBYTE);
+icetSetDepthFormat(ICET_IMAGE_DEPTH_FLOAT);
+icetDisable(ICET_COMPOSITE_ONE_BUFFER);
 \end{code}
+
 Alternatively, if you only need the depth buffer (for example, as a shadow
-map), you can do so by setting both the input and output buffers to just
-the depth buffer.
+map), you can do so by setting the color format to
+\CEnum{ICET\_IMAGE\_COLOR\_NONE}.  In this case, the
+\CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option will have no effect
+
 \begin{code}
-  icetInputOutputBuffers(ICET_DEPTH_BUFFER_BIT, ICET_DEPTH_BUFFER_BIT);
+icetCompositeMode(ICET_COMPOSITE_MODE_Z_BUFFER);
+icetSetColorFormat(ICET_IMAGE_COLOR_NONE);
+icetSetDepthFormat(ICET_IMAGE_DEPTH_FLOAT);
 \end{code}
 
 \index{compositing!z-buffer|)}
@@ -105,21 +143,25 @@ that all the pixels get composited in the correct order requires additional
 information about and constraints on the geometry.
 
 When z-buffer compositing is not applicable, you must use \keyterm{blended
-  compositing}.  Blended compositing is automatically turned on when there
-is no z-buffer specified as an input buffer.  That generally means you will
-be setting both the input and output buffers to the color buffer.
+  compositing}.  To use blended compositing, set the composite mode (with
+\CFunc{icetCompositeMode}) to \CEnum{ICET\_COMPOSITE\_MODE\_BLEND} and turn
+off depth buffers (i.e. \CFunc{icetSetDepthFormat} is set to
+\CEnum{ICET\_IMAGE\_DEPTH\_NONE}).
+
 \begin{code}
-  icetInputOutputBuffers(ICET_COLOR_BUFFER_BIT, ICET_COLOR_BUFFER_BIT);
+icetCompositeMode(ICET_COMPOSITE_MODE_BLEND);
+icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_UBYTE);
+icetSetDepthFormat(ICET_IMAGE_DEPTH_NONE);
 \end{code}
 
 The blending composite operator relies on the \index{alpha}\keyterm{alpha}
 (\index{$\alpha$}\keyterm{$\alpha$}) channel of the color buffer (the A in
-RGBA colors).  Note that the alpha values must actually be available in the
-OpenGL color buffers in order for blended compositing to work.  Many
-applications create OpenGL buffers without alpha bit planes in them because
-they are often not necessary to render images in serial.  Make sure your
-application creates alpha bit planes before attempting to composite
-translucent images with \IceT (or any other library).
+RGBA colors).  Note that when using \OpenGL, the alpha values must actually
+be available in the \OpenGL color buffers in order for blended compositing
+to work.  Many applications create \OpenGL buffers without alpha bit planes
+in them because they are often not necessary to render images in serial.
+Make sure your application creates alpha bit planes before attempting to
+composite translucent images with \IceT (or any other library).
 
 The blending operation is the standard
 \index{over~operator}\index{under~operator}\keyterm{over/under operator}
@@ -138,7 +180,7 @@ the red, green, and blue values are scaled by the alpha parameter.  Thus, a
 fully red color at half transparency is represented by the vector $\langle
 0.5, 0, 0, 0.5 \rangle$ rather than $\langle 1, 0, 0, 0.5 \rangle$.  In
 pre-multiplied colors, none of the red, green, or blue values ever exceed
-the alpha value.  Note that colors are often provided in OpenGL as
+the alpha value.  Note that colors are often provided in \OpenGL as
 non-pre-multiplied values, and the blending equation $C_o \leftarrow C_f
 \alpha_f + C_b (1 - \alpha_f)$ is used instead of the one in
 Equation~\ref{eq:VolumeRendering:OverOperator}.  Although this blending
@@ -180,9 +222,9 @@ Ordered compositing is turned on by simply passing the
 Once ordered compositing is enabled, it is very important to use
 \CFunc{icetCompositeOrder} to specify the visibility order of the geometry
 associated with each process.  This must generally be done before each call
-to \CFunc{icetDrawFrame}.
+to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \begin{Table}{1}
-  \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const GLint *}
+  \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const IceTInt *}
   \CArg{process\_ranks} \textC{);}
 \end{Table}
 The \CFunc{icetCompositeOrder} function takes an array of processes.  It is
@@ -218,37 +260,28 @@ behind the geometry of process $B$, and the resulting image will be
 invalid.
 
 If your background is a solid color, then \IceT can fix this problem
-automatically.  Simply set the OpenGL background (clear) color like you
-normally would and enable the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND}
-feature.
-
-\index{glClearColor}
-\begin{code}
-  glClearColor(0.0, 0.0, 1.0, 1.0);
-  icetEnable(ICET_CORRECT_COLORED_BACKGROUND)
-\end{code}
+automatically.  Both \CFunc{icetDrawFrame} and \CFunc{icetGLDrawFrame} have
+the ability take a solid background color and modify it as appropriate for
+compositing.  \CFunc{icetDrawFrame} takes the background color as an
+explicit parameter whereas \CFunc{icetGLDrawFrame} implicitly gets the
+background color from the \OpenGL clear color.
 
 When the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} feature is enabled and
 blended compositing is on, \IceT will change the background to $\langle 0,
-0, 0, 0 \rangle$, perform the rendering and compositing, blend the result
-into the specified background color, and finally restore the OpenGL clear
-color.
+0, 0, 0 \rangle$, perform the rendering and compositing, and blend the
+result into the specified background color.
 
-If you do not actually need to get the image result back from
+If you are using \CFunc{icetGLDrawFrame} to render with the \OpenGL layer
+and if you do not actually need to get the image result back from
 \CFunc{icetGetColorBuffer}, you can use the
-\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND}.
+\CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} option instead.
 
-\begin{code}
-  glClearColor(0.0, 0.0, 1.0, 1.0);
-  icetEnable(ICET_CORRECT_COLORED_BACKGROUND)
-\end{code}
-
-\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} operates similar to
+\CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} operates similar to
 \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} with the exception that it uses
 the OpenGL graphics hardware to blend the composited image to the colored
 background, and may therefore get a modest performance increase.  However,
 it also means that the result will not be available in the memory buffer
-returned by \CFunc{icetGetColorBuffer}.
+returned by \CFunc{icetGLDrawFrame}.
 
 \index{background~color|)}
 
