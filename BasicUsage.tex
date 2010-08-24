@@ -434,7 +434,7 @@ the largest tile dimensions in the \CEnum{ICET\_TILE\_MAX\_WIDTH} and
 \IceT must know in advanced the size of images that your application will
 render.  If you are using \IceT's \OpenGL layer, \IceT will automatically
 know the size of the images you generate based off of the current \OpenGL
-viewport (retreived with the \CEnum{GL\_VIEWPORT} \OpenGL state variable).
+viewport (retrieved with the \CEnum{GL\_VIEWPORT} \OpenGL state variable).
 Otherwise, you can specify the size of images the application generates
 with \CFunc{icetPhysicalRenderSize}.  If you are not using the \OpenGL
 layer and you have not called \CFunc{icetPhysicalRenderSize}, \IceT assumes
@@ -634,7 +634,7 @@ for (row = 0; row < 4; row++) {
 \end{code}
 
 If your rendering system has no need to find the world coordinates of
-points, you can combine the two matrices by multipling them together like
+points, you can combine the two matrices by multiplying them together like
 this.
 
 \begin{code}
@@ -677,7 +677,7 @@ passed to \CFunc{icetDrawFrame}.
 
 The resulting image should be rendered (or copied) into the
 \CType{IceTImage}, \CArg{result}, passed to the callback.  The image will
-be sized by the phyiscal render width and height and its format will
+be sized by the physical render width and height and its format will
 conform to that set by \CFunc{icetSetColorFormat} and
 \CFunc{icetSetDepthFormat}.  You can get the buffers of the image with the
 \icetImageGetColor and \icetImageGetDepth functions.  Data written to these
@@ -749,29 +749,29 @@ bounds of the local geometry.  This is done using either the
 \CFunc{icetBoundingVertices} or the \CFunc{icetBoundingBox} function.
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetBoundingVertices}\textC{(}&\textC{GLint}&\CArg{size}\textC{,} \\
-    &\textC{GLenum}&\CArg{type}\textC{,} \\
-    &\textC{GLsizei}&\CArg{stride}\textC{,} \\
-    &\textC{GLsizei}&\CArg{count}\textC{,} \\
-    &\textC{const GLvoid *}&\CArg{pointer}\quad\textC{);}
+  \textC{void }\CFunc{icetBoundingVertices}\textC{(}&\textC{IceTInt}&\CArg{size}\textC{,} \\
+    &\textC{IceTEnum}&\CArg{type}\textC{,} \\
+    &\textC{IceTSizeType}&\CArg{stride}\textC{,} \\
+    &\textC{IceTSizeType}&\CArg{count}\textC{,} \\
+    &\textC{const IceTVoid *}&\CArg{pointer}\quad\textC{);}
 \end{Table}
 
 \begin{Table}{3}
-  \textC{void }\icetBoundingBoxd\textC{(}&\textC{GLdouble}&\CArg{x\_min}\textC{,} \\
-    &\textC{GLdouble}&\CArg{x\_max}\textC{,} \\
-    &\textC{GLdouble}&\CArg{y\_min}\textC{,} \\
-    &\textC{GLdouble}&\CArg{y\_max}\textC{,} \\
-    &\textC{GLdouble}&\CArg{z\_min}\textC{,} \\
-    &\textC{GLdouble}&\CArg{z\_max}\quad\textC{);}
+  \textC{void }\icetBoundingBoxd\textC{(}&\textC{IceTDouble}&\CArg{x\_min}\textC{,} \\
+    &\textC{IceTDouble}&\CArg{x\_max}\textC{,} \\
+    &\textC{IceTDouble}&\CArg{y\_min}\textC{,} \\
+    &\textC{IceTDouble}&\CArg{y\_max}\textC{,} \\
+    &\textC{IceTDouble}&\CArg{z\_min}\textC{,} \\
+    &\textC{IceTDouble}&\CArg{z\_max}\quad\textC{);}
 \end{Table}
 
 \begin{Table}{3}
-  \textC{void }\icetBoundingBoxf\textC{(}&\textC{GLfloat}&\CArg{x\_min}\textC{,} \\
-    &\textC{GLfloat}&\CArg{x\_max}\textC{,} \\
-    &\textC{GLfloat}&\CArg{y\_min}\textC{,} \\
-    &\textC{GLfloat}&\CArg{y\_max}\textC{,} \\
-    &\textC{GLfloat}&\CArg{z\_min}\textC{,} \\
-    &\textC{GLfloat}&\CArg{z\_max}\quad\textC{);}
+  \textC{void }\icetBoundingBoxf\textC{(}&\textC{IceTFloat}&\CArg{x\_min}\textC{,} \\
+    &\textC{IceTFloat}&\CArg{x\_max}\textC{,} \\
+    &\textC{IceTFloat}&\CArg{y\_min}\textC{,} \\
+    &\textC{IceTFloat}&\CArg{y\_max}\textC{,} \\
+    &\textC{IceTFloat}&\CArg{z\_min}\textC{,} \\
+    &\textC{IceTFloat}&\CArg{z\_max}\quad\textC{);}
 \end{Table}
 
 With the \CFunc{icetBoundingVertices} function, you specify a set of
@@ -936,7 +936,7 @@ drawing callback should behave as if neither of the matrices were modified.
 By the time \CFunc{icetGLDrawFrame} completes, an image will have been
 completely rendered and composited.  If \CEnum{ICET\_GL\_DISPLAY} is
 enabled, then the fully composited image is written back to the \OpenGL
-framebuffer for display.  It is the application's responsibility to
+frame buffer for display.  It is the application's responsibility to
 synchronize the processes and swap front and back buffers.  The image
 remaining in the frame buffer is undefined if \CEnum{ICET\_GL\_DISPLAY} is
 disabled or the process is not displaying a tile.
@@ -1014,7 +1014,7 @@ The functions \CFunc{icetImageGetWidth}, \CFunc{icetImageGetHeight}, and
 An \CType{IceTImage} can hold color data, depth data, or both.
 Furthermore, colors and depths can be stored in different formats.  The
 internal formats for colors and depths for an \CType{IceTImage} can be
-retreived with the \CFunc{icetImageGetColorFormat} and
+retrieved with the \CFunc{icetImageGetColorFormat} and
 \CFunc{icetImageGetDepthFormat} functions, respectively.
 
 \begin{Table}{5}
