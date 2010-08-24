@@ -786,91 +786,184 @@ container as an axis aligned bounding box.
 \label{sec:Basic_Usage:Rendering}
 
 Once you have set up the \IceT state as described in the previous sections
-of this chapter, you are ready to perform parallel rendering.  Parallel
-rendering is performed by calling \CFunc{icetDrawFrame}.
+of this chapter, you are ready to perform parallel rendering.  Rendering is
+initiated in \IceT by calling one of the draw frame functions.
+
+\subsection{Generic Rendering}
+\label{sec:Basic_Usage:Rendering:Generic}
+
+There are two frame drawing functions.  The first version is independent of
+the rendering system and is used in conjunction with the callback set with
+\CFunc{icetDrawCallback}.  It is performed by calling
+\CFunc{icetDrawFrame}.
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetDrawFrame}\textC{(void);}
+  \CType{IceTImage}\textC{ }\CFunc{icetDrawFrame}\textC{(}
+  &\textC{const IceTDouble *}&\CArg{projection\_matrix}\textC{,} \\
+  &\textC{const IceTDouble *}&\CArg{modelview\_matrix}\textC{,} \\
+  &\textC{const IceTFloat *}&\CArg{background\_color}\quad\textC{);}
 \end{Table}
 
-\CFunc{icetDrawFrame} is called in basically the same way as the
-\index{drawing~callback}drawing callback would be called directly.  First,
-establish the OpenGL state.  Setting up the \CEnum{GL\_PROJECTION\_MATRIX}
-before calling \CFunc{icetDrawFrame} is essential.  It is also advisable to
-set up whatever transformations in the \CEnum{GL\_MODELVIEW\_MATRIX} that
-you can before calling \CFunc{icetDrawFrame}.  \IceT will use and modify
-these two matrices to render regions of the tiled display.  The drawing
-callback should behave as if neither of the matrices were modified.
+Conceptually, calling \CFunc{icetDrawFrame} is similar to calling the
+\index{drawing~callback}drawing callback directly.  The arguments
+\CArg{projection\_matrix}, \CArg{modelview\_matrix}, and
+\CArg{background\_color} are the same as you would potentially pass the
+callback (although \IceT is free to change them).
 
-By the time \CFunc{icetDrawFrame} completes, an image will have been
-completely rendered and composited.  If \CEnum{ICET\_DISPLAY} is enabled,
-then the fully composited image is written back to the \OpenGL framebuffer
-for display.  It is the application's responsibility to synchronize the
-processes and swap front and back buffers.  The image remaining in the
-frame buffer is undefined if \CEnum{ICET\_DISPLAY} is disabled or the
-process is not displaying a tile.
+The \CArg{projection\_matrix} and \CArg{modelview\_matrix} are 16-value
+arrays that represent $4 \times 4$ transformations of homogeneous coordinates.
+The arrays store the matrices in \index{column-major~order}column-major
+order.  Thus, if the values in \CArg{projection\_matrix} are $(p[0],
+p[1],... p[15])$ and the values in \CArg{modelview\_matrix} are $(m[0],
+m[1],... m[15])$, then a vertex in object space is transformed into
+normalized screen coordinates by the sequence of operations
+
+For example, if your modelview matrix used a simple translation to move the
+geometry in front of the camera, you would use a matrix like this.
+
+\begin{displaymath}
+  \left[
+    \begin{array}{cccc}
+      1 & 0 & 0 & x \\
+      0 & 1 & 0 & y \\
+      0 & 0 & 1 & z \\
+      0 & 0 & 0 & 1
+    \end{array}
+  \right]
+\end{displaymath}
+
+The code to set the modelview matrix could look like this.
+
+\begin{code}
+modelview_matrix[ 0] = 1.0;
+modelview_matrix[ 1] = 0.0;
+modelview_matrix[ 2] = 0.0;
+modelview_matrix[ 3] = 0.0;
+
+modelview_matrix[ 4] = 0.0;
+modelview_matrix[ 5] = 1.0;
+modelview_matrix[ 6] = 0.0;
+modelview_matrix[ 7] = 0.0;
+
+modelview_matrix[ 8] = 0.0;
+modelview_matrix[ 9] = 0.0;
+modelview_matrix[10] = 1.0;
+modelview_matrix[11] = 0.0;
+
+modelview_matrix[12] = x;
+modelview_matrix[13] = y;
+modelview_matrix[14] = z;
+modelview_matrix[15] = 1.0;
+\end{code}
+
+As another example, consider setting the projection matrix for the
+perspective of a camera sitting at the origin facing down the $-z$ axis.
+You could use a transformation matrix like this.
+
+\begin{displaymath}
+  \begin{array}{c}
+    \left[
+      \begin{array}{cccc}
+        \frac{f \cdot height}{width} & 0 & 0 & 0 \\
+        0 & f & 0 & 0 \\
+        0 & 0 & -1 & -2near \\
+        0 & 0 & -1 & 0
+      \end{array}
+    \right] \\
+    f = \mathrm{cotangent}\left(\frac{fovy}{2}\right)
+  \end{array}
+\end{displaymath}
+
+The code to set the projection matrix could look like this.
+
+\begin{code}
+/* width, height: image dimensions */
+/* fovy: field of view in the y direction */
+/* zNear: distance from camera (at origin) to near clipping plane (at -zNear). */
+
+f = 1.0/tan(0.5*fovy);
+
+projection_matrix[ 0] = (f*height)/width;
+projection_matrix[ 1] = 0.0;
+projection_matrix[ 2] = 0.0;
+projection_matrix[ 3] = 0.0;
+
+projection_matrix[ 4] = 0.0;
+projection_matrix[ 5] = f;
+projection_matrix[ 6] = 0.0;
+projection_matrix[ 7] = 0.0;
+
+projection_matrix[ 8] = 0.0;
+projection_matrix[ 9] = 0.0;
+projection_matrix[10] = -1.0;
+projection_matrix[11] = -1.0;
+
+projection_matrix[12] = 0.0;
+projection_matrix[13] = 0.0;
+projection_matrix[14] = -2*zNear;
+projection_matrix[15] = 0.0;
+\end{code}
+
+The \CArg{background\_color} is the color in which the background should be
+initialized.  It is the color of ``empty'' pixels and also the color to be
+blended with any transparent geometry.
+
+\CFunc{icetDrawFrame} returns an \CType{IceTImage} containing the composited
+image displayed on this process.  If the process is not displaying a tile,
+then the contents of the image is undefined.
+
+\subsection{OpenGL Rendering}
+\label{sec:Basic_Usage:Rendering:OpenGL}
+
+If you are rendering with \OpenGL, then you can remove many of the
+complexities of defining projection matrices and displaying images by using
+the \CFunc{icetGLDrawFrame} function in conjunction with the drawing
+callback set with \CFunc{icetGLDrawCallback}.
+
+\begin{Table}{3}
+  \textC{void}\quad\CFunc{icetGLDrawFrame}\textC{( void );}
+\end{Table}
+
+\CFunc{icetGLDrawFrame} is called in basically the same way as the \OpenGL
+\index{drawing~callback}drawing callback would be called directly.  First,
+establish the \OpenGL state.  Setting up the \CEnum{GL\_PROJECTION\_MATRIX}
+before calling \CFunc{icetGLDrawFrame} is essential.  It is also advisable
+to set up whatever transformations in the \CEnum{GL\_MODELVIEW\_MATRIX}
+that you can before calling \CFunc{icetGLDrawFrame}.  \IceT will use and
+modify these two matrices to render regions of the tiled display.  The
+drawing callback should behave as if neither of the matrices were modified.
+
+By the time \CFunc{icetGLDrawFrame} completes, an image will have been
+completely rendered and composited.  If \CEnum{ICET\_GL\_DISPLAY} is
+enabled, then the fully composited image is written back to the \OpenGL
+framebuffer for display.  It is the application's responsibility to
+synchronize the processes and swap front and back buffers.  The image
+remaining in the frame buffer is undefined if \CEnum{ICET\_GL\_DISPLAY} is
+disabled or the process is not displaying a tile.
 
 If the \OpenGL background color is set to something other than black,
-\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} should also be enabled.
-Displaying with \CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} disabled may be
-slightly faster (depending on graphics hardware) but can result in black
+\CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} should also be enabled.
+Displaying with \CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} disabled may
+be slightly faster (depending on graphics hardware) but can result in black
 rectangles in the background.
 
-If \CEnum{ICET\_DISPLAY\_INFLATE} is enabled and the size of the renderable
-window (determined by the current \OpenGL viewport) is greater than that of
-the tile being displayed, then the image will first be ``inflated'' to the
-size of the actual display.  If \CEnum{ICET\_DISPLAY\_INFLATE} is disabled,
-the image is drawn at its original resolution at the lower left corner of
-the display.  More details on image inflation are given in
+If \CEnum{ICET\_GL\_DISPLAY\_INFLATE} is enabled and the size of the
+renderable window (determined by the current \OpenGL viewport) is greater
+than that of the tile being displayed, then the image will first be
+``inflated'' to the size of the actual display.  If
+\CEnum{ICET\_GL\_DISPLAY\_INFLATE} is disabled, the image is drawn at its
+original resolution at the lower left corner of the display.  More details
+on image inflation are given in
 Chapter~\ref{sec:Customizing_Compositing:Image_Inflation}.
 
 Regardless of whether it writes the fully composited image back to the
-display, \IceT stores the resulting image buffers.  These image buffers can
+display, \CFunc{icetGLDrawFrame} returns an \CType{IceTImage} containing
+the composited image displayed on this process.  If the process is not
+displaying a tile, then the contents of the image is undefined.
+
+\IceT stores the resulting image buffers.  These image buffers can
 be retrieved with the \CFunc{icetGetColorBuffer} and \CFunc{icetGetDepthBuffer}
 functions.
-
-\begin{Table}{4}
-  \textC{GLubyte}&\textC{*}\CFunc{icetGetColorBuffer}&\textC{(}&\textC{void}\quad\textC{)}; \\
-  \textC{GLuint}&\textC{*}\CFunc{icetGetDepthBuffer}&\textC{(}&\textC{void}\quad\textC{)}; \\
-\end{Table}
-
-Of course, color buffers are only available on
-\index{display~process}display processes.  Also be aware that a color or
-depth buffer may not have been computed with the last call to
-\CFunc{icetDrawFrame}.  \IceT avoids the computation and network transfers
-for any unnecessary buffers unless specifically requested otherwise with
-the flags given to the \CFunc{icetInputOutputBuffers} function.
-
-\begin{Table}{3}
-  \textC{void }\CFunc{icetInputOutputBuffers}\textC{(}&\textC{GLenum}&\CArg{inputs}\textC{,} \\
-    &\textC{GLenum}&\CArg{outputs}\quad\textC{);}
-\end{Table}
-
-\CFunc{icetInputOutputBuffers} allows you to specify which OpenGL buffers
-to composite (the \CArg{input} buffers) and which to deliver to the
-\index{display~process}display processes (the \CArg{output} buffers).  The
-color and depth buffers are specified with the
-\CEnum{ICET\_COLOR\_BUFFER\_BIT} and \CEnum{ICET\_DEPTH\_BUFFER\_BIT},
-respectively.  By default, \IceT reads in both the color and depth buffers,
-performs compositing using \index{Z~comparison}\keyterm{Z comparison}, and
-delivers just the color buffer to the display nodes.  If you need the depth
-buffer as well, specify depth as one of the outputs.  If you do not need
-the color buffer, you can remove the color buffer as one of the input
-buffers.  If the depth buffer is not specified as one of the inputs, then
-the compositing mode is automatically switched to
-\index{alpha~blending}\keyterm{alpha blending}.  However, alpha blending
-requires additional information from the application, which is discussed
-in Chapter~\ref{sec:Customizing_Compositing:Volume_Rendering}.
-
-In any case, you can query whether a color or depth buffer is available
-with \CEnum{ICET\_COLOR\_BUFFER\_VALID} or
-\CEnum{ICET\_DEPTH\_BUFFER\_VALID}, respectively.  It is an error to read
-an invalid buffer.
-
-The memory returned by \CFunc{icetGetColorBuffer} and \CFunc{icetGetDepthBuffer} need
-not, and should not, be freed.  It will be reclaimed in the next call to
-\CFunc{icetDrawFrame}.  Expect the data returned to be obliterated on the
-next call to \CFunc{icetDrawFrame}.
 
 
 \section{Image Objects}
