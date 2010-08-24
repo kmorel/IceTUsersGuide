@@ -137,7 +137,7 @@ function.
 Changing the context is a fast and easy way to swap states.  This could be
 used, for example, to switch between rendering modes.  One context could be
 used for a full resolution image, and another could use
-\index{image~inflation}\keyterm{image inflation} (described in
+\index{image!inflation}\keyterm{image inflation} (described in
 Chapter~\ref{sec:Customizing_Compositing:Image_Inflation}) to make faster
 but coarser images during interaction.
 
@@ -445,7 +445,7 @@ size is stored in the \CEnum{ICET\_PHYSICAL\_RENDER\_WIDTH} and
 
 Although counterintuitive, it is often more efficient to create images that
 are larger than any tile.  This situation may be necessary when using
-\index{image~inflation}image inflation (see
+\index{image!inflation}image inflation (see
 Chapter~\ref{sec:Customizing_Compositing:Image_Inflation}).  Even when not
 using image inflation, larger rendered images can save a significant amount
 of rendering time.  \IceT can use the larger images to potentially render
@@ -968,3 +968,107 @@ functions.
 
 \section{Image Objects}
 \label{sec:Basic_Usage:Image_Objects}
+
+\IceT uses a data type called \CType{IceTImage} to store and pass around
+image data.  To get image data from a generic drawing callback (described
+previously starting on
+page~\pageref{sec:Basic_Usage:Drawing_Callback:Generic}), \IceT passes the
+callback an \CType{IceTImage} sized to hold an image of the appropriate
+dimensions.  Likewise, the frame drawing functions (described previously
+starting on page~\pageref{sec:Basic_Usage:Rendering}) return an
+\CType{IceTImage}.  An \CType{IceTImage} is intended to be an opaque object
+that is accessed by a suite of functions provided by \IceT.
+
+\index{null image|see{image, null}}
+
+\IceT defines a special \index{image!null}\keyterm{null image} that can be
+used as a place holder when no image data is available.  You can create and
+check for null images with the \CFunc{icetImageNull} and
+\CFunc{icetImageIsNull} functions, respectively.
+
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetImageNull}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+\begin{Table}{3}
+  \textC{IceTBoolean}\textC{ }\CFunc{icetImageIsNull}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+It is good defensive programming to initialize \CType{IceTImage} objects to
+null on creation.  That way, all of \IceT's images functions will always
+behave appropriately on the image, whereas the behavior is unpredictable if
+the \CType{IceTImage} is uninitialized.
+
+\begin{code}
+  IceTImage image = icetImageNull();
+\end{code}
+
+The functions \CFunc{icetImageGetWidth}, \CFunc{icetImageGetHeight}, and
+\CFunc{icetImageGetNumPixels} return the dimensions of an image.
+
+\begin{Table}{5}
+  \textC{IceTSizeType}&\icetImageGetWidth&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTSizeType}&\icetImageGetHeight&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTSizeType}&\icetImageGetNumPixels&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);}
+\end{Table}
+
+An \CType{IceTImage} can hold color data, depth data, or both.
+Furthermore, colors and depths can be stored in different formats.  The
+internal formats for colors and depths for an \CType{IceTImage} can be
+retreived with the \CFunc{icetImageGetColorFormat} and
+\CFunc{icetImageGetDepthFormat} functions, respectively.
+
+\begin{Table}{5}
+  \textC{IceTEnum}&\icetImageGetColorFormat\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTEnum}&\icetImageGetDepthFormat\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);}
+\end{Table}
+
+The format specifies the basic data type, the packing, and whether the
+color or depth data is available at all.  Here is a list of possible color
+formats.
+
+\input{enumerations/image_color}
+
+Here is a list of possible depth formats.
+
+\input{enumerations/image_depth}
+
+An \CType{IceTImage} stores the color and depth data in separate buffers.
+You can use the \icetImageGetColor and \icetImageGetDepth functions to
+retrieve pointers to this data.  A drawing callback must use these
+functions to get buffers to write data into.
+
+\begin{Table}{4}
+  \textC{IceTUByte *}&\icetImageGetColorub&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \textC{IceTUInt *}&\icetImageGetColorui&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \textC{IceTFloat *}&\icetImageGetColorf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \\
+  \textC{IceTFloat *}&\icetImageGetDepthf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)};
+\end{Table}
+
+The various forms of \icetImageGetColor and \icetImageGetDepth return typed
+arrays for the buffer of data.  The type of the data must conform to the
+internal format of the data; the functions will raise an error otherwise.
+
+If you want to use image data of a specific format, you can use one of the
+\icetImageCopyColor or \icetImageCopyDepth functions.  With these
+functions, you give an allocated array and a specific color format, and the
+data for that array will be copied into your buffer in the desired format.
+
+\begin{Table}{4}
+  \textC{void}&\icetImageCopyColorub\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &&\textC{IceTUByte *}&\CArg{color\_buffer}, \\
+  &&\textC{IceTEnum}&\CArg{color\_format}\quad\textC{);} 
+\end{Table}
+
+\begin{Table}{4}
+  \textC{void}&\icetImageCopyColorf\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &&\textC{IceTFloat *}&\CArg{color\_buffer}, \\
+  &&\textC{IceTEnum}&\CArg{color\_format}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{4}
+  \textC{void}&\icetImageCopyDepthf\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &&\textC{IceTFloat *}&\CArg{depth\_buffer}, \\
+  &&\textC{IceTEnum}&\CArg{depth\_format}\quad\textC{);}
+\end{Table}
+
