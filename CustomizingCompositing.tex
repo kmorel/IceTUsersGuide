@@ -507,9 +507,10 @@ To set up data replication groups, it is your responsibility to partition
 and replicate geometry.  (\IceT knows nothing about geometry.)  You then
 report what the data replication groups are with the
 \CFunc{icetDataReplicationGroup} function.
+
 \begin{Table}{3}
-  \textC{void }\CFunc{icetDataReplicationGroup}\textC{(}&\textC{GLint}&\CArg{size}\textC{,} \\
-  &\textC{const GLint *}&\CArg{processes}\quad\textC{);}
+  \textC{void }\CFunc{icetDataReplicationGroup}\textC{(}&\textC{IceTInt}&\CArg{size}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{processes}\quad\textC{);}
 \end{Table}
 
 \CFunc{icetDataReplicationGroup} simply takes an array defining the
@@ -521,7 +522,7 @@ define the data replication groups by assigning an identifier (i.e. color)
 to each partition and having each process report the partition color in
 which it belongs.
 \begin{Table}{3}
-  \textC{void }\CFunc{icetDataReplicationGroupColor}\textC{(}&\textC{GLint}&\CArg{color}\quad\textC{);}
+  \textC{void }\CFunc{icetDataReplicationGroupColor}\textC{(}&\textC{IceTInt}&\CArg{color}\quad\textC{);}
 \end{Table}
 
 As an example, let us say that processes 0--3 share the same geometry, 4--7
@@ -548,31 +549,35 @@ local process.
 \label{sec:Customizing_Compositing:Timing}
 \index{timing|(}
 
-Whenever \CFunc{icetDrawFrame} is called, \IceT measures the amount of time
-spent in the various tasks required for parallel rendering.  These timings
-are stored in the \IceT state and can be retrieved with \CFunc{icetGet}.
-The state variables containing these timing metrics (in seconds) are as
-follows.
+Whenever \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} is called, \IceT
+measures the amount of time spent in the various tasks required for
+parallel rendering.  These timings are stored in the \IceT state and can be
+retrieved with \CFunc{icetGet}.  The state variables containing these
+timing metrics (in seconds) are as follows.
 
 \begin{Description}[xxxxxxxx]
 \item[\CEnum{ICET\_RENDER\_TIME}] The total time spent in the drawing
-  callback during the last call to \CFunc{icetDrawFrame}.
-\item[\CEnum{ICET\_BUFFER\_READ\_TIME}] The total time spent reading from
-  OpenGL buffers during the last call to \CFunc{icetDrawFrame}.
+  callback during the last call to \CFunc{icetDrawFrame} or
+  \CFunc{icetGLDrawFrame}.
+\item[\CEnum{ICET\_BUFFER\_READ\_TIME}] The total time spent copying buffer
+  data and reading from \OpenGL buffers during the last call to
+  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_BUFFER\_WRITE\_TIME}] The total time spent writing to
-  OpenGL buffers during the last call to \CFunc{icetDrawFrame}.
+  OpenGL buffers during the last call to \CFunc{icetGLDrawFrame}.  Always
+  set to 0.0 after a call to \CFunc{icetDrawFrame}.
 \item[\CEnum{ICET\_COMPRESS\_TIME}] The total time spent in compressing
   image data using active pixel encoding during the last call to
-  \CFunc{icetDrawFrame}.
+  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_BLEND\_TIME}]/\CEnum{ICET\_COMPARE\_TIME} The total time
   spent in performing Z comparisons or color blending of images during the
-  last call to \CFunc{icetDrawFrame}.  These two variables always return
-  the same value.
-\item[\CEnum{ICET\_RENDER\_TIME}] The total time spent in the drawing
-  callback during the last call to \CFunc{icetDrawFrame}.
+  last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  These two
+  variables always return the same value.
+\item[\CEnum{ICET\_TOTAL\_DRAW\_TIME}] The total time spent in the drawing
+  callback during the last call to \CFunc{icetDrawFrame} or
+  \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_COMPOSITE\_TIME}] The total time spent in compositing
-  during the last call to \CFunc{icetDrawFrame}.  Equal to
-  $\CEnum{ICET\_TOTAL\_DRAW\_TIME} - \CEnum{ICET\_RENDER\_TIME} -
+  during the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+  Equal to $\CEnum{ICET\_TOTAL\_DRAW\_TIME} - \CEnum{ICET\_RENDER\_TIME} -
   \CEnum{ICET\_BUFFER\_READ\_TIME} - \CEnum{ICET\_BUFFER\_WRITE\_TIME}$.
 \end{Description}
 
@@ -583,7 +588,8 @@ the calling process for transferring image data during the last call to
 \CFunc{icetDrawFrame}.  Obviously, each process could have a different
 value for \CEnum{ICET\_BYTES\_SENT}.
 
-\IceT also keeps track of the number of times \CFunc{icetDrawFrame} has
-been called.  This number is stored in \CEnum{ICET\_FRAME\_COUNT}.
+\IceT also keeps track of the number of times \CFunc{icetDrawFrame} or
+\CFunc{icetGLDrawFrame} has been called.  This number is stored in
+\CEnum{ICET\_FRAME\_COUNT}.
 
 \index{timing|)}
