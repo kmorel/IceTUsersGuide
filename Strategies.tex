@@ -472,67 +472,101 @@ strategy does, however, support ordered compositing.
 \section{Implementing New Strategies}
 
 The \IceT API was written while its strategies were being developed.  As
-such, the design yields for the relatively simplistic addition of new
-strategies.  This section will provide the basic overview of how to add a
-new strategy.  It is probably easiest to start by modifying your \IceT
-source to insert your own strategy in the src/ice-t/strategies directory of
-the \IceT source distribution.  It should be possible to create an external
-library with a strategy in it, but there may be some complications with
-finding include files and getting the proper exports.
+such, the design yields for the relatively simplistic addition of both new
+multi-tile strategies and new single-image strategies.  This section will
+provide the basic overview of how to add a new strategy.  It is probably
+easiest to start by modifying your \IceT source to insert your own strategy
+in the \textC{src/strategies} directory of the \IceT source distribution.
 
-A strategy in \IceT is created by simply defining an \CType{IceTStrategy}
-object.  The \CType{IceTStrategy} type is generally meant to be an opaque
-type so that most users to not have to be concerned with the strategy
-innards.  However, the \IceT code base is currently quite stable and the
-\CType{IceTStrategy} type rarely changes in any case.
-
-The \CType{IceTStrategy} type is defined in the
-\index{ice-t.h}\index{GL/ice-t.h}\textC{GL/ice-t.h} header file.
-\begin{code}
-typedef GLuint *IceTImage;
-typedef struct _IceTStrategy {
-    const char *name;
-    GLboolean supports_ordering;
-    IceTImage (*compose)(void);
-} IceTStrategy;
-\end{code}
-The \textC{name} field in the \CType{IceTStrategy} type is a short string
-identifying the strategy.  (It is the string returned by
-\CFunc{icetGetStrategyName} when the strategy is active.)  The
-\textC{supports\_ordering} field is a Boolean value indicating whether the
-strategy supports ordered compositing.  Finally, and most importantly, the
-\textC{compose} field is a function that is called during an invocation of
-\CFunc{icetDrawFrame} to perform the rendering and compositing.  It takes
-no arguments (the composition should rely on the current \IceT state), and
-returns a composited image.  The \CType{IceTImage} type is opaque to
-compositing algorithms, but several functions, discussed later in this
-chapter, are available to create and manipulate them.
-
-All it takes to make \IceT use a new strategy is to define and fill an
-object of type \CType{IceTStrategy} and pass it to the \CFunc{icetStrategy}
-function.  Typically this is done as a static object somewhere within your
-library source.  For example, the declaration for the direct send strategy
-looks like this.
+A strategy in \IceT is created by simply defining a function that performs
+the operation.  A multi-tile strategy (one selected with
+\CFunc{icetStrategy}) should take no arguments and return an
+\CType{IceTImage}.  Thus, a new multi-tile strategy function would look
+something like this.  (The following sections will provide details on
+performing the individual tasks of the implementation.)
 
 \begin{code}
-static IceTImage directCompose(void);
-
-IceTStrategy ICET_STRATEGY_DIRECT = { "Direct", ICET_TRUE, directCompose };
+IceTImage icetCustomMultiTileCompose(void)
+{
+    /* Render images. */
+    /* Transfer data. */
+    /* Composite pixels. */
+    /* Store results in image. */
+    return image;
+}
 \end{code}
 
-The object is also exposed in the
-\index{ice-t.h}\index{GL/ice-t.h}\textC{GL/ice-t.h} header file in a way
-that does not require linking directly to the strategy function.
+To expose the strategy from the \IceT interface, add an identifier to
+\textC{IceT.h} starting with \textC{ICET\_STRATEGY\_} to the list of
+existing strategy identifiers.  Then modify the functions in
+\textC{src/strategies/select.c} to expose this new identifier to the rest
+of the \IceT library.  In particular, add your new identifier to the switch
+statements in the following functions.
+
+\begin{description}
+\item[\CFunc{icetStrategyValid}] Simply add your identifier to the list so
+  that \IceT can verify that your strategy is defined.
+\item[\CFunc{icetStrategyNameFromEnum}] Add a short human-readable name for
+  your strategy.  This is the string returned from
+  \CFunc{icetGetStrategyName}.
+\item[\CFunc{icetStrategySupportsOrder}] Return \CEnum{ICET\_TRUE} if your
+  strategy can properly composite based on the ordering given in
+  \CEnum{ICET\_COMPOSITE\_ORDER}.  Return \CEnum{ICET\_FALSE} otherwise.
+  This value gets stored in the
+  \CEnum{ICET\_STRATEGY\_SUPPORTS\_ORDERING}.
+\item[\CFunc{icetInvokeStrategy}] Call the function that invokes your
+  strategy's image compositing (\textC{icetCustomMultiTileCompose} in the
+  example above).
+\end{description}
+
+The process for creating a single-image strategy (one selected with
+\CFunc{icetSingleImageStrategy} is similar.  The first step is define a
+function that performs the compositing.  However, the single-image
+composite function takes arguments that define the image to composite and
+the group of processes contributing.  A new single-image strategy function
+would look something like this.
+
 \begin{code}
-ICET_STRATEGY_EXPORT extern IceTStrategy ICET_STRATEGY_DIRECT;
+void icetCustomSingleImageCompose(IceTInt *compose_group, IceTInt group_size,
+                                  IceTInt image_dest,
+                                  IceTImage image)
+{
+    /* Transfer data. */
+    /* Composite pixels. */
+    /* Store results in image. */
+}
 \end{code}
 
-The \CEnum{ICET\_STRATEGY\_DIRECT} name is intentionally formed to look
-like a C macro for an identifier, and it is intended to be used by the end
-user as such.  (\CEnum{ICET\_STRATEGY\_EXPORT} is a real C macro that
-performs library export magic.)  Your strategy should define a
-\CType{IceTStrategy} in a similar manner.  The remainder of this section
-describes how to implement the compose function.
+The first argument, \CArg{compose\_group}, is an array of process ranks.
+The pixels are to be composited in the order specified in this array.  The
+second argument, \CArg{group\_size}, specifies how many processes are
+contributing to the image and also specifies the length of
+\CArg{compose\_group}.  The third argument, \CArg{image\_dest}, specifies
+the process in which the final composed image should be placed.  It is an
+index into \CArg{compose\_group}, not the actual rank of the process.  The
+final argument, \CArg{image} contains the input images to be composited
+together.  It is also used to store the results of the compositing.  The
+process with rank \textC{\CArg{compose\_group}[\CArg{image\_dest}]} fills
+\CArg{image} with the resulting composited image.
+
+To expose the single-image strategy from the \IceT interface, add an
+identifier to \textC{IceT.h} starting with
+\textC{ICET\_SINGLE\_IMAGE\_STRATEGY\_} to the list of existing
+single-image strategy identifiers.  Then modify the functions in
+\textC{src/strategies/select.c} to expose this new identifier to the rest
+of the \IceT library.  In particular, add your new identifier to the switch
+statements in the following functions.
+
+\begin{description}
+\item[\CFunc{icetSingleImageStrategyValid}] Simply add your identifier to
+  the list so that \IceT can verify that your strategy is defined.
+\item[\CFunc{icetSingleImageStrategyNameFromEnum}] Add a short
+  human-readable name for your strategy.  This is the string returned from
+  \CFunc{icetGetSingleImageStrategyName}.
+\item[\CFunc{icetInvokeSingleImageStrategy}] Call the function that invokes
+  your strategy's image compositing (\textC{icetCustomSingleImageCompose}
+  in the example above).
+\end{description}
 
 \subsection{Internal State Variables for Compositing}
 
