@@ -570,15 +570,14 @@ statements in the following functions.
 
 \subsection{Internal State Variables for Compositing}
 
-As stated previously, a strategy's compose function does not take any
-arguments.  Instead, it gets all relevant information from the \IceT state.
-Many of the relevant state variables are described in the documentation for
-the \CFunc{icetGet} functions (as well as elsewhere throughout this
-document).  There are also several ``hidden'' state variables for internal
-use.  The ones specifically useful for within a composite function are
-listed here (along with the variable type, number of entries, and a
-description).  Note that these state variables generally should be read
-from, not written to.
+The strategy compose functions are expected to get many of its parameters
+and other relevant information from the \IceT state.  Many of the relevant
+state variables are described in the documentation for the \CFunc{icetGet}
+functions (as well as elsewhere throughout this document).  There are also
+several ``hidden'' state variables for internal use.  The ones specifically
+useful for within a composite function are listed here (along with the
+variable type, number of entries, and a description).  Note that these
+state variables generally should be read from, not written to.
 
 \begin{Description}[xxxxxxxx]
 \item[\CEnum{ICET\_ALL\_CONTAINED\_TILES\_MASKS}] (boolean,
@@ -614,6 +613,9 @@ from, not written to.
 \item[\CEnum{ICET\_IS\_DRAWING\_FRAME}] (boolean, 1) Set to true while in a
   call to \CFunc{icetDrawFrame} and set to false otherwise.  This should
   always be set to true while the compose function is being executed.
+\item[\CEnum{ICET\_MODELVIEW\_MATRIX}] (double, 16) The current modelview
+  matrix as passed to \CFunc{icetDrawFrame} or read from OpenGL at the
+  invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_NEAR\_DEPTH}] (double, 1) The minimum depth value of the
   local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORTS}
   for more details.
@@ -621,35 +623,41 @@ from, not written to.
   into which the local geometry projects.  This is the length of the
   \CEnum{ICET\_CONTAINED\_TILES\_LIST} variable.
 \item[\CEnum{ICET\_PROJECTION\_MATRIX}] (double, 16) The current projection
-  matrix, read from OpenGL at the invocation of \CFunc{icetDrawFrame}.
+  matrix as passed to \CFunc{icetDrawFrame} or read from OpenGL at the
+  invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_TILE\_CONTRIB\_COUNTS}] (integer,
   \CEnum{ICET\_NUM\_TILES}) For each tile, provides the number of processes
   that will produce a non-empty image for that tile.
 \item[\CEnum{ICET\_TOTAL\_IMAGE\_COUNT}] (integer, 1) The total number of
   non-empty images produced by all processes for all tiles.  This variable
-  is the sub of all entries in \CEnum{ICET\_TILE\_CONTRIB\_COUNTS}.
+  is the sum of all entries in \CEnum{ICET\_TILE\_CONTRIB\_COUNTS}.
 \end{Description}
 
 \label{manpage:icetUnsafeStateGet}
 In addition to several internal state variables, \IceT also has several
-internal functions for accessing them.  The most important one for
-implementing a strategy is \CFunc{icetUnsafeStateGet}, which is defined in
-the \index{state.h}\textC{state.h} header file.
+internal functions for accessing them.  The most important set for
+implementing a strategy is \CFunc{icetUnsafeStateGet} suite of functions,
+which are defined in the \index{IceTDevState.h}\textC{IceTDevState.h}
+header file.
 
-\begin{Table}{3}
-  \textC{void *}\CFunc{icetUnsafeStateGet}\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
+\begin{Table}{4}
+  \textC{IceTDouble *}&\icetUnsafeStateGetDouble\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTFloat *}&\icetUnsafeStateGetFloat\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTInt *}&\icetUnsafeStateGetInteger\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTBoolean *}&\icetUnsafeStateGetBoolean\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTVoid **}&\icetUnsafeStateGetPointer\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
 \end{Table}
 
 The implementation for the \CFunc{icetGet} functions is to copy the data
 into a memory buffer you provide, performing type conversion as necessary.
-\CFunc{icetUnsafeStateGet} simply returns the internal pointer where the
-data is stored.  This can be faster and more convenient (since you do not
-have to allocate your own memory), but is unsafe in two ways.  First, if
-the state variable is changed, the pointer you receive can become invalid.
-Second, no type conversion is performed.  You have to make sure you cast
-the pointer correctly yourself, and there is no real way to query the
-correct type.  Since the state setting functions are hidden from the end
-user API, it is possible to manage these erroneous conditions.
+The \CFunc{icetUnsafeStateGet} functions simply return the internal pointer
+where the data is stored.  This can be faster and more convenient (since
+you do not have to allocate your own memory), but is unsafe in two ways.
+First, if the state variable is changed, the pointer you receive can become
+invalid.  Second, no type conversion is performed.  You have to make sure
+that you request a pointer of the correct type (or you will get an error).
+Since the state setting functions are hidden from the end user API, it is
+possible to manage these erroneous conditions.
 
 \subsection{Memory Management}
 
