@@ -23,13 +23,15 @@ see the following paper.
 A strategy is specified using the \CFunc{icetStrategy} function.
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetStrategy}\textC{(}&\CType{IceTStrategy}&\CArg{strategy}\quad\textC{);}
+  \textC{void }\CFunc{icetStrategy}\textC{(}&\textC{IceTEnum}&\CArg{strategy}\quad\textC{);}
 \end{Table}
 
-The \CArg{strategy} is set to one of the identifiers for the strategies
-documented in the following sections of this chapter.  A string documenting
-the current strategy can be retrieved with the \CFunc{icetGetStrategyName}
-function.
+The \CArg{strategy} is set to one of the following identifiers.  A string
+documenting the current strategy can be retrieved with the
+\CFunc{icetGetStrategyName} function.  The following sections describe the
+strategies in more detail.
+
+\input{enumerations/strategy.tex}
 
 To describe the \IceT compositing algorithms, we will use the example
 parallel rendering problem shown in Figure~\ref{fig:ExampleInputs} where 6
@@ -50,7 +52,7 @@ colors gray, red, blue, green, purple, and orange.  The colors of the
 geometry correspond to the process that generated each piece.  Image
 boarder colors denote the process that generates and holds that image.
 (Apologies to those having troubles resolving the colors due to poor
-display or vision deficiencies.  It should not be hard to follow the
+display, printout, or vision deficiencies.  It should not be hard to follow the
 descriptions either way.)
 
 \section{Single Image Compositing}
@@ -61,7 +63,7 @@ descriptions either way.)
 
 Before discussing the multi-tile image compositing algorithms implemented
 by \IceT, we visit the standard single image compositing algorithms.  You
-cannot directly select a single image compositing algorithm as a strategy
+cannot directly use a single image compositing algorithm as a strategy
 (most of the multi-tile algorithms work well in ``single-tile'' mode), but
 these compositing algorithms are used as ``subroutines'' in some of the
 multi-tile algorithms.  A reference to a
@@ -69,16 +71,34 @@ multi-tile algorithms.  A reference to a
   network} in the subsequent compositing algorithm descriptions refers to
 the algorithms described here.
 
+You can, however, choose which single image strategy is used by the main
+multi-tile strategy.  This is selected with the
+\CFunc{icetSingleImageStrategy} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSingleImageStrategy}\textC{(}&\textC{IceTEnum}&\CArg{strategy}\quad\textC{);}
+\end{Table}
+
+The \CArg{strategy} is set to one of the following enumerations.  A string
+documenting the current strategy can be retrieved with the
+\CFunc{icetGetSingleImageStrategyName} function.  The following sections
+describe the single image strategies in more detail.
+
+\input{enumerations/single_image_strategy.tex}
+
 \subsection{Tree Compositing}
 
 \index{compositing!tree|(}
 \index{tree~composite|(}
 \index{binary~tree~composite|(}
 
-\IceT internally has two single image composite implementations.  The first
-of which is the \keyterm{tree composite} algorithm (sometimes also called
-binary tree composite due to its pair-wise grouping).  The basic network
-for tree composite is shown in Figure~\ref{fig:BinaryTree}.
+The \keyterm{tree composite} algorithm (sometimes also called binary tree
+composite due to its pair-wise grouping) is a simple algorithm that
+iteratively combines full images together until they are all merged into a
+single image.  The tree composite sub-strategy is selected by calling
+\CFunc{icetSingleImageStrategy} with
+\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_TREE}.  The basic network for tree
+composite is shown in Figure~\ref{fig:BinaryTree}.
 
 \begin{figure}
   \centering
@@ -121,9 +141,11 @@ utilization.
 \index{compositing!binary~swap|(}
 \index{binary~swap~composite|(}
 
-The second single image compositing algorithm used internally by \IceT is
-the \keyterm{binary swap} algorithm.  The basic network for binary-swap
-composite is shown in Figure~\ref{fig:BinarySwap}
+The second single image compositing algorithm provided by \IceT is the
+\keyterm{binary-swap} algorithm.  The binary-swap composite sub-strategy is
+selected by calling \CFunc{icetSingleImageStrategy} with
+\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_BINARY\_SWAP}.  The basic network for
+binary-swap composite is shown in Figure~\ref{fig:BinarySwap}
 
 \begin{figure}
   \centering
@@ -176,14 +198,34 @@ processes on which it is run.
 
 The most inefficient part of binary swap is the collection of image
 fragments at the end, which is an extra step that tree composite does not
-need to take.  Through some empirical studies, we found that the binary
-tree algorithm was more efficient than binary swap on less then 8 processes and
-less efficient on more than 8 processes.  Consequently, \IceT automatically
-switches between the two algorithms based on the amount of processes
-involved in the compositing.
+need to take.  Most of the time the better parallel efficiency of binary
+swap over tree composite more than compensates for the extra collection
+step.
 
 \index{binary~swap~composite|)}
 \index{compositing!binary~swap|)}
+
+\subsection{Automatic Algorithm Selection}
+
+\index{automatic~composite~selection|(}
+\index{compositing!automatic~selection|(}
+
+\IceT also supports the automatic selection of the single image
+sub-strategy.  This automatic selection is enabled by calling
+\CFunc{icetSingleImageStrategy} with
+\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_AUTOMATIC}. (It is also the default
+for the single image strategy.)
+
+The automatic selection attempts to guess at the best strategy.  The
+intension is that \IceT can internally pick the best strategy depending on
+how the compositing is being used.  For example, through some empirical
+studies, we found that the binary tree algorithm was more efficient than
+binary swap on less then 8 processes and less efficient on more than 8
+processes.  Consequently, \IceT automatically switches between the two
+algorithms based on the amount of processes involved in the compositing.
+
+\index{compositing!automatic~selection|)}
+\index{automatic~composite~selection|)}
 
 \subsection{Ordered Compositing}
 
