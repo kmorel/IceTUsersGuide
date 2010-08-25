@@ -283,7 +283,7 @@ The left tile has 3 of the 9, that is $\frac{1}{3}$, of the images and thus
 is assigned $\frac{1}{3} \times 6 = 2$ processes.  Likewise, the right
 image is assigned $\frac{2}{3} \times 6 = 4$ processes.
 
-When assigned processes to tiles, display processes and processes rendering
+When assigning processes to tiles, display processes and processes rendering
 images to the tile are given preference.  In the example of
 Figure~\ref{fig:ReduceComposite}, the gray and blue processes are assigned
 to the left tile.  The remainder are assigned to the right tile.  Any image
@@ -315,11 +315,12 @@ second phase each support their own ordered compositing.
 
 The \keyterm{tile split and delegate strategy} (or simply the split
 strategy) is a simple algorithm that splits up tiles, assigns each piece to
-a tile, and then sends image fragments directly to the tiles for
+a process, and then sends image fragments directly to the processes for
 compositing.  The split strategy makes efficient use of processing
-resources, but exhibits haphazard message passing which can cause issues on
-some high speed interconnects.  The split strategy is selected by calling
-\CFunc{icetStrategy} with the \CEnum{ICET\_STRATEGY\_SPLIT} argument.
+resources, but exhibits haphazard and copious message passing which can
+cause issues on some high speed interconnects.  The split strategy is
+selected by calling \CFunc{icetStrategy} with the
+\CEnum{ICET\_STRATEGY\_SPLIT} argument.
 
 \begin{figure}
   \centering
@@ -400,44 +401,44 @@ virtual trees strategy in color blending mode will fail.
 
 \index{strategy!virtual~trees|)}
 
-\section{Serial Strategy}
-\label{sec:Strategies:Serial}
+\section{Sequential Strategy}
+\label{sec:Strategies:Sequential}
 
-\index{strategy!serial|(}
-\index{serial~strategy|see{strategy, serial}}
+\index{strategy!sequential|(}
+\index{sequential~strategy|see{strategy, sequential}}
 
-Despite its name, the \keyterm{serial strategy} does not completely
-serialize the image compositing process.  Rather, it serially addresses the
-tiles, but performs parallel compositing for each tile.  The serial
-strategy is selected by calling \CFunc{icetStrategy} with the
-\CEnum{ICET\_STRATEGY\_SERIAL} argument.
+The \keyterm{sequential strategy} sequentially addresses the tiles, but
+performs parallel compositing for each tile.  The sequential strategy is
+selected by calling \CFunc{icetStrategy} with the
+\CEnum{ICET\_STRATEGY\_SEQUENTIAL} argument.
 
 \begin{figure}
   \centering
-  \includegraphics{images/SerialComposite}
-  \caption[Serial compositing network.]{Composite network for serial
-    compositing.  One at a time, each tile is composited using a parallel
-    single image composite network described in a previous section.}
-  \label{fig:SerialComposite}
+  \includegraphics{images/SequentialComposite}
+  \caption[Sequential compositing network.]{Composite network for
+    sequential compositing.  One at a time, each tile is composited using a
+    parallel single image composite network described in a previous
+    section.}
+  \label{fig:SequentialComposite}
 \end{figure}
 
-The serial strategy iterates over all of the tiles.  For each tile, it
+The sequential strategy iterates over all of the tiles.  For each tile, it
 composites all the images for that tile using one of the single image
 compositing algorithms described in that preceding section.  As
-demonstrated in the example in Figure~\ref{fig:SerialComposite} images from
-all processes are composited for each tile regardless of whether some of
-them may be empty.
+demonstrated in the example in Figure~\ref{fig:SequentialComposite}, images
+from all processes are composited for each tile regardless of whether some
+of them may be empty.
 
 Since the single image compositing algorithms support ordered
-compositing, the serial strategy also supports ordered compositing.
+compositing, the sequential strategy also supports ordered compositing.
 
-The serial strategy is really only implemented as a baseline algorithm to
+The sequential strategy is really only implemented as a baseline algorithm to
 compare other algorithms.  In general, the reduce strategy does at least as
-well or outperforms the serial strategy.  We have observed this even in
+well or outperforms the sequential strategy.  We have observed this even in
 single tile mode, possibly because the reduce strategy can throw away empty
 images.
 
-\index{strategy!serial|)}
+\index{strategy!sequential|)}
 
 \section{Direct Send Strategy}
 \label{sec:Strategies:DirectSend}
