@@ -641,11 +641,11 @@ which are defined in the \index{IceTDevState.h}\textC{IceTDevState.h}
 header file.
 
 \begin{Table}{4}
-  \textC{IceTDouble *}&\icetUnsafeStateGetDouble\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTFloat *}&\icetUnsafeStateGetFloat\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTInt *}&\icetUnsafeStateGetInteger\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTBoolean *}&\icetUnsafeStateGetBoolean\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTVoid **}&\icetUnsafeStateGetPointer\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
+  \textC{IceTDouble *}&\icetUnsafeStateGetDouble\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTFloat *}&\icetUnsafeStateGetFloat\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTInt *}&\icetUnsafeStateGetInteger\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTBoolean *}&\icetUnsafeStateGetBoolean\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{IceTVoid **}&\icetUnsafeStateGetPointer\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
 \end{Table}
 
 The implementation for the \CFunc{icetGet} functions is to copy the data
@@ -670,69 +670,102 @@ However, some implementations of
 even the best implementations can have a tendency to fragment memory over
 time as large buffers are allocated and released.
 
-To ensure efficient memory allocation, \IceT provides its own memory
-management that is simple but effective for its compositing operations.
-\IceT keeps around a pool of memory to be used by various components of the
-API.  To use the \index{memory~pool}\index{pool!memory}\keyterm{memory
-  pool}, the code first clears the buffer and ensures that it is big
-enough.  The code then reserves sections of the pool for various buffers.
-Since this pool changes size infrequently, allocating time or memory
-fragmentation is not an issue.  The size of the allocated memory is also
-minimized since it is shared throughout all of \IceT.
+During typical \IceT operation, a strategy (whether it be a multi-tile
+strategy or a single-image strategy) is invoked multiple times.  Each
+invocation will require multiple buffers to manipulate images and other
+buffers.  One way to do this is to allocate these buffers as needed and
+free them by the end of the invocation.  However, this can lead to
+the inefficiencies and memory fragmentation previously mentioned.  It is
+also problematic when returning an image buffer as the responsibility for
+deallocating the buffer becomes undefined.
 
-\label{manpage:icetResizeBuffer}
-The \CFunc{icetResizeBuffer} function is used to clear out the memory
-pool.  The declaration for this function is located in the
-\index{context.h}\textC{context.h} header file.
+A better approach is to allocate the buffers as needed and then keep the
+buffers around for the next invocation of the strategy.  This approach
+requires a certain amount of overhead to check when buffers need to be
+allocated or resized and when they can be freed.  \IceT uses its own state
+mechanism to assist in managing memory buffers.  You do this by creating a
+\index{state~buffer}\keyterm{state buffer}, a buffer attached to a state
+variable.  This is done with the \CFunc{icetGetStateBuffer} function, which
+is defined in \index{IceTDevState.h}\textC{IceTDevState.h}.
 
+\label{manpage:icetGetStateBuffer}
 \begin{Table}{3}
-  \textC{void }\CFunc{icetResizeBuffer}\textC{(}&\textC{int}&\CArg{size}\quad\textC{);}
+  \textC{IceTVoid *}\CFunc{icetGetStateBuffer}\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{num\_bytes}\quad\textC{);}
 \end{Table}
 
-The \CFunc{icetResizeBuffer} function ensures that the memory pool is at
-least \CArg{size} bytes large.  It also resets all previously allocated
-memory (that is, freeing it back into the pool).  This has two important
-consequences.  First, you must know the amount of memory you need
-\emph{a-priori}.  You cannot resize the buffer once you have started
-allocating memory blocks.  If you try to do so, the previously allocated
-blocks (potentially) will be destroyed.
+The \CFunc{icetGetStateBuffer} takes a state variable and a buffer size in
+bytes.  It then checks to see if a buffer of the appropriate size has
+already been allocated to that state variable.  If so, it is returned.  If
+not, a new buffer is allocated and returned.  There are also similar
+functions called \CFunc{icetGetStateBufferImage} and
+\CFunc{icetGetStateBufferSparseImage}, described in the following section,
+that allocate image buffers.
 
-Second, since this block of data is shared amongst all functions of \IceT,
-you must be aware that other \IceT code can potentially release your memory
-and allocate its own.  You should feel free to use \IceT's memory pool from
-within the compose function of your strategy and the image that it returns
-is best allocated from this buffer.  Furthermore, the helper functions
-described in this section to implement your own strategy are also safe to
-call.  Be aware, however, that in between calls to your composite function
-the memory you allocate will be lost and you will have to reallocate your
-buffers.
+Because each buffer is assigned to a state variable, it is important to
+assign the buffer to a state variable that is both valid and unused by
+other \IceT components.  To this end, there are several state variables
+reserved for multi-tile strategies or single-image strategies.  The state
+variables for multi-tile strategies are named
+\CEnum{ICET\_STRATEGY\_BUFFER}\textC{\_$i$} numbered from 0 to 15.  That
+is, \CEnum{ICET\_STRATEGY\_BUFFER\_0}, \CEnum{ICET\_STRATEGY\_BUFFER\_1},
+and so on up to \CEnum{ICET\_STRATEGY\_BUFFER\_15}.
 
-\label{manpage:icetReserveBufferMem}
-Once you have sized the memory pool, use \CFunc{icetReserveBufferMem} to
-allocate a chunk of memory.
+By convention, your multi-tile strategy implementation should start by
+creating \textC{\#define} enumerations that alias these variables to
+logical names for the buffers.  This will help prevent confusion or
+accidental sharing of buffers.  Also by convention, try to make the largest
+buffers ``first'' (that is, \CEnum{ICET\_STRATEGY\_BUFFER\_0} has the
+largest buffer, \CEnum{ICET\_STRATEGY\_BUFFER\_1} has the next largest, and
+so on) so that if the strategy is changed, the large buffers will most
+likely be shared.
 
-\begin{Table}{3}
-  \textC{void *}\CFunc{icetReserveBufferMem}\textC{(}&\textC{int}&\CArg{size}\quad\textC{);}
-\end{Table}
-
-\CFunc{icetReserveBufferMem} returns a pointer to a buffer reserved to the
-given size.  The buffer is aligned on 64-bit boundaries to help prevent
-illegal memory accesses.
-
-The following code snippet (taken from the direct send strategy)
-demonstrates the use of \CFunc{icetResizeBuffer} and
-\CFunc{icetReserveBufferMem}.  (The image size functions are described in
-the section on image functions.)
+As an example, consider the following code taken from the virtual trees
+implementation that aliases the buffer state variables it uses.
 
 \begin{code}
-    icetResizeBuffer(  2*icetSparseImageSize(max_pixels)
-                     + icetFullImageSize(max_pixels)
-                     + num_tiles*sizeof(GLint));
-    inImage     = icetReserveBufferMem(icetSparseImageSize(max_pixels));
-    outImage    = icetReserveBufferMem(icetSparseImageSize(max_pixels));
-    image       = icetReserveBufferMem(icetFullImageSize(max_pixels));
-    tile_image_dest = icetReserveBufferMem(num_tiles*sizeof(GLint));
+#define VTREE_IMAGE_BUFFER              ICET_STRATEGY_BUFFER_0
+#define VTREE_IN_SPARSE_IMAGE_BUFFER    ICET_STRATEGY_BUFFER_1
+#define VTREE_OUT_SPARSE_IMAGE_BUFFER   ICET_STRATEGY_BUFFER_2
+#define VTREE_INFO_BUFFER               ICET_STRATEGY_BUFFER_3
+#define VTREE_ALL_CONTAINED_TMASKS_BUFFER ICET_STRATEGY_BUFFER_4
 \end{code}
+
+And here is an example of these buffers being allocated.
+
+\begin{code}
+sparseImageSize = icetSparseImageBufferSize(max_width, max_height);
+
+image                = icetGetStateBufferImage(VTREE_IMAGE_BUFFER,
+                                               max_width, max_height);
+inSparseImageBuffer  = icetGetStateBuffer(VTREE_IN_SPARSE_IMAGE_BUFFER,
+                                          sparseImageSize);
+outSparseImage       = icetGetStateBufferSparseImage(
+                                              VTREE_OUT_SPARSE_IMAGE_BUFFER,
+                                              max_width, max_height);
+info                 = icetGetStateBuffer(VTREE_INFO_BUFFER,
+                                         sizeof(struct node_info)*num_proc);
+all_contained_tmasks = icetGetStateBuffer(VTREE_ALL_CONTAINED_TMASKS_BUFFER,
+                                    sizeof(IceTBoolean)*num_proc*num_tiles);
+\end{code}
+
+Once allocated, these buffers can be used and never need to be freed.
+\IceT will handle the memory management.  However, do not expect any of
+these buffers to contain the same data or even exist on the next invocation
+of the strategy.  Each invocation of the strategy should call
+\CFunc{icetGetStateBuffer}, \CFunc{icetGetStateBufferImage}, and
+\CFunc{icetGetStateBufferSparseImage} to ensure that it has a valid buffer.
+
+There is a separate set of state variables reserved for buffers used in
+single-image strategies.  These are named
+\CEnum{ICET\_SI\_STRATEGY\_BUFFER}\textC{\_$i$} numbered from 0 to 15.
+That is, \CEnum{ICET\_SI\_STRATEGY\_BUFFER\_0},
+\CEnum{ICET\_SI\_STRATEGY\_BUFFER\_1}, and so on up to
+\CEnum{ICET\_SI\_STRATEGY\_BUFFER\_15}.  It is important \emph{not} to use
+the multi-tile strategy buffer variable in a single-image strategy because
+the multi-tile strategy will call the single-image strategy while it is
+still operating and the single-image strategy can invalidate the buffers of
+the multi-tile strategy.
 
 \subsection{Image Manipulation Functions}
 
