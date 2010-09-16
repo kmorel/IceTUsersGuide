@@ -1153,16 +1153,18 @@ A sparse image can be returned to its uncompressed form with
 
 \label{manpage:icetGetTileImage}
 \label{manpage:icetGetCompressedTileImage}
-To get the image for a particular tile in the display, use either
-\CFunc{icetGetTileImage} or \CFunc{icetGetCompressedTileImage}.
+A multi-tile compositing strategy is responsible for rendering images on
+demand as well as compositing.  To render and retrieve the image for a
+particular tile in the display, use either \CFunc{icetGetTileImage} or
+\CFunc{icetGetCompressedTileImage}.
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetGetTileImage}\textC{(}&\textC{GLint}&\CArg{tile},\\
-    &\CType{IceTImage}&\CArg{buffer}\quad\textC{);}
+  \textC{void }\CFunc{icetGetTileImage}\textC{(}&\textC{IceTInt}&\CArg{tile},\\
+    &\CType{IceTImage}&\CArg{image}\quad\textC{);}
 \end{Table}
 \begin{Table}{3}
-  \textC{GLuint }\CFunc{icetGetCompressedTileImage}\textC{(}&\textC{GLint}&\CArg{tile},\\
-    &\CType{IceTSparseImage}&\CArg{buffer}\quad\textC{);}
+  \textC{void }\CFunc{icetGetCompressedTileImage}\textC{(}&\textC{IceTInt}&\CArg{tile},\\
+    &\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
 \end{Table}
 
 Both functions will invoke a rendering for that tile (performing the
@@ -1171,16 +1173,6 @@ buffers and store the results in an image buffer you specify.  The
 difference, of course, is that \CFunc{icetGetTileImage} fills the buffer
 with raw data whereas \CFunc{icetGetCompressedTileImage} will compress the
 image data with \index{active-pixel~encoding}active-pixel encoding.
-
-\CFunc{icetGetTileImage} writes a pre-determined amount of data into
-\CArg{buffer}, which corresponds to the value returned by
-\CFunc{icetFullImageSize}.  The amount of data written to \CArg{buffer} by
-\CFunc{icetGetCompressedTileImage} varies depending on how well the image
-compresses.  The actual number of bytes written is returned by
-\CFunc{icetGetCompressedTileImage}.  In general, you should record this
-size as you will need it to transfer the data to another process.  The
-amount of data written will never exceed the amount returned by
-\CFunc{icetSparseImageSize}.
 
 \subsection{Communications}
 
