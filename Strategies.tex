@@ -1238,140 +1238,109 @@ contiguous pixels in \CArg{destBuffer} to perform the compositing in.
 
 \subsection{Communications}
 
-The first thing to know about communications in \IceT is to understand that
-it is up to the strategy to count how many bytes are being transmitted in
-your compose function and store this in the \CEnum{ICET\_BYTES\_SENT} state
-variable.  To make this easier, \index{common.h}\textC{common.h} (found in
-the strategies directory) provides \CFunc{icetAddSentBytes}.
-
-\label{manpage:icetAddSentBytes}
-\begin{Table}{3}
-  \textC{void }\CFunc{icetAddSentBytes}\textC{(}&\textC{GLint }&\CArg{num\_sending}\quad\textC{);}
-\end{Table}
-
-\CFunc{icetAddSentBytes} simply adds \CArg{num\_sending} to the value in
-state variable \CEnum{ICET\_BYTES\_SENT}.  A call to
-\CFunc{icetAddSentBytes} should be coupled with every communication call
-that sends data.
-
 \IceT provides an abstract communication layer, which is described in
 detail in Chapter~\ref{chap:Communicators}.  A handle to a communicator is
 stored in the current context.  To make using the communicator easier, a
 set of convenience functions described next is available in the
-\index{context.h}\textC{context.h} include file.  All of these functions
-are based off of those found in the \MPI standard.  For documentation, see
-that for the corresponding \MPI function.  Note that each function is
-missing an argument specifying the communicator.  These functions just grab
-the current context's communicator.
+\index{IceTDevCommunication.h}\textC{IceTDevCommunication.h} include file.
+All of these functions are based off of those found in the \MPI standard.
+For documentation, see that for the corresponding \MPI function.  Data
+types, however, are specified as one of the following \IceT data types:
+\CEnum{ICET\_BOOLEAN}, \CEnum{ICET\_BYTE}, \CEnum{ICET\_SHORT},
+\CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}
 
-\index{ICET\_COMM\_DUPLICATE}
-\renewcommand{\currentmansection}{ICET\_COMM\_DUPLICATE}
+Note that each function is missing an argument specifying the communicator.
+These functions just grab the current context's communicator.
+
+\label{manpage:icetCommDuplicate}
 \begin{Table}{3}
-  \textC{struct }\CType{IceTCommunicatorStruct}\textC{ *}\CFunc{ICET\_COMM\_DUPLICATE}\textC{(void);}
+  \textC{struct }\CType{IceTCommunicatorStruct}\textC{ *}\CFunc{icetCommDuplicate}\textC{(void);}
 \end{Table}
 
-\index{ICET\_COMM\_DESTROY}
-\renewcommand{\currentmansection}{ICET\_COMM\_DESTROY}
+\label{manpage:icetCommSend}
 \begin{Table}{3}
-  \textC{void }\CFunc{ICET\_COMM\_DESTROY}\textC{(void);}
-\end{Table}
-
-\index{ICET\_COMM\_SEND}
-\renewcommand{\currentmansection}{ICET\_COMM\_SEND}
-\begin{Table}{3}
-  \textC{void }\CFunc{ICET\_COMM\_SEND}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
+  \textC{void }\CFunc{icetCommSend}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
   &\textC{int}&\CArg{count},\\
-  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
   &\textC{int}&\CArg{dest},\\
   &\textC{int}&\CArg{tag}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_RECV}
-\renewcommand{\currentmansection}{ICET\_COMM\_RECV}
+\label{manpage:icetCommRecv}
 \begin{Table}{3}
-  \textC{void }\CFunc{ICET\_COMM\_RECV}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
+  \textC{void }\CFunc{icetCommRecv}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
   &\textC{int}&\CArg{count},\\
-  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
   &\textC{int}&\CArg{src},\\
   &\textC{int}&\CArg{tag}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_SENDRECV}
-\renewcommand{\currentmansection}{ICET\_COMM\_SENDRECV}
+\label{manpage:icetCommSendrecv}
 \begin{Table}{3}
-  \textC{void }\CFunc{ICET\_COMM\_SENDRECV}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  \textC{void }\CFunc{icetCommSendrecv}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
   &\textC{int}&\CArg{sendcount}\textC{,}\\
-  &\textC{GLenum}&\CArg{sendtype}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{sendtype}\textC{,}\\
   &\textC{int}&\CArg{dest}\textC{,}\\
   &\textC{int}&\CArg{sendtag}\textC{,}\\
   &\textC{void *}&\CArg{recvbuf}\textC{,}\\
   &\textC{int}&\CArg{recvcount}\textC{,}\\
-  &\textC{GLenum}&\CArg{recvtype}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{recvtype}\textC{,}\\
   &\textC{int}&\CArg{src}\textC{,}\\
   &\textC{int}&\CArg{recvtag}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_ALLGATHER}
-\renewcommand{\currentmansection}{ICET\_COMM\_ALLGATHER}
+\label{manpage:icetCommAllgather}
 \begin{Table}{3}
-  \textC{void }\CFunc{ICET\_COMM\_ALLGATHER}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  \textC{void }\CFunc{icetCommAllgather}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
   &\textC{int}&\CArg{sendcount}\textC{,}\\
-  &\textC{GLenum}&\CArg{type}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{type}\textC{,}\\
   &\textC{void *}&\CArg{recvbuf}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_ISEND}
-\renewcommand{\currentmansection}{ICET\_COMM\_ISEND}
+\label{manpage:icetCommIsend}
 \begin{Table}{3}
-  \CType{IceTCommRequest}\textC{ }\CFunc{ICET\_COMM\_ISEND}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
+  \CType{IceTCommRequest}\textC{ }\CFunc{icetCommIsend}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
   &\textC{int}&\CArg{count},\\
-  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
   &\textC{int}&\CArg{dest},\\
   &\textC{int}&\CArg{tag}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_IRECV}
-\renewcommand{\currentmansection}{ICET\_COMM\_IRECV}
+\label{manpage:icetCommIrecv}
 \begin{Table}{3}
-  \CType{IceTCommRequest}\textC{ }\CFunc{ICET\_COMM\_IRECV}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
+  \CType{IceTCommRequest}\textC{ }\CFunc{icetCommIrecv}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
   &\textC{int}&\CArg{count},\\
-  &\textC{GLenum}&\CArg{datatype},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
   &\textC{int}&\CArg{src},\\
   &\textC{int}&\CArg{tag}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_WAIT}
-\renewcommand{\currentmansection}{ICET\_COMM\_WAIT}
+\label{manpage:icetCommWait}
 \begin{Table}{3}
-  \textC{void }\CFunc{ICET\_COMM\_WAIT}\textC{(}&\CType{IceTCommRequest}\textC{ *}&\CArg{request}\quad\textC{);}
+  \textC{void }\CFunc{icetCommWait}\textC{(}&\CType{IceTCommRequest}\textC{ *}&\CArg{request}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_WAITANY}
-\renewcommand{\currentmansection}{ICET\_COMM\_WAITANY}
+\label{manpage:icetCommWaitany}
 \begin{Table}{3}
-  \multicolumn{3}{l}{\textC{void }\CFunc{ICET\_COMM\_WAITANY}\textC{(}}\\
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCommWaitany}\textC{(}}\\
   \makebox[1.8in]{}&\textC{int}&\CArg{count},\\
   &\CType{IceTCommRequest}\textC{ *}&\CArg{array\_of\_requests}\quad\textC{);}
 \end{Table}
 
-\index{ICET\_COMM\_SIZE}
-\renewcommand{\currentmansection}{ICET\_COMM\_SIZE}
+\label{manpage:icetCommSize}
 \begin{Table}{3}
-  \textC{int }\CFunc{ICET\_COMM\_SIZE}\textC{(void);}
+  \textC{int }\CFunc{icetCommSize}\textC{(void);}
 \end{Table}
 
-\index{ICET\_COMM\_RANK}
-\renewcommand{\currentmansection}{ICET\_COMM\_RANK}
+\label{manpage:icetCommRank}
 \begin{Table}{3}
-  \textC{int }\CFunc{ICET\_COMM\_RANK}\textC{(void);}
+  \textC{int }\CFunc{icetCommRank}\textC{(void);}
 \end{Table}
-
-In each of these functions, the type parameter is set to one of the
-following: \CEnum{ICET\_BOOLEAN}, \CEnum{ICET\_BYTE}, \CEnum{ICET\_SHORT},
-\CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}
 
 \subsubsection{Transferring Images}
 \label{sec:Strategies:New:Communications:Transferring_Images}
+
+\updateFromHere
 
 Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
 opaque, they can be transferred as simple byte buffers.  To do so, you need
