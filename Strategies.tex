@@ -1105,6 +1105,50 @@ There are no equivalent mechanisms for changing pixel data in
 via compression and compositing functions, which are described in the
 subsequent sections.
 
+\subsubsection{Compressing Images}
+
+\label{manpage:icetCompressImage}
+\CFunc{icetCompressImage} converts a full \CType{IceTImage} into to more
+compact \CType{IceTSparseImage}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCompressImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image},\\
+  &\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{);}
+\end{Table}
+
+\label{manpage:icetCompressSubImage}
+Sometimes it is convenient to break up an image into pieces, and compress
+each piece.  This is common when dividing up an image to be divvied amongst
+some amount of processes.  This can be most easily achieved by using the
+\CFunc{icetCompressSubImage}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCompressSubImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image},\\
+  &\textC{IceTSizeType}&\CArg{offset},\\
+  &\textC{IceTSizeType}&\CArg{pixels},\\
+  &\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{ );}
+\end{Table}
+
+\CFunc{icetCompressSubImage} compresses a region of contiguous pixels.  The
+block of pixels starts \CArg{offset} pixels past the beginning of the image
+and is \CArg{pixels} long.  \CArg{icetCompressImage} is almost equivalent
+to calling \CArg{icetCompressSubImage} with \CArg{offset} set to $0$ and
+\CArg{pixels} set to the result of \icetImageGetNumPixels.  When
+compressing an image with \CFunc{icetCompressSubImage}, the output
+\CType{IceTSparseImage} has its width set to the \CArg{pixels} argument and
+its height set to 1.
+
+\label{manpage:icetDecompressImage}
+A sparse image can be returned to its uncompressed form with
+\CFunc{icetDecompressImage}.
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressImage}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
 \subsubsection{Rendering Images}
 
 \label{manpage:icetGetTileImage}
@@ -1137,54 +1181,6 @@ compresses.  The actual number of bytes written is returned by
 size as you will need it to transfer the data to another process.  The
 amount of data written will never exceed the amount returned by
 \CFunc{icetSparseImageSize}.
-
-\subsubsection{Compressing Images}
-
-\label{manpage:icetCompressImage}
-\CFunc{icetCompressImage} converts a full \CType{IceTImage} into to more
-compact \CType{IceTSparseImage}.
-
-\begin{Table}{3}
-  \textC{GLuint }\CFunc{icetCompressImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{imageBuffer},\\
-  &\CType{IceTSparseImage}&\CArg{compressedBuffer}\textC{);}
-\end{Table}
-
-\CFunc{icetCompressImage} returns the actual size of
-\CArg{compressedBuffer} in bytes.
-
-\label{manpage:icetCompressSubImage}
-Sometimes it is convenient to break up an image into pieces, and compress
-each piece.  This is common when dividing up an image to be divided amongst
-some amount of processes.  This can be most easily achieved by using the
-\CFunc{icetCompressSubImage}.
-
-\begin{Table}{3}
-  \multicolumn{3}{l}{\textC{GLuint }\CFunc{icetCompressSubImage}\textC{(}}\\
-  \makebox[2in]{}&\textC{const }\CType{IceTImage}&\CArg{imageBuffer},\\
-  &\textC{GLuint}&\CArg{offset},\\
-  &\textC{GLuint}&\CArg{pixels},\\
-  &\CType{IceTSparseImage}&\CArg{compressedBuffer}\textC{);}
-\end{Table}
-
-\CFunc{icetCompressSubImage} compresses a region of contiguous pixels.  The
-block of pixels starts \CArg{offset} pixels past the beginning of the image
-and is \CArg{pixels} long.  \CArg{icetCompressImage} is equivalent to
-calling \CArg{icetCompressSubImage} with \CArg{offset} set to $0$ and
-\CArg{pixels} set to the result of \CFunc{icetGetImagePixelCount}.
-
-\label{manpage:icetDecompressImage}
-A sparse image can be returned to its uncompressed form with
-\CFunc{icetDecompressImage}.
-
-\begin{Table}{3}
-  \multicolumn{3}{l}{\textC{GLuint }\CFunc{icetDecompressImage}\textC{(}}\\
-  \makebox[2in]{}&\textC{const }\CType{IceTSparseImage}&\CArg{compressedBuffer},\\
-  &\CType{IceTImage}&\CArg{imageBuffer}\quad\textC{);}
-\end{Table}
-
-\CFunc{icetDecompressImage} returns the number of pixels in the resulting
-image, which is the same number that you will get if you call
-\CFunc{icetGetImagePixelCount} on the resulting image.
 
 \subsection{Communications}
 
