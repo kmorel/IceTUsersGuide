@@ -470,6 +470,7 @@ strategy does, however, support ordered compositing.
 \index{strategy!direct~send|)}
 
 \section{Implementing New Strategies}
+\label{sec:Strategies:New}
 
 The \IceT API was written while its strategies were being developed.  As
 such, the design yields for the relatively simplistic addition of both new
@@ -721,7 +722,7 @@ so on) so that if the strategy is changed, the large buffers will most
 likely be shared.
 
 As an example, consider the following code taken from the virtual trees
-implementation that aliases the buffer state variables it uses.
+strategy implementation that aliases the buffer state variables it uses.
 
 \begin{code}
 #define VTREE_IMAGE_BUFFER              ICET_STRATEGY_BUFFER_0
@@ -769,114 +770,200 @@ the multi-tile strategy.
 
 \subsection{Image Manipulation Functions}
 
-You probably have noticed from the definition of the strategy structure
-that the compose function returns a variable of type \CType{IceTImage}.
-There is another variable type used internally by strategies called
+\IceT defines two image types: \CType{IceTImage} and
 \CType{IceTSparseImage}.  Both image types can hold color data or depth
 data or both.  The \CType{IceTImage} type stores pixels as raw data, simple
-2D arrays that are compatible with OpenGL buffers.  The
+2D arrays holding color or pixel data in horizontal-major order.  The
 \CType{IceTSparseImage} stores images using
 \index{active-pixel~encoding}active-pixel encoding, the run length encoding
 described in the Active-Pixel Encoding section of
 Chapter~\ref{sec:Customizing_Compositing:Active_Pixel_Encoding}.
 
 Both the \CType{IceTImage} type and the \CType{IceTSparseImage} type are
-opaque to compositing algorithms.  Although you will create them by
-allocating a buffer and casting the pointer, you will not access the data
-directly.  Instead, you will manipulate it with the functions described in
-this section.  These functions are defined in the
-\index{image.h}\textC{image.h} header file.
+opaque to compositing algorithms.  \IceT provides functions for creating
+and manipulating images.  Some of these functions are defined in
+\index{IceT.h}\textC{IceT.h} and exposed to user code.  These exposed
+functions are documented in the Image Objects section of
+Chapter~\ref{sec:Basic_Usage:Image_Objects} starting on
+page~\pageref{sec:Basic_Usage:Image_Objects}.  Other functions are
+protected from the user level code and reserved for use by the compositing
+algorithms and other parts of \IceT.  These functions are defined in
+\index{IceTDevImage.h}\textC{IceTDevImage.h} and are documented here.  When
+creating a compositing strategy, be sure to include both of these header
+files.
 
 \subsubsection{Creating Images}
 
-\label{manpage:icetFullImageSize}
-\label{manpage:icetSparseImageSize}
-To create an image, you first need to know how big of a buffer you need.
-You can do this with the \CFunc{icetFullImageSize} and
-\CFunc{icetSparseImageSize} functions.
+\label{manpage:icetGetStateBufferImage}
+\label{manpage:icetGetStateBufferSparseImage}
+The easiest and safest way to create an image is to use the
+\CFunc{icetGetStateBufferImage} function (or
+\CFunc{icetGetStateBufferSparseImage} for sparse images).
 
 \begin{Table}{3}
-  \textC{GLuint }\CFunc{icetFullImageSize}\textC{(}&\textC{GLuint}&\CArg{pixels}\quad\textC{);}
+  \CType{IceTImage}\textC{ }\CFunc{icetGetStateBufferImage}\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
 \end{Table}
-\begin{Table}{3}
-  \textC{GLuint }\CFunc{icetSparseImageSize}\textC{(}&\textC{GLuint}&\CArg{pixels}\quad\textC{);}
-\end{Table}
-
-The former of these functions return the size, in bytes, required for an
-\CType{IceTImage} containing the number of \CArg{pixels} specified.  The
-latter performs the same operation for an \CType{IceTSparseImage}.  A
-sparse image can vary in actual size depending on how well the data
-compresses so \CFunc{icetSparseImageSize} conservatively returns the
-maximum amount of bytes needed in any case.
-
-To ensure memory is managed efficiently, your strategy will have to create
-all of the images it uses by allocating them with \CFunc{icetResizeBuffer}
-and \CFunc{icetReserveBufferMem} (discussed in the previous section with an
-example) and then casting the pointer to \CType{IceTImage} or
-\CType{IceTSparseImage} as appropriate.
-
-\label{manpage:icetInitializeImage}
-Image structures are basically a block of memory with a small bit of header
-data.  \IceT functions that create images will fill that information for
-you.  Occasionally you may need to explicitly fill the header information.
-This is done with \CFunc{icetInitializeImage}.
 
 \begin{Table}{3}
-  \textC{void }\CFunc{icetInitializeImage}\textC{(}&\CType{IceTImage}&\CArg{image},\\
-  &\textC{GLuint}&\CArg{pixel\_count}\quad\textC{);}
+  \multicolumn{3}{l}{
+    \CType{IceTSparseImage}\textC{ }\CFunc{icetGetStateBufferSparseImage}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
 \end{Table}
 
-\CFunc{icetInitializeImage} will initialize the \CArg{image} buffer to be
-a full containing \CArg{pixel\_count} pixels and the type of pixel data
-specified by the \CEnum{ICET\_INPUT\_BUFFERS} state parameter.  There are
-only two common instances in which you will have to initialize an image
-yourself.  The first is that you are filling the buffer one part at a
-time.  The other is that you are creating a blank image, which frequently
-happens when a tile is empty.  To clear out an image use
-\CFunc{icetClearImage}.
+Each of these functions allocates a \index{state~buffer}state buffer
+(described in the previous section on Memory Management) for an image of
+size \CArg{width} by \CArg{height} on the given state variable
+(\CArg{pname}), and returns an initialized image object.  The image object
+is allocated and initialized for the color and depth formats specified by
+the \CEnum{ICET\_COLOR\_FORMAT} and \CEnum{ICET\_DEPTH\_FORMAT} state
+variables.  Here is some code taken from the virtual trees strategy
+implementation that demonstrates the use of these functions.
+
+\begin{code}
+image                = icetGetStateBufferImage(VTREE_IMAGE_BUFFER,
+                                               max_width, max_height);
+outSparseImage       = icetGetStateBufferSparseImage(
+                                              VTREE_OUT_SPARSE_IMAGE_BUFFER,
+                                              max_width, max_height);
+\end{code}
+
+\label{manpage:icetImageSetDimensions}
+\label{manpage:icetSparseImageSetDimensions}
+After an image is allocated, it is possible to resize the image, but only
+to dimensions that are less than or equal to those for which the image was
+created. This is done with the \CFunc{icetImageSetDimensions} or
+\CFunc{icetSparseImageSetDimensions} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageSetDimensions}\textC{(}&\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);} \\
+\end{Table}
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSparseImageSetDimensions}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);} \\
+\end{Table}
+
+These functions do not resize the internal buffer of the image.  Rather,
+they set the internal width and height parameters of the image and reuse
+the original (an potentially larger than necessary) buffer.  This is why
+they cannot be used to size the image larger than the original buffer
+allocation.  It is for this reason that it is typical for a multi-tile
+strategy to create images of size \CEnum{ICET\_TILE\_MAX\_WIDTH} and
+\CEnum{ICET\_TILE\_MAX\_HEIGHT}.  A well desgined compositing algorithm
+should never need more space than that.  Likewise, it is typical for a
+single-image strategy to create images of the same size as the input
+image.
+
+\label{manpage:icetImageBufferSize}
+\label{manpage:icetSparseImageBufferSize}
+It is sometimes necessary to know the size of buffer required to store
+image data.  This most often occurs when allocating buffers to receive
+images (as described in detail in the following section on Transferring
+Images starting on
+page~\pageref{sec:Strategies:New:Communications:Transferring_Images}).
+Getting the necessary buffer size is done with the
+\CFunc{icetImageBufferSize} and \CFunc{icetSparseImageBufferSize}.
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetSparseImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+Each of these functions returns the \emph{maximum} number of bytes required
+to store the image of the given dimensions and the formats specified by the
+\CEnum{ICET\_COLOR\_FORMAT} and \CEnum{ICET\_DEPTH\_FORMAT} state
+variables.
+
+It is fairly common to need to clear an image.  This is common in a
+multi-tile strategy when returning an image for which no geometry is
+rendered.  \IceT provides convenience functions for setting all the data in
+an image to the background color.
 
 \label{manpage:icetClearImage}
 \begin{Table}{3}
   \textC{void }\CFunc{icetClearImage}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
 \end{Table}
 
-\CFunc{icetClearImage} will set all of the pixel data in an image to the
-background.  In practice, \CFunc{icetClearImage} is coupled with a call to
-\CFunc{icetInitializeImage} such as in the following.
-
-\begin{code}
-  image = icetReserveBufferMem(icetFullImageSize(max_pixels));
-  icetInitializeImage(image, max_pixels);
-  icetClearImage(image);
-\end{code}
+\label{manpage:icetClearSparseImage}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearSparseImage}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
+\end{Table}
 
 \subsubsection{Querying Images}
 
-\label{manpage:icetGetImagePixelCount}
-Once you have an initialized image, whether initialized by you or some
-other \IceT function, you can retrieve the number of pixels in it with
-\CFunc{icetGetImagePixelCount}.
+\IceT contains several functions that allow you to query basic information
+about an image object such as dimensions and data formats.  Each function
+takes an information object and returns the appropriate size or identifier.
+(More detail for the functions that work on \CType{IceTImage} objects is
+given in the Image Objects section of
+Chapter~\ref{sec:Basic_Usage:Image_Objects} starting on
+page~\pageref{sec:Basic_Usage:Image_Objects}.)
 
-\begin{Table}{2}
-  \textC{GLuint }\CFunc{icetGetImagePixelCount}\textC{(}&\CArg{image}\quad\textC{);}
+\begin{Table}{5}
+  \textC{IceTSizeType}&\icetImageGetWidth&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTSizeType}&\icetImageGetHeight&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTSizeType}&\icetImageGetNumPixels&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);}
 \end{Table}
 
-Unlike most functions, \CFunc{icetGetImagePixelCount} can take either a
-\CType{IceTImage} or a \CType{IceTSparseImage}.
+\begin{Table}{5}
+  \textC{IceTEnum}&\icetImageGetColorFormat\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTEnum}&\icetImageGetDepthFormat\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);}
+\end{Table}
 
-\label{manpage:icetGetImageColorBuffer}
-\label{manpage:icetGetImageDepthBuffer}
-If you need to access the actual data of a \CType{IceTImage}, you can do so
-with \CFunc{icetGetImageColorBuffer} and \CFunc{icetGetImageDepthBuffer}.
-
+\label{manpage:icetSparseImageGetWidth}
+\label{manpage:icetSparseImageGetHeight}
+\label{manpage:icetSparseImageGetNumPixels}
 \begin{Table}{4}
-  \textC{GLubyte}&\textC{*}\CFunc{icetGetImageColorBuffer}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}\\
-  \textC{GLuint}&\textC{*}\CFunc{icetGetImageDepthBuffer}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+  \multicolumn{4}{l}{
+    \textC{IceTSizeType }\CFunc{icetSparseImageGetWidth}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);} \\
+  \multicolumn{4}{l}{
+    \textC{IceTSizeType }\CFunc{icetSparseImageGetHeight}\textC{(}
+  } \\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);} \\
+  \multicolumn{4}{l}{
+    \textC{IceTSizeType }\CFunc{icetSparseImageGetNumPixels}\textC{(}
+  } \\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);}
 \end{Table}
 
-For these functions to work, the image must be initialized and contain the
-respective color or depth buffer (of course).  If this condition is not
-met, an error is raised and \textC{NULL} is returned.
+\label{manpage:icetSparseImageGetColorFormat}
+\label{manpage:icetSparseImageGetDepthFormat}
+\begin{Table}{4}
+  \multicolumn{4}{l}{
+    \textC{IceTEnum }\CFunc{icetSparseImageGetColorFormat}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);} \\
+  \multicolumn{4}{l}{
+    \textC{IceTEnum }\CFunc{icetSparseImageGetDepthFormat}\textC{(}
+  } \\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);}
+\end{Table}
+
+\IceT also provides several functions for retreiving data from
+\CType{IceTImage} objects.  These functions are described in the Image
+Objects section of Chapter~\ref{sec:Basic_Usage:Image_Objects} starting on
+page~\pageref{sec:Basic_Usage:Image_Objects}.  There is no mechanism for
+directly accessing the data in an \CType{IceTSparseImage}.  Data is
+indirectly manipulated via compression and compositing functions, which are
+described in the subsequent sections.
 
 \subsubsection{Rendering Images}
 
@@ -1094,6 +1181,7 @@ following: \CEnum{ICET\_BOOLEAN}, \CEnum{ICET\_BYTE}, \CEnum{ICET\_SHORT},
 \CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}
 
 \subsubsection{Transferring Images}
+\label{sec:Strategies:New:Communications:Transferring_Images}
 
 Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
 opaque, they can be transferred as simple byte buffers.  To do so, you need
