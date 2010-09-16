@@ -858,7 +858,7 @@ the original (an potentially larger than necessary) buffer.  This is why
 they cannot be used to size the image larger than the original buffer
 allocation.  It is for this reason that it is typical for a multi-tile
 strategy to create images of size \CEnum{ICET\_TILE\_MAX\_WIDTH} and
-\CEnum{ICET\_TILE\_MAX\_HEIGHT}.  A well desgined compositing algorithm
+\CEnum{ICET\_TILE\_MAX\_HEIGHT}.  A well designed compositing algorithm
 should never need more space than that.  Likewise, it is typical for a
 single-image strategy to create images of the same size as the input
 image.
@@ -957,13 +957,153 @@ page~\pageref{sec:Basic_Usage:Image_Objects}.)
   &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);}
 \end{Table}
 
-\IceT also provides several functions for retreiving data from
+\IceT also provides several functions for retrieving data from
 \CType{IceTImage} objects.  These functions are described in the Image
 Objects section of Chapter~\ref{sec:Basic_Usage:Image_Objects} starting on
 page~\pageref{sec:Basic_Usage:Image_Objects}.  There is no mechanism for
-directly accessing the data in an \CType{IceTSparseImage}.  Data is
-indirectly manipulated via compression and compositing functions, which are
-described in the subsequent sections.
+directly accessing the data in an \CType{IceTSparseImage}.  Instead, data
+is indirectly manipulated via compression and compositing functions, which
+are described in the subsequent sections.
+
+\subsubsection{Setting Pixel Data}
+
+There are several mechanisms for setting, changing, or copying pixel data
+in \CType{IceTImage} objects.  Foremost are the \icetImageGetColor and
+\icetImageGetDepth functions that return the data buffer containing the
+color or depth values.
+
+\begin{Table}{4}
+  \textC{IceTUByte *}&\icetImageGetColorub&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \textC{IceTUInt *}&\icetImageGetColorui&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \textC{IceTFloat *}&\icetImageGetColorf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \\
+  \textC{IceTFloat *}&\icetImageGetDepthf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)};
+\end{Table}
+
+The pointers returned from these functions are shared with the
+\CType{IceTImage} object itself, so writing data into the buffer will
+change the image object as well.
+
+\IceT is also able to copy data from one \CType{IceTImage} to another.  The
+first function is \CFunc{icetImageCopyPixels}, which copies a contiguous
+section of pixels.
+
+\label{manpage:icetImageCopyPixels}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageCopyPixels}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{in\_image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{in\_offset}\textC{,} \\
+  &\CType{IceTImage}&\CArg{out\_image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{out\_offset}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{num\_pixels}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetImageCopyPixels} copies pixel data from \CArg{in\_image} to
+\CArg{out\_image}.  \CArg{in\_image} and \CArg{out\_image} must have the
+same format.  Both color and depth values are copied when available.  The
+data is taken from the input starting at index \CArg{in\_offset} and are
+placed in the output starting at index \CArg{out\_offset}.
+\CArg{num\_pixels} are copied in all.  The following example code copies
+the entire contents from \textC{in\_image} to \textC{out\_image} (assuming
+they have the same sizes and formats).
+
+\begin{code}
+icetImageCopyPixels(in_image, 0, out_image, 0, icetImageGetNumPixels(in_image));
+\end{code}
+
+This example copies the third row of data from the input image and copies
+it to the fifth row of data in the output image.
+
+\begin{code}
+width = icetImageGetWidth(in_image);
+icetImageCopyPixels(in_image, 3*width, out_image, 5*width, width);
+\end{code}
+
+This example copies the second half of pixels in \textC{in\_image} and
+places it in the first part of \textC{out\_image}.  Notice that coping a
+contiguous region of pixels makes it easy to divide in halves (or thirds,
+or whatevers), which is a common operation in image compositing, without
+having to worry about image dimensions.
+
+\begin{code}
+num_pixels = icetImageGetNumPixels(in_image);
+icetImageCopyPixels(in_image, num_pixels/2, out_image, 0, num_pixels/2);
+\end{code}
+
+A second convenience function for copying data amongst arrays is
+\CFunc{icetImageCopyRegion}.  This function works much like
+\CFunc{icetImageCopyPixels}, except that you specify a rectangular 2D
+viewport window to copy rather than a 1D array region of pixels.
+
+\label{manpage:icetImageCopyRegion}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageCopyRegion}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{in\_image}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{in\_viewport}\textC{,} \\
+  &\CType{IceTImage}&\CArg{out\_image}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{out\_viewport}\quad\textC{);}
+\end{Table}
+
+\CArg{in\_viewport} is an array containing 4 values that specify the
+rectangular region from which to copy.  The first 2 values specify the $x$
+and $y$ position of the lower left corner of the region.  The second 2
+values specify the width and height of the region.  \CArg{out\_viewport} is
+a similar array that specifies the destination region.  The width and
+height of \CArg{in\_viewport} and \CArg{out\_viewport} must be the same.
+Here is a simple example of copying all the pixels from \textC{in\_image}
+to \textC{out\_image}.
+
+\begin{code}
+IceTInt full_viewport[4];
+
+full_viewport[0] = 0;
+full_viewport[1] = 0;
+full_viewport[2] = icetImageGetWidth(in_image);
+full_viewport[3] = icetImageGetHeight(out_image);
+
+icetImageCopyRegion(in_image, full_viewport, out_image, full_viewport);
+\end{code}
+
+This example copies a $50 \times 50$ region of pixels from the lower left
+corner of \textC{in\_image} to the upper right corner of
+\textC{out\_image}.
+
+\begin{code}
+IceTInt in_viewport[4], out_viewport[3];
+
+in_viewport[0] = 0;   in_viewport[1] = 0;
+in_viewport[2] = 50;  in_viewport[3] = 50;
+
+out_viewport[0] = icetImageGetWidth(in_image) - 50;
+out_viewport[1] = icetImageGetHeight(in_image) - 50;
+out_viewport[2] = 50;
+out_viewport[3] = 50;
+
+icetImageCopyRegion(in_image, in_viewport, out_image, out_viewport);
+\end{code}
+
+As mentioned previously, there is a \CFunc{icetClearImage} function to
+clear the contents of an image to background.  There is also another
+function called \CFunc{icetImageClearAroundRegion} that sets the image to
+background everywhere but in a specified 2D viewport window.
+
+\label{manpage:icetImageClearAroundRegion}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageClearAroundRegion}\textC{(}&\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{region}\quad\textC{);}
+\end{Table}
+
+Expanding on the previous example, here is code that copies a region of
+pixels and then clears everything outside of this region in the
+destination.
+
+\begin{code}
+icetImageCopyRegion(in_image, in_viewport, out_image, out_viewport);
+icetImageClearAroundRegion(out_image, out_viewport);
+\end{code}
+
+There are no equivalent mechanisms for changing pixel data in
+\CType{IceTSparseImage} objects.  Instead, data is indirectly manipulated
+via compression and compositing functions, which are described in the
+subsequent sections.
 
 \subsubsection{Rendering Images}
 
