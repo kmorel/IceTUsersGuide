@@ -1174,6 +1174,68 @@ difference, of course, is that \CFunc{icetGetTileImage} fills the buffer
 with raw data whereas \CFunc{icetGetCompressedTileImage} will compress the
 image data with \index{active-pixel~encoding}active-pixel encoding.
 
+\subsubsection{Image Compositing}
+
+The \IceT library contains multiple functions to locally composite two images
+together.  These functions handle the complexities of dealing with
+different image formats and compositing operations.
+
+\label{manpage:icetComposite}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetComposite}\textC{(}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{const }\CType{IceTImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetComposite} takes the images stored in \CArg{destBuffer} and
+\CArg{srcBuffer}, composites them together, and stores the result in
+\CArg{destBuffer}.  The compositing operation is automatically determined
+by the current state. (See the discussion on Compositing Operations in
+Chapter~\ref{sec:Customizing_Compositing:Compositing_Operation} for
+information on how the compositing operation is determined.)  If the
+compositing operation is order dependent, then the Boolean argument
+\CArg{srcOnTop} determines whether \CArg{srcBuffer} or \CArg{destBuffer} is
+on top.
+
+If one of your images is compressed (stored in a \CType{IceTSparseImage},
+it is faster to perform the compositing operation on the compressed image
+rather than decompressing first.  In fact, it is faster to composite a
+compressed image than two full image because the
+\index{active-pixel~encoding}active-pixel encoding allows the composite
+algorithm to skip over groups of background pixels.  This gives you the
+double win of faster image transfer and faster compositing.
+
+\label{manpage:icetCompressedComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedComposite}\textC{(}}\\
+  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetCompressedComposite} behaves just like \CFunc{icetComposite}
+except that \CArg{srcBuffer} is a compressed image rather than a full
+image.  The images in \CArg{destBuffer} and \CArg{srcBuffer} are composited
+together, and the results are stored in \CArg{destBuffer}.
+
+Many parallel compositing algorithms break images into pieces, distribute
+amongst processes, and composite the pieces.  To facilitate the compositing
+image pieces, \IceT provides \CFunc{icetCompressedSubComposite}.
+
+\label{manpage:icetCompressedSubComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedSubComposite}\textC{(}}\\
+  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{offset}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\textC{);}
+\end{Table}
+
+The \CArg{destBuffer}, \CArg{srcBuffer} and \CArg{srcOnTop} arguments are
+the same as those in \CFunc{icetCompressedComposite}.  The \CArg{offset}
+argument and the number of pixels in \CArg{srcBuffer} specify a region of
+contiguous pixels in \CArg{destBuffer} to perform the compositing in.
+
 \subsection{Communications}
 
 The first thing to know about communications in \IceT is to understand that
@@ -1631,71 +1693,5 @@ IceTImage bswapComposeTile0(void)
   return image;
 }
 \end{code}
-
-\subsubsection{Local Compositing}
-
-When developing a multi-tile compositing algorithm (or any parallel
-compositing algorithm for that matter), it is often cannot be broken into
-full composites of single images.  Instead, you must break the problem down
-further into image transfers and image combinations.  Image transfers have
-already been covered previously in this section.  The \IceT library
-contains multiple methods to locally composite two images together.
-
-\label{manpage:icetComposite}
-\begin{Table}{3}
-  \textC{void }\CFunc{icetComposite}\textC{(}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
-  &\textC{const }\CType{IceTImage}&\CArg{srcBuffer}\textC{,}\\
-  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
-\end{Table}
-
-\CFunc{icetComposite} takes the images stored in \CArg{destBuffer} and
-\CArg{srcBuffer}, composites them together, and stores the result in
-\CArg{destBuffer}.  The compositing operation is automatically determined
-by the current state. (See
-Chapter~\ref{sec:Customizing_Compositing:Compositing_Operation} for
-information on how the compositing operation is determined.)  If the
-compositing operation is order dependent, then the Boolean argument
-\CArg{srcOnTop} determines whether \CArg{srcBuffer} or \CArg{destBuffer} is
-on top.
-
-If one of your images is compressed (stored in a \CType{IceTSparseImage},
-it is faster to perform the compositing operation on the compressed image
-rather than decompressing first.  In fact, it is faster to composite a
-compressed image than two full image because the
-\index{active-pixel~encoding}active-pixel encoding allows the composite
-algorithm to skip over groups of background pixels.  This gives you the
-double win of faster image transfer and faster compositing.
-
-\label{manpage:icetCompressedComposite}
-\begin{Table}{3}
-  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedComposite}\textC{(}}\\
-  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
-  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
-  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
-\end{Table}
-
-\CFunc{icetCompressedComposite} behaves just like \CFunc{icetComposite}
-except that \CArg{srcBuffer} is a compressed image rather than a full
-image.  The images in \CArg{destBuffer} and \CArg{srcBuffer} are composited
-together, and the results are stored in \CArg{destBuffer}.
-
-Many parallel compositing algorithms break images into pieces, distribute
-amongst processes, and composite the pieces.  To facilitate the compositing
-image pieces, \IceT provides \CFunc{icetCompressedSubComposite}.
-
-\label{manpage:icetCompressedSubComposite}
-\begin{Table}{3}
-  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedSubComposite}\textC{(}}\\
-  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
-  &\textC{GLuint}&\CArg{offset}\textC{,}\\
-  &\textC{GLuint}&\CArg{pixels}\textC{,}\\
-  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
-  &\textC{int}&\CArg{srcOnTop}\textC{);}
-\end{Table}
-
-The \CArg{destBuffer}, \CArg{srcBuffer} and \CArg{srcOnTop} arguments are
-the same as those in \CFunc{icetCompressedComposite}.  The \CArg{offset}
-and \CArg{pixels} arguments specify a region of contiguous pixels in
-\CArg{destBuffer} to perform the compositing in.
 
 \index{strategy|)}
