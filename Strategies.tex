@@ -1462,48 +1462,60 @@ patterns.  They may be helpful in implementing your strategy.
 \label{manpage:icetRenderTransferFullImages}
 \begin{Table}{3}
   \multicolumn{3}{l}{\textC{void }\CFunc{icetRenderTransferFullImages}\textC{(}}\\
-  \makebox[2in]{}&\CType{IceTImage}&\CArg{imageBuffer}\textC{,}\\
-  &\CType{IceTSparseImage}&\CArg{inImage}\textC{,}\\
-  &\CType{IceTSparseImage}&\CArg{outImage}\textC{,}\\
-  &\textC{GLint}&\CArg{num\_receiving}\textC{,}\\
-  &\textC{GLint *}&\CArg{tile\_image\_dest}\quad\textC{);}
+  \makebox[2in]{}
+  &\CType{IceTImage}&\CArg{image}\textC{,}\\
+  &\textC{IceTVoid *}&\CArg{inSparseImageBuffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{outSparseImage}\textC{,}\\
+  &\textC{IceTInt *}&\CArg{tile\_image\_dest}\quad\textC{);}
 \end{Table}
 
 \CFunc{icetRenderTransferFullImages} renders all the tiles that are
 specified in the \CEnum{ICET\_CONTAINED\_TILES} state array and sends them
 to the processors with ranks specified in \CArg{tile\_image\_dest}.  This
-method is guaranteed not to deadlock.  It only uses memory given with the
-buffer arguments, and will make its best efforts to get the graphics and
-network hardware to run in parallel.
+function is guaranteed not to deadlock so long as all processes call it.
+The function uses only memory given with the buffer arguments, and will
+make its best efforts to get the graphics and network hardware to run in
+parallel.
 
-\CArg{imageBuffer} is a buffer big enough to hold color and/or depth values
-that is \CEnum{ICET\_MAX\_PIXELS} big.  The size can be determined with the
-\CFunc{icetFullImageSize} function in image.h.  \CArg{inImage} and
-\CArg{outImage} are two buffers big enough to hold sparse color and depth
-information for an image that is \CEnum{ICET\_MAX\_PIXELS} big.  The size
-can be determined with the \CFunc{icetSparseImageSize} macro in
-\index{image.h}\textC{image.h}.  \CArg{num\_receiving} is the number of
-images this processor is receiving, and \CArg{tile\_image\_dest} is an
-array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES}, then the
+\CArg{image} is an image object big enough to hold color and/or depth
+values that is \CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$
+\CEnum{ICET\_TILE\_MAX\_HEIGHT} big.  \CArg{inSparseImageBuffer} and
+\CArg{outSparseImage} are two buffers big enough to hold sparse color and
+depth information for an image that is \CEnum{ICET\_TILE\_MAX\_WIDTH}
+$\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT} big.  The size for
+\CArg{inSparseImageBuffer} can be determined with the
+\CFunc{icetSparseImageBufferSize} function in
+\index{IceTDevImage.h}\textC{IceTDevImage.h}.  \CArg{tile\_image\_dest} is
+an array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES}, then the
 rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
 
 There is also a more general form for transferring images or other large
 data blocks.
 
 \label{manpage:icetSendRecvLargeMessages}
-\textC{typedef void *(*}\CType{IceTGenerateData}\textC{)(GLint id, GLint dest, GLint *size);}
-
-\textC{typedef void *(*}\CType{IceTHandleData}\textC{)(void *, GLint src);}
+\begin{Table}{3}
+  \textC{typedef IceTVoid *(*}\CType{IceTGenerateData}\textC{)(}&\textC{IceTInt}&\CArg{id}\textC{,} \\
+  &\textC{IceTInt}&\CArg{dest}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{size}\quad\textC{);}
+\end{Table}
 
 \begin{Table}{3}
-  \multicolumn{3}{l}{\textC{void }\CFunc{icetSendRecvLargeMessages}\textC{(}}\\
-  \makebox[2in]{}&\textC{GLint}&\CArg{numMessagesSend}\textC{,}\\
-  &\textC{GLint *}&\CArg{messageDestinations}\textC{,}\\
-  &\textC{GLint}&\CArg{messagesInOrder}\textC{,}\\
+  \textC{typedef void (*}\CType{IceTHandleData}\textC{)(}&\textC{void *}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTInt}&\CArg{src}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSendRecvLargeMessages}\textC{(}
+  }\\
+  \makebox[2in]{}
+  &\textC{IceTInt}&\CArg{numMessagesSending}\textC{,}\\
+  &\textC{IceTInt *}&\CArg{messageDestinations}\textC{,}\\
+  &\textC{IceTBoolean}&\CArg{messagesInOrder}\textC{,}\\
   &\CType{IceTGenerateData}&\CArg{generateDataFunc}\textC{,}\\
   &\CType{IceTHandleData}&\CArg{handleDataFunc}\textC{,}\\
-  &\textC{void *}&\CArg{incomingBuffer}\textC{,}\\
-  &\textC{GLint}&\CArg{bufferSize}\textC{);}
+  &\textC{IceTVoid *}&\CArg{incomingBuffer}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{bufferSize}\textC{);}
 \end{Table}
 
 \CFunc{icetSendRecvLargeMessages} is similar to
@@ -1518,9 +1530,7 @@ longer in use, so the memory may be reused.  As large messages come in, the
 handle callback is called.  As an optimization, if a process sends to
 itself, then that will be the first message created.  This gives the
 callback an opportunity to build its local data while waiting for incoming
-data.  The handle callback returns a pointer to a buffer to be used for the
-next large message receive.  It should be common for this message buffer to
-be reused too.
+data.
 
 \CArg{numMessagesSending} is a count of the number of large messages this
 processor is sending out.  \CArg{messageDestinations} is an array of size
@@ -1532,11 +1542,9 @@ the message (in bytes) are returned.  The \CArg{generateDataFunc} will not
 be called again until the returned data is no longer in use.  Thus the data
 may be reused.  \CArg{handleDataFunc} is a callback function that processes
 messages.  The function is given the data buffer and the rank of the
-process that sent it.  The function is expected to return a buffer to use
-for the next message receive.  If the callback is finished with the buffer
-it was given, it is perfectly acceptable to return it again for reuse.
-\CArg{incomingBuffer} is a buffer to use for the first incoming message.
-\CArg{bufferSize} is the maximum size of a message.
+process that sent it.  The callback should completely finish its use of the
+buffer before returning.  \CArg{incomingBuffer} is a buffer to use for
+incoming messages.  \CArg{bufferSize} is the maximum size of a message.
 
 \subsection{Internal Functions for Compositing}
 
