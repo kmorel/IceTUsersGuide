@@ -544,7 +544,7 @@
 
 	%\hspace*{-0.5in}
 	\begin{minipage}[b]{6.0in}
-	    \includegraphics{snllineblk}
+	    \includegraphics{SANDimages/snllineblk}
 	\end{minipage}
 
 
@@ -635,7 +635,7 @@
 	    \vspace{\baselineskip}
 	    \vspace{0.125in}
 
-	    \includegraphics[width=0.75in]{DOEbwlogo}
+	    \includegraphics[width=0.75in]{SANDimages/DOEbwlogo}
 	\end{minipage}
 	\end{center}
 
@@ -1750,7 +1750,7 @@
 	\vspace*{\fill}		% Move the logo to the bottom of the page
 	\thispagestyle{empty}
 	\begin{center}
-	    \includegraphics{snllineblk}
+	    \includegraphics{SANDimages/snllineblk}
 	\end{center}
 
     } % End of AtEndDocument{}
