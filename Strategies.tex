@@ -1654,4 +1654,106 @@ IceTImage ComposeTile0(void)
 }
 \end{code}
 
+\subsection{Raising Diagnostics}
+
+\index{diagnostics|(}
+
+\IceT's diagnostics system, described in
+Chapter~\ref{sec:Basic_Usage:Diagnostics} starting on
+page~\pageref{sec:Basic_Usage:Diagnostics}, alert the user of anomalous
+conditions.  Your compositing strategies should also alert the user through
+this diagnostic mechanism.
+
+\index{error}Error and \index{warning}warning diagnostics can be raised
+with the \CFunc{icetRaiseError} and \CFunc{icetRaiseWarning} functions,
+respectively.  These functions are defined in the
+\index{IceTDevDiagnostics.h}\textC{IceTDevDiagnostics.h} header file.
+
+\label{manpage:icetRaiseError}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseError}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &\textC{IceTEnum}&\CArg{type}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetRaiseWarning}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseWarning}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &\textC{IceTEnum}&\CArg{type}\quad\textC{);}
+\end{Table}
+
+The \CArg{message} argument contains a descriptive string that will be
+presented to the user describing the error or warning condition.  The
+\CArg{type} argument gives the class of the error or warning.  It must be
+one of the following with the given meanings.
+
+\begin{Description}[ICET\_INVALID\_OPERATION]
+\item[\CEnum{ICET\_INVALID\_VALUE}] An inappropriate value has been passed
+  to a function.
+\item[\CEnum{ICET\_INVALID\_OPERATION}] An inappropriate function has been
+  called.
+\item[\CEnum{ICET\_OUT\_OF\_MEMORY}] \IceT has ran out of memory for buffer
+  space.
+\item[\CEnum{ICET\_BAD\_CAST}] A function has been passed a value of the
+  wrong type.
+\item[\CEnum{ICET\_INVALID\_ENUM}] A function has been passed an invalid
+  constant.
+\item[\CEnum{ICET\_SANITY\_CHECK\_FAIL}] An internal error (or warning) has
+  occurred.
+\end{Description}
+
+Your strategy also has the option of raising \index{debug}debug statements.
+Unlike an error or warning, debug statements are often raised during normal
+operation.  These messages are \emph{not} intended for the end user.
+Rather, they are status messages that might help you track problems while
+debugging.  The debug messages are only created when \IceT is compiled in
+``Debug'' mode (the \CEnum{CMAKE\_BUILD\_TYPE} \index{CMake}CMake variable
+is set to \textC{Debug} when building \IceT) and the
+\CEnum{ICET\_DIAG\_DEBUG} flag is given to \CFunc{icetDiagnostics}.  With
+these two conditions met, basic debug status messages can be raised with
+the \CFunc{icetRaiseDebug} function.
+
+\label{manpage:icetRaiseDebug}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug}\textC{(}&\textC{const char *}&\CArg{message}\quad\textC{);}
+\end{Table}
+
+Unlike \CFunc{icetRaiseError} and \CFunc{icetRaiseWarning},
+\CFunc{icetRaiseDebug} does not accept a type because no anomalous
+condition is being reported.
+
+It is common to want to use debug messages to report the state of
+variables.  To help you with this, \IceT provides three convenience
+functions that accept a printf-formatted message and a number of
+arguments.  The message and arguments are passed to the C \textC{sprintf}
+function.
+
+\label{manpage:icetRaiseDebug1}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug1}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &&\CArg{arg1}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetRaiseDebug2}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug2}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &&\CArg{arg1}\textC{,} \\
+  &&\CArg{arg2}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetRaiseDebug4}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug4}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &&\CArg{arg1}\textC{,} \\
+  &&\CArg{arg2}\textC{,} \\
+  &&\CArg{arg3}\textC{,} \\
+  &&\CArg{arg4}\quad\textC{);}
+\end{Table}
+
+In the documentation for these functions, the type for \CArg{arg$i$} is
+left out.  The type of these arguments is determined by the
+printf-formatted \CArg{message}.  (As you have probably guessed, these
+functions are actually macros that pass the arguments to sprintf.)
+
+\index{diagnostics|)}
+
 \index{strategy|)}
