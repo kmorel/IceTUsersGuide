@@ -26,12 +26,13 @@ A strategy is specified using the \CFunc{icetStrategy} function.
   \textC{void }\CFunc{icetStrategy}\textC{(}&\textC{IceTEnum}&\CArg{strategy}\quad\textC{);}
 \end{Table}
 
-The \CArg{strategy} is set to one of the following identifiers.  A string
-documenting the current strategy can be retrieved with the
-\CFunc{icetGetStrategyName} function.  The following sections describe the
-strategies in more detail.
+The \CArg{strategy} is set to one of the following identifiers.
 
 \input{enumerations/strategy.tex}
+
+A string documenting the current strategy can be retrieved with the
+\CFunc{icetGetStrategyName} function.  The following sections describe the
+strategies in more detail.
 
 To describe the \IceT compositing algorithms, we will use the example
 parallel rendering problem shown in Figure~\ref{fig:ExampleInputs} where 6
@@ -79,12 +80,13 @@ multi-tile strategy.  This is selected with the
   \textC{void }\CFunc{icetSingleImageStrategy}\textC{(}&\textC{IceTEnum}&\CArg{strategy}\quad\textC{);}
 \end{Table}
 
-The \CArg{strategy} is set to one of the following enumerations.  A string
-documenting the current strategy can be retrieved with the
-\CFunc{icetGetSingleImageStrategyName} function.  The following sections
-describe the single image strategies in more detail.
+The \CArg{strategy} is set to one of the following enumerations.
 
 \input{enumerations/single_image_strategy.tex}
+
+A string documenting the current strategy can be retrieved with the
+\CFunc{icetGetSingleImageStrategyName} function.  The following sections
+describe the single image strategies in more detail.
 
 \subsection{Tree Compositing}
 
@@ -585,7 +587,7 @@ state variables generally should be read from, not written to.
   \CEnum{ICET\_NUM\_TILES} $\times$ \CEnum{ICET\_NUM\_PROCESSES}) Contains
   an appended list of \CEnum{ICET\_CONTAINED\_TILES\_MASK} variables for
   all processes.  Given process $p$ and tile $t$, the entry at
-  $p+\CEnum{ICET\_NUM\_TILES} \times t$ contains the flag describing
+  $(\CEnum{ICET\_NUM\_TILES} \times p)+t$ contains the flag describing
   whether process $p$ renders a non-blank image for tile $t$.  This
   variable is the same on all processes.
 \item[\CEnum{ICET\_CONTAINED\_TILES\_LIST}] (integer,
@@ -595,27 +597,28 @@ state variables generally should be read from, not written to.
   images for these tiles and participate in the composition of them.
 \item[\CEnum{ICET\_CONTAINED\_TILES\_MASK}] (boolean,
   \CEnum{ICET\_NUM\_TILES}) This is a list of boolean flags, one per tile.
-  The flag is 1 if the local geometry projects onto the tile (that is, the
-  local render will not be empty for that tile) and 0 otherwise.  This
-  gives the same information as \CEnum{ICET\_CONTAINED\_TILES\_LIST}, but
-  in a different way that can be more convenient in some circumstances.
+  The flag is true if the local geometry projects onto the tile (that is,
+  the local render will not be empty for that tile) and false otherwise.
+  This gives the same information as \CEnum{ICET\_CONTAINED\_TILES\_LIST},
+  but in a different way that can be more convenient in some circumstances.
 \item[\CEnum{ICET\_CONTAINED\_VIEWPORT}] (integer, 4) Describes the region
   of the viewport that the geometry being rendered locally projects onto.
   The bounds of the data (given by \CFunc{icetBoundingBox} or
-  \CFunc{icetBoundingVertices}) onto the tile display and determines the
-  region of the tile display the data covers.  The values in the four-tuple
-  correspond to x, y, width, and height, respectively, of the projection in
-  global pixel coordinates.  This variable in conjunction with the
-  \CEnum{ICET\_NEAR\_DEPTH} and \CEnum{ICET\_FAR\_DEPTH} give the full 3D
-  projection of the local data in window space.
+  \CFunc{icetBoundingVertices}) projected onto the tiled display determines
+  the region of the tiled display the data covers.  The values in the
+  four-tuple correspond to x, y, width, and height, respectively, of the
+  projection in global pixel coordinates.  This variable in conjunction
+  with the \CEnum{ICET\_NEAR\_DEPTH} and \CEnum{ICET\_FAR\_DEPTH} give the
+  full 3D projection of the local data in window space.
 \item[\CEnum{ICET\_FAR\_DEPTH}] (double, 1) The maximum depth value of the
   local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORTS}
   for more details.
 \item[\CEnum{ICET\_IS\_DRAWING\_FRAME}] (boolean, 1) Set to true while in a
-  call to \CFunc{icetDrawFrame} and set to false otherwise.  This should
-  always be set to true while the compose function is being executed.
+  call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} and set to false
+  otherwise.  This should always be set to true while the compose function
+  is being executed.
 \item[\CEnum{ICET\_MODELVIEW\_MATRIX}] (double, 16) The current modelview
-  matrix as passed to \CFunc{icetDrawFrame} or read from OpenGL at the
+  matrix as passed to \CFunc{icetDrawFrame} or read from \OpenGL at the
   invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_NEAR\_DEPTH}] (double, 1) The minimum depth value of the
   local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORTS}
@@ -624,7 +627,7 @@ state variables generally should be read from, not written to.
   into which the local geometry projects.  This is the length of the
   \CEnum{ICET\_CONTAINED\_TILES\_LIST} variable.
 \item[\CEnum{ICET\_PROJECTION\_MATRIX}] (double, 16) The current projection
-  matrix as passed to \CFunc{icetDrawFrame} or read from OpenGL at the
+  matrix as passed to \CFunc{icetDrawFrame} or read from \OpenGL at the
   invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_TILE\_CONTRIB\_COUNTS}] (integer,
   \CEnum{ICET\_NUM\_TILES}) For each tile, provides the number of processes
@@ -637,9 +640,9 @@ state variables generally should be read from, not written to.
 \label{manpage:icetUnsafeStateGet}
 In addition to several internal state variables, \IceT also has several
 internal functions for accessing them.  The most important set for
-implementing a strategy is \CFunc{icetUnsafeStateGet} suite of functions,
-which are defined in the \index{IceTDevState.h}\textC{IceTDevState.h}
-header file.
+implementing a strategy is the \CFunc{icetUnsafeStateGet} suite of
+functions, which are defined in the
+\index{IceTDevState.h}\textC{IceTDevState.h} header file.
 
 \begin{Table}{4}
   \textC{IceTDouble *}&\icetUnsafeStateGetDouble\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
@@ -675,7 +678,7 @@ time as large buffers are allocated and released.
 During typical \IceT operation, a strategy (whether it be a multi-tile
 strategy or a single-image strategy) is invoked multiple times.  Each
 invocation will require multiple buffers to manipulate images and other
-buffers.  One way to do this is to allocate these buffers as needed and
+data.  One way to do this is to allocate these buffers as needed and
 free them by the end of the invocation.  However, this can lead to
 the inefficiencies and memory fragmentation previously mentioned.  It is
 also problematic when returning an image buffer as the responsibility for
@@ -764,7 +767,7 @@ single-image strategies.  These are named
 That is, \CEnum{ICET\_SI\_STRATEGY\_BUFFER\_0},
 \CEnum{ICET\_SI\_STRATEGY\_BUFFER\_1}, and so on up to
 \CEnum{ICET\_SI\_STRATEGY\_BUFFER\_15}.  It is important \emph{not} to use
-the multi-tile strategy buffer variable in a single-image strategy because
+the multi-tile strategy buffer variables in a single-image strategy because
 the multi-tile strategy will call the single-image strategy while it is
 still operating and the single-image strategy can invalidate the buffers of
 the multi-tile strategy.
@@ -855,7 +858,7 @@ created. This is done with the \CFunc{icetImageSetDimensions} or
 
 These functions do not resize the internal buffer of the image.  Rather,
 they set the internal width and height parameters of the image and reuse
-the original (an potentially larger than necessary) buffer.  This is why
+the original (and potentially larger than necessary) buffer.  This is why
 they cannot be used to size the image larger than the original buffer
 allocation.  It is for this reason that it is typical for a multi-tile
 strategy to create images of size \CEnum{ICET\_TILE\_MAX\_WIDTH} and
@@ -872,7 +875,8 @@ images (as described in detail in the following section on Transferring
 Images starting on
 page~\pageref{sec:Strategies:New:Communications:Transferring_Images}).
 Getting the necessary buffer size is done with the
-\CFunc{icetImageBufferSize} and \CFunc{icetSparseImageBufferSize}.
+\CFunc{icetImageBufferSize} and \CFunc{icetSparseImageBufferSize}
+functions.
 
 \begin{Table}{3}
   \textC{IceTSizeType }\CFunc{icetImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
@@ -1011,8 +1015,8 @@ they have the same sizes and formats).
 icetImageCopyPixels(in_image, 0, out_image, 0, icetImageGetNumPixels(in_image));
 \end{code}
 
-This example copies the third row of data from the input image and copies
-it to the fifth row of data in the output image.
+This example copies the third row of data from the input image to the fifth
+row of data in the output image.
 
 \begin{code}
 width = icetImageGetWidth(in_image);
@@ -1021,9 +1025,9 @@ icetImageCopyPixels(in_image, 3*width, out_image, 5*width, width);
 
 This example copies the second half of pixels in \textC{in\_image} and
 places it in the first part of \textC{out\_image}.  Notice that coping a
-contiguous region of pixels makes it easy to divide in halves (or thirds,
-or whatevers), which is a common operation in image compositing, without
-having to worry about image dimensions.
+contiguous region of pixels makes it easy to divide images in halves (or
+thirds, or whatevers), which is a common operation in image compositing,
+without having to worry about image dimensions.
 
 \begin{code}
 num_pixels = icetImageGetNumPixels(in_image);
@@ -1175,6 +1179,10 @@ difference, of course, is that \CFunc{icetGetTileImage} fills the buffer
 with raw data whereas \CFunc{icetGetCompressedTileImage} will compress the
 image data with \index{active-pixel~encoding}active-pixel encoding.
 
+Although it is roughly equivalent to calling \CFunc{icetGetTileImage} and
+then \CFunc{icetCompressImage}, \CFunc{icetGetCompressedTileImage} can be
+much more efficient.
+
 \subsubsection{Image Compositing}
 
 The \IceT library contains multiple functions to locally composite two images
@@ -1190,18 +1198,19 @@ different image formats and compositing operations.
 
 \CFunc{icetComposite} takes the images stored in \CArg{destBuffer} and
 \CArg{srcBuffer}, composites them together, and stores the result in
-\CArg{destBuffer}.  The compositing operation is automatically determined
-by the current state. (See the discussion on Compositing Operations in
+\CArg{destBuffer}.  The compositing operation is determined by the
+\CEnum{ICET\_COMPOSITE\_MODE} state variable. (See the discussion on
+Compositing Operations in
 Chapter~\ref{sec:Customizing_Compositing:Compositing_Operation} for
 information on how the compositing operation is determined.)  If the
 compositing operation is order dependent, then the Boolean argument
 \CArg{srcOnTop} determines whether \CArg{srcBuffer} or \CArg{destBuffer} is
 on top.
 
-If one of your images is compressed (stored in a \CType{IceTSparseImage},
+If one of your images is compressed (stored in an \CType{IceTSparseImage},
 it is faster to perform the compositing operation on the compressed image
 rather than decompressing first.  In fact, it is faster to composite a
-compressed image than two full image because the
+compressed image than two full images because the
 \index{active-pixel~encoding}active-pixel encoding allows the composite
 algorithm to skip over groups of background pixels.  This gives you the
 double win of faster image transfer and faster compositing.
@@ -1448,11 +1457,6 @@ dest_sparse_image = icetSparseImageUnpackageFromReceive(package_buffer);
 icetCompressedComposite(image, dest_sparse_image, ICET_FALSE);
 \end{code}
 
-Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
-opaque, they can be transferred as simple byte buffers.  To do so, you need
-only the size of the buffer.  The following sends an image stored in the
-variable \textC{image} of type \CType{IceTImage}.
-
 \subsubsection{Helper Communication Functions}
 
 \index{common.h}\textC{common.h} (found in the strategies directory)
@@ -1660,7 +1664,7 @@ IceTImage ComposeTile0(void)
 
 \IceT's diagnostics system, described in
 Chapter~\ref{sec:Basic_Usage:Diagnostics} starting on
-page~\pageref{sec:Basic_Usage:Diagnostics}, alert the user of anomalous
+page~\pageref{sec:Basic_Usage:Diagnostics}, alerts the user of anomalous
 conditions.  Your compositing strategies should also alert the user through
 this diagnostic mechanism.
 
@@ -1749,8 +1753,8 @@ function.
   &&\CArg{arg4}\quad\textC{);}
 \end{Table}
 
-In the documentation for these functions, the type for \CArg{arg$i$} is
-left out.  The type of these arguments is determined by the
+In the documentation for these functions here, the type for \CArg{arg$i$}
+is left out.  The type of these arguments is determined by the
 printf-formatted \CArg{message}.  (As you have probably guessed, these
 functions are actually macros that pass the arguments to sprintf.)
 
