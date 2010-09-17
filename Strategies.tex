@@ -661,6 +661,7 @@ Since the state setting functions are hidden from the end user API, it is
 possible to manage these erroneous conditions.
 
 \subsection{Memory Management}
+\label{sec:Strategies:New:Memory_Management}
 
 Compositing algorithms by their nature require buffers of memory of
 non-trivial size to hold images, among other data, that are not needed in
@@ -1340,59 +1341,117 @@ These functions just grab the current context's communicator.
 \subsubsection{Transferring Images}
 \label{sec:Strategies:New:Communications:Transferring_Images}
 
-\updateFromHere
+Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
+opaque, \IceT provides a mechanism to transfer the data.  A pair of
+functions allow you to package the data into a buffer (provided for you)
+and then unpackage a buffer back into an image object.  The first of these
+functions is \CFunc{icetImagePackageForSend} for \CType{IceTImage} or
+\CFunc{icetSparseImagePackageForSend} for \CType{IceTSparseImage}.
+
+\label{manpage:icetImagePackageForSend}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImagePackageForSend}\textC{(}&\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTVoid **}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{size}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImagePackageForSend}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSparseImagePackageForSend}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTVoid **}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{size}\quad\textC{);}
+\end{Table}
+
+Both of these functions behave identically.  They return a pointer in
+\CArg{buffer} to a block of raw data that can be sent opaquely via the
+communications functions.  The length of this buffer in bytes is returned
+in \CArg{size}.  When sending this data, send it as \CEnum{ICET\_BYTE} type
+data of \CArg{size} length.  In the following example, an \textC{image} is
+compressed and then its data is sent to another process.
+
+\index{icetGetStateBufferSparseImage}
+\index{icetSparseImagePackageForSend}
+\index{icetCommSend}
+\begin{code}
+IceTSparseImage src_sparse_image;
+IceTVoid *package_buffer;
+IceTSizeType package_size;
+
+src_sparse_image = icetGetStateBufferSparseImage(MYCOMPOSITE_SRC_SPARSE_IMAGE,
+                                                 max_width, max_height);
+icetSparseImagePackageForSend(src_sparse_image, &package_buffer, &package_size);
+icetCommSend(package_buffer, package_size, ICET_BYTE, dest_rank,
+             MYCOMPOSITE_FOO_TAG);
+\end{code}
+
+The companion to each package function is the unpackage function.  These
+are \CFunc{icetImageUnpackageFromReceive} for \CType{IceTImage} and
+\CFunc{icetSparseImageUnpackageFromReceive} for \CType{IceTSparseImage}.
+
+\label{manpage:icetImageUnpackageFromReceive}
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetImageUnpackageFromReceive}\textC{(}&\textC{IceTVoid *}&\CArg{buffer}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImageUnpackageFromReceive}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \CType{IceTSparseImage}\textC{ }\CFunc{icetSparseImageUnpackageFromReceive}\textC{(}
+  } \\
+  \makebox[4in]{}
+  &\textC{IceTVoid *}&\CArg{buffer}\quad\textC{);}
+\end{Table}
+
+These functions take a buffer containing the same data provided by a
+package command, create an image object, and return that object.  Note that
+the buffer provided becomes part of the image.  If that buffer is destroyed
+the image reverts to an undefined state.
+
+This leads to a minor complication when receiving images.  The receiver
+must allocate a raw buffer of the appropriate size and then leave it
+available while the image is still in use.  This is best done by creating a
+\index{state~buffer}state buffer (described in the Memory Management
+section starting on page~\pageref{sec:Strategies:New:Memory_Management}).
+The size necessary for these buffers is determined with the buffer size
+functions, repeated here for reference.
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetSparseImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+As a companion to the previous example, here a sparse image is received
+from another process and then composited into a locally held
+\textC{image}.
+
+\index{icetSparseImageBufferSize}
+\index{icetGetStateBuffer}
+\index{icetCommRecv}
+\index{icetSparseImageUnpackageFromReceive}
+\index{icetCompressedComposite}
+\begin{code}
+IceTSparseImage dest_sparse_image;
+IceTVoid *package_buffer;
+IceTSizeType max_package_size;
+
+max_package_size = icetSparseImageBufferSize(max_width, max_height);
+package_buffer = icetGetStateBuffer(MYCOMPOSITE_DEST_SPARSE_IMAGE,
+                                    max_package_size);
+icetCommRecv(package_buffer, max_package_size, ICET_BYTE, src_rank,
+             MYCOMPOSITE_FOO_TAG);
+dest_sparse_image = icetSparseImageUnpackageFromReceive(package_buffer);
+icetCompressedComposite(image, dest_sparse_image, ICET_FALSE);
+\end{code}
 
 Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
 opaque, they can be transferred as simple byte buffers.  To do so, you need
 only the size of the buffer.  The following sends an image stored in the
 variable \textC{image} of type \CType{IceTImage}.
-
-\index{icetFullImageSize}
-\index{icetGetImagePixelCount}
-\index{icetAddSentBytes}
-\index{ICET\_COMM\_SEND}
-\begin{code}
-  size = icetFullImageSize(icetGetImagePixelCount(image));
-  icetAddSentBytes(size);
-  ICET_COMM_SEND(image, size, ICET_BYTE, dest, tag);
-\end{code}
-
-And the following is the paired receive for the image.  Note that the
-number of pixels in \textC{pixel\_count} need to be as large or larger then
-the actual number of pixels sent, but it otherwise does not have to match
-exactly.  And, of course, \textC{image} must be allocated (generally with
-\CFunc{icetResizeBuffer} and \CFunc{icetReserveBufferMem}) with the
-appropriate amount of memory.
-
-\index{icetFullImageSize}
-\index{ICET\_COMM\_RECV}
-\begin{code}
-  size = icetFullImageSize(pixels);
-  ICET_COMM_RECV(image, size, ICET_BYTE, src, tag);
-\end{code}
-
-Most of the time, you will actually send compressed image data.  Compressed
-images are sent in the same manner as full image.  The only difference is
-to make sure you give the communication function the actual size of the
-image.
-
-\index{icetCompressImage}
-\index{ICET\_COMM\_SEND}
-\begin{code}
-  size = icetCompressImage(image, compressed_image);
-  ICET_COMM_SEND(compressed_image, size, ICET_BYTE, dest, tag);
-\end{code}
-
-And the following is the paired receive for the sparse image.  Note that we
-do not need to know the actual number of bytes received.  Rather, we just
-need to know the maximum size of the image and have a buffer that large.
-
-\index{icetSparseImageSize}
-\index{ICET\_COMM\_RECV}
-\begin{code}
-  size = icetSparseImageSize(pixels);
-  ICET_COMM_RECV(compressed_image, size, ICET_BYTE, src tag);
-\end{code}
 
 \subsubsection{Helper Communication Functions}
 
