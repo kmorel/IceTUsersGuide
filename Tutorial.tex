@@ -65,17 +65,18 @@ optionally, install \IceT.
 \section{Linking to \IceT Libraries}
 \label{sec:Tutorial:Linking_to_IceT_Libraries}
 
-\IceT comes with three libraries: \index{IceT (library)}\keyterm{IceT},
-\index{IceTGL~(library)}\keyterm{IceTGL}, and
-\index{IceTMPI~(library)}\keyterm{IceTMPI}.  The actual filenames of these
+\IceT comes with three libraries:
+\index{IceTCore (library)}\keyterm{IceTCore},
+\index{IceTGL (library)}\keyterm{IceTGL}, and
+\index{IceTMPI (library)}\keyterm{IceTMPI}.  The actual filenames of these
 libraries varies depending on the filesystem and build type.  For example,
 on most Unix systems, a static build results in filenames of
-\index{libIceT.a}libIceT.a and the like whereas shared libraries are
-\index{libIceT.so}libIceT.so.  Windows has libraries with names like
-\index{IceT.lib}IceT.lib as well as \index{IceT.dll}IceT.dll if building
-shared libraries.  However, the difference in these filenames usually
-hidden by the build system, especially if you use a portable build system
-like \index{CMake}CMake.
+\index{libIceTCore.a}libIceTCore.a and the like whereas shared libraries
+are \index{libIceTCore.so}libIceTCore.so.  Windows has libraries with names
+like \index{IceTCore.lib}IceTCore.lib as well as
+\index{IceTCore.dll}IceTCore.dll if building shared libraries.  However,
+the difference in these filenames usually hidden by the build system,
+especially if you use a portable build system like \index{CMake}CMake.
 
 You are, of course, free to use whatever build system you like, whether it
 be system specific or cross platform.  Using \IceT is simply a matter of
@@ -213,7 +214,7 @@ job it is running in and what is the local process id, or
 \index{rank}\keyterm{rank}.  The values are stored in variables of type
 \index{IceTInt}\textC{IceTInt}.
 
-\index{icetGetIntegerv}
+\index{icetGet}
 \index{ICET\_RANK}
 \index{ICET\_NUM\_PROCESSES}
 \begin{code}

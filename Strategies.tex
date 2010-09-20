@@ -445,8 +445,8 @@ images.
 \section{Direct Send Strategy}
 \label{sec:Strategies:DirectSend}
 
-\index{strategy!direct~send|(}
-\index{direct~send~strategy|see{strategy, direct send}}
+\index{strategy!direct|(}
+\index{direct~send~strategy|see{strategy, direct}}
 
 The \keyterm{direct send strategy} is the simplest of all the strategies.
 Each process simply renders its images and sends them directly to the
@@ -469,7 +469,7 @@ The direct send strategy is usually a poor performer.  It was designed as a
 low watermark to compare to other compositing strategies.  The direct send
 strategy does, however, support ordered compositing.
 
-\index{strategy!direct~send|)}
+\index{strategy!direct|)}
 
 \section{Implementing New Strategies}
 \label{sec:Strategies:New}
@@ -611,7 +611,7 @@ state variables generally should be read from, not written to.
   with the \CEnum{ICET\_NEAR\_DEPTH} and \CEnum{ICET\_FAR\_DEPTH} give the
   full 3D projection of the local data in window space.
 \item[\CEnum{ICET\_FAR\_DEPTH}] (double, 1) The maximum depth value of the
-  local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORTS}
+  local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORT}
   for more details.
 \item[\CEnum{ICET\_IS\_DRAWING\_FRAME}] (boolean, 1) Set to true while in a
   call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} and set to false
@@ -621,7 +621,7 @@ state variables generally should be read from, not written to.
   matrix as passed to \CFunc{icetDrawFrame} or read from \OpenGL at the
   invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_NEAR\_DEPTH}] (double, 1) The minimum depth value of the
-  local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORTS}
+  local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORT}
   for more details.
 \item[\CEnum{ICET\_NUM\_CONTAINED\_TILES}] (integer, 1) The number of tiles
   into which the local geometry projects.  This is the length of the
@@ -1474,12 +1474,12 @@ patterns.  They may be helpful in implementing your strategy.
 \end{Table}
 
 \CFunc{icetRenderTransferFullImages} renders all the tiles that are
-specified in the \CEnum{ICET\_CONTAINED\_TILES} state array and sends them
-to the processors with ranks specified in \CArg{tile\_image\_dest}.  This
-function is guaranteed not to deadlock so long as all processes call it.
-The function uses only memory given with the buffer arguments, and will
-make its best efforts to get the graphics and network hardware to run in
-parallel.
+specified in the \CEnum{ICET\_CONTAINED\_TILES\_LIST} state array and sends
+them to the processors with ranks specified in \CArg{tile\_image\_dest}.
+This function is guaranteed not to deadlock so long as all processes call
+it.  The function uses only memory given with the buffer arguments, and
+will make its best efforts to get the graphics and network hardware to run
+in parallel.
 
 \CArg{image} is an image object big enough to hold color and/or depth
 values that is \CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$
@@ -1490,8 +1490,8 @@ $\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT} big.  The size for
 \CArg{inSparseImageBuffer} can be determined with the
 \CFunc{icetSparseImageBufferSize} function in
 \index{IceTDevImage.h}\textC{IceTDevImage.h}.  \CArg{tile\_image\_dest} is
-an array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES}, then the
-rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
+an array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES\_LIST}, then
+the rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
 
 There is also a more general form for transferring images or other large
 data blocks.

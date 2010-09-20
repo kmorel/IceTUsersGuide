@@ -357,35 +357,6 @@ be handled on an as needed basis, assuming the need should arise.
   communication layer, but all the strategies still have to be ready to
   quit once a communication is canceled due to an abort (or at the very
   least ignore it without crashing).
-\item[Decouple from OpenGL.] In retrospect, tying the \IceT library so
-  closely to \OpenGL was a mistake.  Although most graphical applications,
-  even today, use \OpenGL for their rendering, it unnecessarily precludes
-  the use of any other graphics library (such as \index{DirectX}DirectX,
-  for example) or any application that does not use a graphics API to
-  create images.  The direct interfacing with \OpenGL can even complicate
-  the integration with applications that also use \OpenGL.  Although there
-  should always be a layer to simplify the interface with \OpenGL, ideally
-  you should be able to use a compositing library like \IceT independently
-  of \OpenGL.
-\item[Allow higher precision color buffers.]  The internal representation
-  of images in \IceT uses 8-bit colors.  This was an intentional design so
-  that RGBA colors can be treated as single 32-bit integers and greatly
-  speed up compositing operations.  Even today, this is fine representation
-  for colors.  Few display devices can provide more color resolution.
-  However, when blending colors stored as 8-bit values, quantization errors
-  can occur.  Most of the time this is not an issue with \IceT, but it can
-  create seams in images with very low opacity.
-\item[Automatically count network communication.] The way \IceT builds the
-  communication metric stored in \CEnum{ICET\_BYTES\_SENT} is to require
-  each strategy to count how many bytes they send.  This is a rather
-  fragile implementation.  A better approach would be to have the
-  communications layer count bytes.
-\item[Source file names.]  The names of the internal \IceT source files are
-  a bit too generic.  Names like image.c and draw.c are not clearly part of
-  \IceT and might conflict with other source file names in projects where
-  the libraries are used.  Although this will not cause any namespace
-  collisions in linking, it can be irritating while debugging if the file
-  names are not easily resolved.
 \end{description}
 
 % -----------------------------------------------------------------------------

@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
 Any number of contexts may be created, each with its own associated state.
 At any given time, a single given context is
-\index{content!current}\keyterm{current}.  All \IceT operations are applied
+\index{context!current}\keyterm{current}.  All \IceT operations are applied
 with the state attached to the current context.  A handle to the current
 \IceT context can be retrieved with the \CFunc{icetGetContext} function,
 and he current context can be changed by using the \CFunc{icetSetContext}
