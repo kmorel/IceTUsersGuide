@@ -507,19 +507,18 @@ of the \IceT library.  In particular, add your new identifier to the switch
 statements in the following functions.
 
 \begin{description}
-\item[\CFunc{icetStrategyValid}] Simply add your identifier to the list so
-  that \IceT can verify that your strategy is defined.
-\item[\CFunc{icetStrategyNameFromEnum}] Add a short human-readable name for
-  your strategy.  This is the string returned from
+\item[\CFuncExternal{icetStrategyValid}] Simply add your identifier to the
+  list so that \IceT can verify that your strategy is defined.
+\item[\CFuncExternal{icetStrategyNameFromEnum}] Add a short human-readable
+  name for your strategy.  This is the string returned from
   \CFunc{icetGetStrategyName}.
-\item[\CFunc{icetStrategySupportsOrder}] Return \CEnum{ICET\_TRUE} if your
-  strategy can properly composite based on the ordering given in
+\item[\CFuncExternal{icetStrategySupportsOrder}] Return \CEnum{ICET\_TRUE}
+  if your strategy can properly composite based on the ordering given in
   \CEnum{ICET\_COMPOSITE\_ORDER}.  Return \CEnum{ICET\_FALSE} otherwise.
-  This value gets stored in the
-  \CEnum{ICET\_STRATEGY\_SUPPORTS\_ORDERING}.
-\item[\CFunc{icetInvokeStrategy}] Call the function that invokes your
-  strategy's image compositing (\textC{icetCustomMultiTileCompose} in the
-  example above).
+  This value gets stored in the \CEnum{ICET\_STRATEGY\_SUPPORTS\_ORDERING}.
+\item[\CFuncExternal{icetInvokeStrategy}] Call the function that invokes
+  your strategy's image compositing (\textC{icetCustomMultiTileCompose} in
+  the example above).
 \end{description}
 
 The process for creating a single-image strategy (one selected with
@@ -561,14 +560,15 @@ of the \IceT library.  In particular, add your new identifier to the switch
 statements in the following functions.
 
 \begin{description}
-\item[\CFunc{icetSingleImageStrategyValid}] Simply add your identifier to
-  the list so that \IceT can verify that your strategy is defined.
-\item[\CFunc{icetSingleImageStrategyNameFromEnum}] Add a short
+\item[\CFuncExternal{icetSingleImageStrategyValid}] Simply add your
+  identifier to the list so that \IceT can verify that your strategy is
+  defined.
+\item[\CFuncExternal{icetSingleImageStrategyNameFromEnum}] Add a short
   human-readable name for your strategy.  This is the string returned from
   \CFunc{icetGetSingleImageStrategyName}.
-\item[\CFunc{icetInvokeSingleImageStrategy}] Call the function that invokes
-  your strategy's image compositing (\textC{icetCustomSingleImageCompose}
-  in the example above).
+\item[\CFuncExternal{icetInvokeSingleImageStrategy}] Call the function that
+  invokes your strategy's image compositing
+  (\textC{icetCustomSingleImageCompose} in the example above).
 \end{description}
 
 \subsection{Internal State Variables for Compositing}

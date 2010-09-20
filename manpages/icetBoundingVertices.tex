@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{August  9, 2010}
+\setDate{September 20, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetBoundingVertices}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetBoundingVertices} -- set bounds of geometry.}
 
@@ -20,14 +20,14 @@
   
   \mansection{Description}
 
-  \CFunc{icetBoundingVertices} is used to tell \IceT what the bounds of
-  the geometry drawn by the callback registered with \CFunc{icetDrawFunc}
-  are.  The bounds are assumed to be the convex hull of the vertices given.
-  The user should take care to make sure that the drawn geometry actually
-  does fit within the convex hull, or the data may be culled in unexpected
-  ways.  \IceT runs most efficiently when the bounds given are tight
-  (match the actual volume of the data well) and when the number of
-  vertices given is minimal.
+  \CFunc{icetBoundingVertices} is used to tell \IceT what the bounds of the
+  geometry drawn by the callback registered with \CFunc{icetDrawCallback}
+  or \CFunc{icetGLDrawCallback} are.  The bounds are assumed to be the
+  convex hull of the vertices given.  The user should take care to make
+  sure that the drawn geometry actually does fit within the convex hull, or
+  the data may be culled in unexpected ways.  \IceT runs most efficiently
+  when the bounds given are tight (match the actual volume of the data
+  well) and when the number of vertices given is minimal.
 
   The \CArg{size} parameter specifies the number of coordinates given for
   each vertex.  Coordinates are given in X-Y-Z-W order.  Any Y or Z
@@ -83,8 +83,10 @@
 
   \mansection{See Also}
 
-  \CFuncSeeAlso{icetDrawFunc}, \CFuncSeeAlso{icetBoundingBox},
-  \CFuncSeeAlso{icetDataReplicationGroup}
+  \CFuncSeeAlso{icetBoundingBox},
+  \CFuncSeeAlso{icetDataReplicationGroup},
+  \CFuncSeeAlso{icetDrawCallback},
+  \CFuncSeeAlso{icetGLDrawCallback}
 
 \end{Name}
 
