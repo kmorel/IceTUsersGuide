@@ -198,9 +198,9 @@ need to initialize the OpenGL-specific code in \IceT by calling
 \index{icetCreateMPICommunicator}
 \index{icetCreateContext}
 \begin{code}
-    comm = icetCreateMPICommunicator(MPI_COMM_WORLD);
-    context = icetCreateContext(comm);
-    icetGLInitialize();
+comm = icetCreateMPICommunicator(MPI_COMM_WORLD);
+context = icetCreateContext(comm);
+icetGLInitialize();
 \end{code}
 
 In the proceeding code, \textC{comm} is of type
@@ -218,8 +218,8 @@ job it is running in and what is the local process id, or
 \index{ICET\_RANK}
 \index{ICET\_NUM\_PROCESSES}
 \begin{code}
-    icetGetIntegerv(ICET_RANK, &rank);
-    icetGetIntegerv(ICET_NUM_PROCESSES, &num_proc);
+icetGetIntegerv(ICET_RANK, &rank);
+icetGetIntegerv(ICET_NUM_PROCESSES, &num_proc);
 \end{code}
 
 Before rendering, we need to tell \IceT the layout of the tiled display
@@ -234,8 +234,8 @@ a desktop-sized image, the following commands will correctly establish the
 correctly reflect the desired image dimensions).
 
 \begin{code}
-    icetResetTiles();
-    icetAddTile(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+icetResetTiles();
+icetAddTile(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 \end{code}
 
 The \CFunc{icetResetTiles} function simply tells \IceT that you are about
@@ -264,11 +264,11 @@ with our tiled display).  The code below defines a $2 \times 2$ tiled
 display with the top two tiles displayed by processes 0 and 1 and the
 bottom two tiles displayed by processes 2 and 3.
 \begin{code}
-    icetResetTiles();
-    icetAddTile(0,           WINDOW_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-    icetAddTile(WINDOW_WIDTH,WINDOW_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, 1);
-    icetAddTile(0,           0,             WINDOW_WIDTH, WINDOW_HEIGHT, 2);
-    icetAddTile(WINDOW_WIDTH,0,             WINDOW_WIDTH, WINDOW_HEIGHT, 3);
+icetResetTiles();
+icetAddTile(0,           WINDOW_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+icetAddTile(WINDOW_WIDTH,WINDOW_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, 1);
+icetAddTile(0,           0,             WINDOW_WIDTH, WINDOW_HEIGHT, 2);
+icetAddTile(WINDOW_WIDTH,0,             WINDOW_WIDTH, WINDOW_HEIGHT, 3);
 \end{code}
 
 \IceT contains several \index{strategy}\keyterm{strategies} for image
@@ -278,7 +278,7 @@ with the \CFunc{icetStrategy} function.  The code below sets \IceT to use
 the \index{strategy!reduce}\keyterm{reduce strategy}, which has proven to
 be an all-around good performer.
 \begin{code}
-    icetStrategy(ICET_STRATEGY_REDUCE);
+icetStrategy(ICET_STRATEGY_REDUCE);
 \end{code}
 Like with the display set up, all processes must set the same strategy.
 
@@ -289,7 +289,7 @@ natural way to do this is to use the \CFunc{icetBoundingBox} function,
 which defines an axis-aligned box defined by the minimum and maximum
 coordinates in each dimension.
 \begin{code}
-    icetBoundingBoxf(x_min, x_max, y_min, y_max, z_min, z_max);
+icetBoundingBoxf(x_min, x_max, y_min, y_max, z_min, z_max);
 \end{code}
 The parameters can, and should be, different on each process, since each
 process will have a different partition of data.  Strictly speaking,
@@ -307,7 +307,7 @@ geometry.  \IceT achieves this through a
 
 \index{icetGLDrawCallback}
 \begin{code}
-    icetGLDrawCallback(drawScene);
+icetGLDrawCallback(drawScene);
 \end{code}
 
 The drawing callback is a pointer to any function that issues \OpenGL
@@ -327,7 +327,7 @@ processes.  The function will render the scene using the provided
 the appropriate images in the back \OpenGL buffers of the appropriate
 \index{display~process}display processes.
 \begin{code}
-    icetGLDrawFrame();
+icetGLDrawFrame();
 \end{code}
 
 Parallel rendering is now enabled in your application.  Simply call

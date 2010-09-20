@@ -351,14 +351,14 @@ that \IceT defines its logical global display with $y$ values from the
 bottom up like OpenGL does.
 
 \begin{code}
-  icetResetTiles();
-  for (row = 0; row < num_tile_rows; row++) {
-      for (column = 0; column < num_tile_columns; column++) {
-          icetAddTile(column*TILE_WIDTH, (num_tile_rows-row-1)*TILE_HEIGHT,
-                      TILE_WIDTH, TILE_HEIGHT,
-                      row*num_tile_columns + column);
-      }
-  }
+icetResetTiles();
+for (row = 0; row < num_tile_rows; row++) {
+    for (column = 0; column < num_tile_columns; column++) {
+        icetAddTile(column*TILE_WIDTH, (num_tile_rows-row-1)*TILE_HEIGHT,
+                    TILE_WIDTH, TILE_HEIGHT,
+                    row*num_tile_columns + column);
+    }
+}
 \end{code}
 
 \index{mullion}\keyterm{Mullions} are added by simply spacing the tiles
@@ -368,15 +368,15 @@ must first be converted to pixels using the dot pitch of the displays.  The
 following code adds mullions between all of the tiles.
 
 \begin{code}
-  icetResetTiles();
-  for (row = 0; row < num_tile_rows; row++) {
-      for (column = 0; column < num_tile_columns; column++) {
-          icetAddTile(column*(TILE_WIDTH + x_mullion),
-                      (num_tile_rows-row-1)*(TILE_HEIGHT + y_mullion),
-                      TILE_WIDTH, TILE_HEIGHT,
-                      row*num_tile_columns + column);
-      }
-  }
+icetResetTiles();
+for (row = 0; row < num_tile_rows; row++) {
+    for (column = 0; column < num_tile_columns; column++) {
+        icetAddTile(column*(TILE_WIDTH + x_mullion),
+                    (num_tile_rows-row-1)*(TILE_HEIGHT + y_mullion),
+                    TILE_WIDTH, TILE_HEIGHT,
+                    row*num_tile_columns + column);
+    }
+}
 \end{code}
 
 An equally common use for \IceT is to render images in parallel to a single
@@ -389,8 +389,8 @@ example code below sets up \IceT to create a single image that is
 accessible on the root process.
 
 \begin{code}
-  icetResetTiles();
-  icetAddTile(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+icetResetTiles();
+icetAddTile(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 \end{code}
 
 \IceT indexes the tiles in the order that they are defined with
@@ -995,7 +995,7 @@ behave appropriately on the image, whereas the behavior is unpredictable if
 the \CType{IceTImage} is uninitialized.
 
 \begin{code}
-  IceTImage image = icetImageNull();
+IceTImage image = icetImageNull();
 \end{code}
 
 The functions \CFunc{icetImageGetWidth}, \CFunc{icetImageGetHeight}, and
