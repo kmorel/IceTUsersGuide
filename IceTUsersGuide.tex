@@ -128,6 +128,28 @@
   \index{\currentmansection|)}
 }
 
+% Change the latex2man Table environment.  Mostly to get rid of the
+% indentation it places on the left hand side.  The nopagebreak option
+% tries to avoid adding a page break (which can add a lot of space on the
+% previous page).  The raggedbottom option says that if a page break is
+% absolutely necessary, do not try to make the bottom of the previous page
+% to the bottom of the page; it will add a bunch of space in the middle
+% that will look bad.  The flush bottom option restores normal page flush
+% operation.
+\newlength{\tableindent}
+\settowidth{\tableindent}{\enspace}
+\addtolength{\tableindent}{\parindent}
+\renewenvironment{Table}[1]{%
+  \raggedbottom%
+  \par\hspace*{-\tableindent}%
+  \begin{tabular}{*{#1}{l}}%
+}{%
+  \end{tabular}%
+  \nopagebreak[3]%
+  \flushbottom%
+  \par%
+}
+
 % Commands for typesetting C identifiers.
 \newcommand{\textC}[1]{\texttt{#1}}                     % Basic C code.
 \newcommand{\textCF}[1]{\textbf{\textC{#1}}}
