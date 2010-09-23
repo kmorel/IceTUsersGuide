@@ -6,6 +6,7 @@
 \usepackage[fancyhdr]{latex2man}
 \usepackage{ifthen}
 \usepackage{xspace}
+\usepackage{relsize}
 \usepackage{fancyvrb}
 
 %%% % Comment this if not a draft.
@@ -39,7 +40,9 @@
 % Set the title, author, and date
 %
 
-\title{@TITLE@}
+\title{@TITLE@ \\
+  \relsize{-2}Version @VERSION@
+}
 \author{Kenneth~Moreland \\
   Data Analysis and Visualization \\
   Sandia National Laboratories \\
@@ -55,8 +58,8 @@
 % -----------------------------------------------------------------------------
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2009-3170}
-\SANDprintDate{May 2009}
+\SANDnum{SANDXXXX-XXXX}
+\SANDprintDate{XXX 2010}
 \SANDauthor{Kenneth~Moreland}
 
 % -----------------------------------------------------------------------------
@@ -68,7 +71,7 @@
 %-----------------------------------------------------------------------------
 % The following definition does not have a default value and will not
 % print anything, if not defined
-%\SANDsupersed{SAND1901-0001}{January 1901}
+\SANDsupersed{SAND2009-3170}{May 2009}
 
 %-----------------------------------------------------------------------------
 % Commands for inserting common words.
