@@ -1,5 +1,5 @@
 % ---------------------------------------------------------------------------- %
-% $Id$
+% $Id: SANDreport.cls,v 1.91 2010/08/14 17:01:16 rolf Exp $
 %
 % We start out with the standard LaTeX document class "article" or "report" and
 % modify it so it conforms to the Sandia Technical report style.
@@ -10,7 +10,7 @@
 % Get the latest version and more at
 %    http://www.cs.sandia.gov/~rolf/SANDreport
 %
-% Rolf Riesen, December 13, 2007.
+% Rolf Riesen, August 14, 2010.
 %
 %
 % 06/14/2002 v1.01
@@ -208,7 +208,7 @@
 % 10/03/2006 v1.27
 %    - Forgot to extend the width of external distributions
 %
-% 12/13/2008 v1.28
+% 12/13/2007 v1.28
 %    - No change: Org. Number for Central Technical Files is 8944 (confirmed by Beth Watkins)
 %    - Mark the OUO examples as sample to avoid misunderstandings (Roger Suppona)
 %    - Paragraph indent is set to 0 for cover pages, but never restored (Daniel Dolan)
@@ -259,19 +259,62 @@
 %	    think this is smoother.
 %
 %    - The Technical Library has a new org number again: 4536 --> 9536 (Ann Smaple via Bill Hart)
-%        Also changed CA tech library org to 8944, but I am mostly guessing here...
+%        Also changed NM tech library org to 8944, but I am mostly guessing here...
 %        Added  (1 electronic and 1 hardcopy) for housekeeping copies and reduce spacing
 %        between distribution entries. (Ann Smaple via Bill Hart)
 %    - Central Technical Files doesn't seem to want unclassified reports anymore. (Several)
-
+%
+% 03/01/2008 v1.29
+%    - Added Rich Field's SAND Memo class.
+%
+% 04/23/2008 v1.30
+%    - Change the library distribution yet again (per Monica Price)
+%
+% 05/22/2008 v1.31
+%    - A template to typeset OUO memos (Rich Field)
+%    - Per management request, remove all references in the examples to Harry Potter and magic
+%
+% 04/30/2009 v1.32
+%    - When strict is used, section refernces do not work, since sections are
+%        not numbered. Not sure how to deal with this. For now just print a
+%        warning during compile and update the strict examples not to use \ref.
+%        (Problem reported by Eric Chu)
+%    - In article style, the list of figures and tables are now placed directly
+%        after the table of contents without starting a new page first. They do
+%        start on a new page in report style, since that is meant for longer
+%        documents. (Suggested by Tammy Kolda)
+%    - Tammy reports that R&A sometimes asks for no paragraph indentation in the
+%        abstract. In strict mode, this is now the case.
+%    - R&A also suggests that all paragraphs are indented the same. Until now the
+%        first paragraph after a section heading was not indented. The strict
+%        option now indents the first paragraph as well. (Suggested by Tammy Kolda)
+%    - Some people don't like their blank pages to be blank. Added the "blank"
+%        option which adds "Page intentionally blank" to blank pages
+%    - Shared text bewteen examples is now in seperate files and \input into the
+%        examples
+%
+% 07/02/2010 v1.33
+%    - More accurate use of \CoverFont (interlinear spacing)
+%    - New DOE statement on cover page
+%    - (electronic copy) instead of just (electronic) for the tech library distribution
+%
+% 08/08/2010 v1.34
+%    - Add the NNSA logo on page 3. Sand publication (and report) guidelines have always
+%        required it, but previous versions of the Word template and this class file
+%        have not used it. Thanks to David Thompson who worked it out with Jennifer Hallstrom
+%        and provided the necessary changes.
+%
+% 08/14/2010 v1.35
+%    - The NNSA logo is not necessary at CA or NM. (Linda
+%        Lovato-Montoya and Jennifer Hallstrom)
 
 
 % ******************************************************************************
 % Package definitions
 %
     % The version and date of this file
-    \newcommand\SANDreportVersionOnly{ v1.28 }		% leave the spaces before and after version
-    \newcommand\SANDreportVersionDate{2007/12/13}	% Date has to bis this format!
+    \newcommand\SANDreportVersionOnly{ v1.35 }		% leave the spaces before and after version
+    \newcommand\SANDreportVersionDate{2010/08/14}	% Date has to be in this format!
 
     \typeout{Using Sandia Technical Report class: \SANDreportVersionDate, \SANDreportVersionOnly Rolf Riesen}
     \newcommand\SANDreportVersion{\SANDreportVersionDate \SANDreportVersionOnly}
@@ -285,6 +328,7 @@
     \RequirePackage{graphicx}
 
     % Variables
+    \newboolean{blankSAND}			% Mark blank pages
     \newboolean{relaxedSAND}
     \newboolean{strictSAND}
     \newboolean{reportSAND}
@@ -328,18 +372,27 @@
     \ProvidesFile{SANDreport.cls}[\SANDreportVersion]
 
 
-    % We understand three options: "relax", "strict", and "report"
-    % Using "relax" make the document look more LaTeXy
+    % We understand five options: "relax", "strict", "report", "blank", and "OUO"
+    % Using "relax" makes the document look more LaTeXy
     % If no option are given, then we follow the format of SAND2002-2068P
     % Using "strict" tries to follow the guideline even more closely
     % Specifying "report" uses the report class instead of the article class
+    % Specifying "blank" marks blank pages with some silly text
+    % Specifying "OUO" removes some unnecessary text on page 2 for OUO documents
     %
+    \DeclareOption{blank}{
+	\typeout{Option "blank": Mark blank pages}
+	\setboolean{blankSAND}{true}
+    }
     \DeclareOption{relax}{
 	\typeout{Option "relax": Relaxing some of the SAND98-0730 requirements}
 	\setboolean{relaxedSAND}{true}
     }
     \DeclareOption{strict}{
 	\typeout{Option "strict": Follow the SAND98-0730 requirements more strictly}
+	\typeout{===============================================================================}
+	\typeout{strict: Note that section references wont work since sections are not numbered!}
+	\typeout{===============================================================================}
 	\setboolean{strictSAND}{true}
     }
     \ifthenelse{\boolean{relaxedSAND} \and \boolean{strictSAND}}   {
@@ -387,6 +440,15 @@
     % \geometry{pdftex, showframe, inner=1.5in, textwidth=6in, textheight=9in}
     % Changed textwidth to 6.5in and inner to 1in to more closely match official SAND cover templates - MJK, 1/12/07
     \geometry{pdftex, inner=1in, textwidth=6.5in, textheight=9in}
+
+
+    % In strict mode, we want all paragraphs indented, even the very first one after
+    % a section heading. The following code does that.
+    %
+    \ifthenelse{\boolean{strictSAND}}   {
+	\RequirePackage{indentfirst}
+    }{
+    }
 
 
 
@@ -457,6 +519,28 @@
 
 	% We don't want a head rule
 	\renewcommand{\headrulewidth}{0pt}
+
+
+	% Some people don't like their blank pages to be blank...
+	% Turn this on using the blank option.
+	\ifthenelse{\boolean{blankSAND}}   {
+	    \makeatletter							% Code I found, but can't remember where
+	    \def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else	% \cleardoublepage from latex.ltx
+		\hbox{}								% \cleardoublepage from latex.ltx
+		\vspace*{\fill}							% Code I found, but can't remember where
+		\begin{center}							% Code I found, but can't remember where
+		    This page intentionally left blank.\\
+		    % {\CoverFont{m}{6}{7pt}(Well, it's not blank anymore...)}
+		\end{center}							% Code I found, but can't remember where
+		\vspace{\fill}							% Code I found, but can't remember where
+		% FIXME: Maybe we still want page numbers... Maybe another option?
+		\thispagestyle{empty}						% Code I found, but can't remember where
+		\newpage							% \cleardoublepage from latex.ltx
+		\if@twocolumn\hbox{}\newpage\fi\fi\fi}				% \cleardoublepage from latex.ltx
+	    \makeatother							% Code I found, but can't remember where
+	}{
+	}
+
     } % End of AtBeginDocument{}
 
 
@@ -473,6 +557,7 @@
 	\fontfamily{phv}
 	\fontseries{#1}
 	\fontshape{n}
+	% #3 should be 20% larger than #2
 	\fontsize{#2}{#3}
 	\selectfont
     }
@@ -494,7 +579,7 @@
 	%
 	%\hspace*{-0.375in}
 	\begin{minipage}[t]{6.0in}
-	    \CoverFont{b}{18}{20pt}
+	    \CoverFont{b}{18}{22pt}
 	    SANDIA REPORT
 	    \vspace{0.125in}\\
 	    \CoverFont{m}{12}{14pt}
@@ -528,14 +613,13 @@
 
 	    \vspace{0.25in}
 	    \CoverFont{m}{8}{10pt}
-	    \selectfont
 	    Prepared by\\
 	    Sandia National Laboratories\\
 	    Albuquerque, New Mexico 87185 and Livermore, California 94550\\
 	    \\
-	    Sandia is a multiprogram laboratory operated by Sandia Corporation,\\
-	    a Lockheed Martin Company, for the United States Department of Energy's\\
-	    National Nuclear Security Administration under Contract DE-AC04-94-AL85000.\\
+	    Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia Corporation,\\
+	    a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. Department of Energy's\\
+	    National Nuclear Security Administration under contract DE-AC04-94AL85000.\\
 	    \\
 	    \MarkCoverVar
 	\end{minipage}
@@ -636,6 +720,9 @@
 	    \vspace{0.125in}
 
 	    \includegraphics[width=0.75in]{SANDimages/DOEbwlogo}
+	    % Not necessary for SAND reports
+	    % \hfill
+	    % \includegraphics[height=0.5in]{SANDimages/NNSAbwlogo}
 	\end{minipage}
 	\end{center}
 
@@ -781,6 +868,32 @@
 	    %{\normalfont\Large\bfseries}%				% deleted
 	    {\normalfont\Large\bfseries\centering}%			% new 4
 	}								% \section from article.cls
+
+	% This is basicaly the same as above, but without the clearpage. We want that
+	% for \listof... in article.cls to conserve some paper.
+	\newcommand\SANDTOCsection{%					% new 3
+	    \@startsection {section}{1}{\z@}%				% \section from article.cls
+	    {-3.5ex \@plus -1ex \@minus -.2ex}%				% \section from article.cls
+	    {2.3ex \@plus.2ex}%						% \section from article.cls
+	    %{\normalfont\Large\bfseries}%				% deleted
+	    {\normalfont\Large\bfseries\centering}%			% new 4
+	}								% \section from article.cls
+
+	% Redefine \listoffigures and \listoftables to use \SANDTOCsection instead of \section
+	%
+	\renewcommand\listoffigures{%					% \listoffigures from article.cls
+	    \SANDTOCsection*{\listfigurename}%				% Change \section to \SANDTOCsection
+	    \@mkboth{\MakeUppercase\listfigurename}%			% \listoffigures from article.cls
+	            {\MakeUppercase\listfigurename}%			% \listoffigures from article.cls
+	    \@starttoc{lof}%						% \listoffigures from article.cls
+	}								% \listoffigures from article.cls
+	%
+	\renewcommand\listoftables{%					% \listoftables from article.cls
+	    \SANDTOCsection*{\listtablename}%				% Change \section to \SANDTOCsection
+	    \@mkboth{\MakeUppercase\listtablename}%			% \listoftables from article.cls
+	            {\MakeUppercase\listtablename}%			% \listoftables from article.cls
+	    \@starttoc{lot}%						% \listoftables from article.cls
+	}								% \listoftables from article.cls
     }
 
 
@@ -855,7 +968,7 @@
 	    \ifthenelse{\boolean{distClassified}}   {
 		\SANDdistInternal{2}{9018}{Central Technical Files}{8944 (1 electronic and 1 hardcopy)}
 	    }{}
-	    \SANDdistInternal{2}{0899}{Technical Library}{8944 (1 electronic and 1 hardcopy)}
+	    \SANDdistInternal{1}{0899}{Technical Library}{8944 (electronic copy)}
 
 	    % If this report has a Patent Caution or Patent Interest
 	    \ifthenelse{\boolean{distPatent}}   {
@@ -880,7 +993,7 @@
 		\SANDdistInternalM{2}{2497}{Central Technical Files}{8944 (1 electronic and 1 hardcopy)}
 	    }{}
 
-	    \SANDdistInternal{1}{0899}{Technical Library}{9536 (electronic)}
+	    \SANDdistInternal{1}{0899}{Technical Library}{9536 (electronic copy)}
 
 	    % If this report has a Patent Caution or Patent Interest
 	    \ifthenelse{\boolean{distPatent}}   {
@@ -1245,7 +1358,7 @@
 	\ClassError{SANDreport.cls}{\@backslashchar SANDmarkCoverTitle doesn't work yet; sorry.}{Don't
 	know where to put the text on the title page.}
 	\sbox{\MarkTitletempbox}{{\bf #1\\}{#2}}
-	\renewcommand{\MarkCoverVar}{{{\CoverFont{b}{12}{12pt}#1}\\ {\CoverFont{m}{8}{10pt}}{#2}}}
+	\renewcommand{\MarkCoverVar}{{{\CoverFont{b}{12}{14pt}#1}\\ {\CoverFont{m}{8}{10pt}}{#2}}}
     }
 
     \newcommand{\SANDmarkCover}[1]{
@@ -1405,7 +1518,7 @@
 	    \setcounter{secnumdepth}{0}
 	}{
 	    % The report SAND98-0730 itself does, though ;-)
-	    \setcounter{secnumdepth}{3}
+	    \setcounter{secnumdepth}{2}
 	}
     }{% else
 	\ifthenelse{\boolean{strictSAND}}   {
@@ -1413,7 +1526,7 @@
 	    \setcounter{secnumdepth}{0}
 	}{
 	    % The report SAND98-0730 itself does, though ;-)
-	    \setcounter{secnumdepth}{3}
+	    \setcounter{secnumdepth}{2}
 	}
     }
 
@@ -1581,7 +1694,12 @@
 		\begin{center}%						% abstract from report.cls
 		    \bfseries \abstractname				% abstract from report.cls
 		    \@endparpenalty\@M					% abstract from report.cls
-		\end{center}}%						% abstract from report.cls
+		\end{center}%						% abstract from report.cls
+		\ifthenelse{\boolean{strictSAND}}   {			% New
+		    \setlength{\parskip}{0.75ex}			% New Don't indent the following paragraph(s)
+		    \setlength{\parindent}{0pt}				% New Don't indent the following paragraph(s)
+		    \noindent\hspace{-0.50em}				% New Don't indent the first paragraph
+		}{}}%							% New
 		% {\par\vfil\null\endtitlepage}				% deleted
 		{\par\vfil\null}					% new version
 	\else								% abstract from report.cls
@@ -1717,6 +1835,45 @@
 		\SANDmarks{body}				% new
 	    }							% \newpage from latex.ltx
 	}								% \maketitle from article.sty
+
+	\if@titlepage						% \abstract from article.cls
+	    \renewenvironment{abstract}{%			% \abstract from article.cls
+		\titlepage					% \abstract from article.cls
+		\null\vfil					% \abstract from article.cls
+		\@beginparpenalty\@lowpenalty			% \abstract from article.cls
+		\begin{center}%					% \abstract from article.cls
+		    \bfseries \abstractname			% \abstract from article.cls
+		    \@endparpenalty\@M				% \abstract from article.cls
+		\end{center}}%					% \abstract from article.cls
+		% In strict mode we don't want paragraph	% New
+		% indentation in the abstract			% New
+		\ifthenelse{\boolean{strictSAND}}   {		% New
+		    \setlength{\parskip}{0.75ex}		% New Don't indent the following paragraph(s)
+		    \setlength{\parindent}{0pt}			% New Don't indent the following paragraph(s)
+		    \noindent\hspace{-0.7em}			% New Don't indent the first paragraph
+		}{}						% New
+	    {\par\vfil\null\endtitlepage}			% \abstract from article.cls
+	\else							% \abstract from article.cls
+	    \renewenvironment{abstract}{%			% \abstract from article.cls
+		\if@twocolumn					% \abstract from article.cls
+		\section*{\abstractname}%			% \abstract from article.cls
+		\else						% \abstract from article.cls
+		\small						% \abstract from article.cls
+		\begin{center}%					% \abstract from article.cls
+		    {\bfseries \abstractname\vspace{-.5em}\vspace{\z@}}% ...from article.cls
+		\end{center}%					% \abstract from article.cls
+		\quotation					% \abstract from article.cls
+		\fi						% \abstract from article.cls
+		% In strict mode we don't want paragraph	% New
+		% indentation in the abstract			% New
+		\ifthenelse{\boolean{strictSAND}}   {		% New
+		    \setlength{\parskip}{0.75ex}		% New Don't indent the following paragraph(s)
+		    \setlength{\parindent}{0pt}			% New Don't indent the following paragraph(s)
+		    \noindent\hspace{-0.7em}			% New Don't indent the first paragraph
+		}{}						% New
+		}						% \abstract from article.cls
+	    {\if@twocolumn\else\endquotation\fi}		% \abstract from article.cls
+	\fi
     }
 
 
@@ -1741,7 +1898,7 @@
 	\cleardoublepage	% We're on the inside end page now
 	\mbox{}			% Some invisible text
 	\vfill
-	\hfill {\CoverFont{m}{6}{6pt} \SANDreportVersionOnly}
+	\hfill {\CoverFont{m}{6}{7pt} \SANDreportVersionOnly}
 	\setboolean{SANDmarkingsRequired}{false}
 	\thispagestyle{empty}
 	\pagestyle{empty}

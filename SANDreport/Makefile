@@ -1,8 +1,8 @@
 #
 # Makefile for the SAND report Example files
-# $Id: Makefile,v 1.10 2005/06/14 16:45:09 rolf Exp $
+# $Id: Makefile,v 1.11 2008/03/01 16:52:02 rolf Exp $
 #
-PFILES	= SANDExampleArticleNotstrict
+PFILES	= SANDExampleArticleNotstrict smemo_example
 
 FILES	= SANDExampleArticlestrict \
           SANDExampleReportNotstrict SANDExampleReportstrict
