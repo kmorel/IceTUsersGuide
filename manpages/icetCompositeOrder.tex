@@ -1,30 +1,32 @@
 % -*- latex -*-
 
 
-\setDate{April 12, 2006}
+\setDate{August  9, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetCompositeOrder}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetCompositeOrder} -- specify the order in which images are composited}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
-  \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const GLint *}
+  \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const IceTInt *}
   \CArg{process\_ranks} \textC{);}
 
   
   \mansection{Description}
 
   If \CEnum{ICET\_ORDERED\_COMPOSITE} is enabled and the current strategy
-  supports ordered composition, then the order which images are composited
-  are specified with \CFunc{icetCompositeOrder}.  If compositing is done
-  with z-buffer comparisons (i.e. the depth buffer is selected as an input
-  with \CFunc{icetInputOutputBuffers}), then the ordering does not matter,
-  and \CEnum{ICET\_ORDERED\_COMPOSITE} should probably be disabled.
-  However, if compositing is done with color blending (i.e. the depth
-  buffer is \emph{not} selected as in input with
-  \CFunc{icetInputOutputBuffers}), then the order in which the images are
-  composed can drastically change the output.
+  supports ordered composition (verified with the
+  \CEnum{ICET\_STRATEGY\_SUPPORTS\_ORDERING} state variable, then the order
+  which images are composited is specified with \CFunc{icetCompositeOrder}.
+  If compositing is done with z-buffer comparisons
+  (e.g. \CFunc{icetCompositeMode} is called with
+  \CEnum{ICET\_COMPOSITE\_MODE\_Z\_BUFFER}), then the ordering does not
+  matter, and \CEnum{ICET\_ORDERED\_COMPOSITE} should probably be disabled.
+  However, if compositing is done with color blending
+  (e.g. \CFunc{icetCompositeMode} is called with
+  \CEnum{ICET\_COMPOSITE\_MODE\_BLEND}), then the order in which the images
+  are composed can drastically change the output.
 
   For ordered image compositing to work, the geometric objects rendered by
   processes must be arranged such that if the geometry of one process is
@@ -32,7 +34,7 @@
   ordering holds for all camera rays.  It is the application's
   responsibility to ensure that such an ordering exists and to find that
   ordering.  The easiest way to do this is to ensure that the geometry of
-  each process falls cleanly into regions of an octree, k-d tree, or
+  each process falls cleanly into regions of a grid, octree, k-d tree, or
   similar structure.
 
   Once the geometry order is determined for a particular rendering
@@ -42,7 +44,7 @@
   rank.  The first process should have the geometry that is ``in front'' of
   all others, the next directly behind that, and so on.  It should be noted
   that the application may actually impose only a partial order on the
-  geometry, but that can easily be converted to the linear ordering requird
+  geometry, but that can easily be converted to the linear ordering required
   by \IceT.
 
   When ordering is on, it is accepted that \CFunc{icetCompositeOrder} will
@@ -80,16 +82,12 @@
   \mansection{Copyright}
   Copyright \copyright 2003 Sandia Corporation
 
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the U.S. Government.
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that this Notice and any statement
-  of authorship are reproduced on all copies.
-
+  @copyright@
 
   \mansection{See Also}
 
-  \CFuncSeeAlso{icetInputOutputBuffers}, \CFuncSeeAlso{icetStrategy}
+  \CFuncSeeAlso{icetCompositeMode}
+  \CFuncSeeAlso{icetStrategy}
 
 \end{Name}
 

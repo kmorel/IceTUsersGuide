@@ -6,10 +6,12 @@
 
 The Image Composition Engine for Tiles (\IceT) is an API designed to enable
 OpenGL applications to perform Sort-Last parallel rendering on very large
-displays.  The displays are assumed to be tile displays.  The overall
-resolution of the display may be several times larger than any viewport
-that may be rendered by a single machine.  It is also assumed that several
-processes in the parallel application are
+displays.  The displays are assumed to be
+\index{tiled~display}\keyterm{tiled displays}, which are displays
+comprising an array of display devices that act together to form a single
+large display.  The overall resolution of the display may be several times
+larger than any viewport that may be rendered by a single machine.  It is
+also assumed that several processes in the parallel application are
 \index{display~process}\keyterm{display processes}.  That is, their entire
 display window makes up part of the display.
 
@@ -24,7 +26,7 @@ provides near optimal parallel rendering under most data size and image
 size combinations.  As an example, the ParaView
 application\footnote{\href{http://www.paraview.org}{http://www.paraview.org}}
 is using \IceT for all of its parallel rendering needs ranging from a
-desktop sized image to the world's largest tile displays and from polygon
+desktop sized image to the world's largest tiled displays and from polygon
 counts ranging from 1 to 1 million (and growing).
 
 \IceT is designed to take advantage of

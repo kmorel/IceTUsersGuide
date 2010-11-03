@@ -1,0 +1,97 @@
+% -*- latex -*-
+
+
+\setDate{August  9, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetSetColorFormat}{Kenneth Moreland}{\IceT Reference}{\icetSetColorFormat, \icetSetDepthFormat -- specifies the buffer formats for \IceT to use when creating images }
+
+  \label{manpage:icetSetDepthFormat}
+  \index{icetSetDepthFormat|(textbf}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{3}
+    \textC{void }\icetSetColorFormat\textC{(}&\textC{IceTEnum}&\CArg{color\_format}\quad\textC{);} \\
+    \textC{void }\icetSetDepthFormat\textC{(}&\textC{IceTEnum}&\CArg{depth\_format}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  When \IceT creates image objects, it uses the formats specified by
+  \icetSetColorFormat and \icetSetDepthFormat.  These will be the formats
+  of images passed to drawing callbacks (specified by
+  \CFunc{icetDrawCallback} or \CFunc{icetGLDrawCallback}) and of images
+  returned from frame drawing functions (\CFunc{icetDrawFrame} or
+  \CFunc{icetGLDrawFrame}).
+
+  The following \CArg{color\_format}s are valid for use in
+  \icetSetColorFormat.
+
+  @enum_image_color@
+
+  The following \CArg{depth\_format}s are valid for use in
+  \icetSetDepthFormat.
+
+  @enum_image_depth@
+
+  The color and depth formats are stored in the \CEnum{ICET\_COLOR\_FORMAT}
+  and \CEnum{ICET\_DEPTH\_FORMAT} state variables, respectively.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}] \icetSetColorFormat or
+    \icetSetDepthFormat was called while \IceT was drawing a frame.  This
+    probably means that you called icetSetColorFormat in a drawing
+    callback. You cannot do that. Call this function before starting the
+    draw operation.
+  \item[\CErrorEnum{ICET\_INVALID\_ENUM}]
+    The \CArg{color\_format} or \CArg{depth\_format} given is invalid.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  Calling either \icetSetColorFormat or \icetSetDepthFormat does \emph{not}
+  change the format of any existing images.  It only changes any
+  subsequently created images.
+
+  The color format must be set before calling either \CFunc{icetDrawFrame}
+  or \CFunc{icetGLDrawFrame}.  Doing otherwise would create inconsistencies
+  in the images created and composed together.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetImageGetColorFormat},
+  \CFuncSeeAlso{icetImageGetDepthFormat}
+
+  \index{icetSetDepthFormat|)textbf}
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

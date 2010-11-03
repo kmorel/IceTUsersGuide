@@ -1,0 +1,20 @@
+% -*- latex -*-
+
+\begin{Description}
+\item[\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_AUTOMATIC}] Automatically
+  chooses which single image strategy to use based on the number of
+  processes participating in the composition.
+  \index{single~image~strategy!automatic}
+\item[\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_BSWAP}] The classic binary swap
+  compositing algorithm.  At each phase of the algorithm, each process
+  partners with another, sends half of its image to its partner, and
+  receives the opposite half from its partner.  The processes are then
+  partitioned into two groups that each have the same image part, and the
+  algorithm recurses.
+  \index{single~image~strategy!binary~swap}
+\item[\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_TREE}] At each phase, each
+  process partners with another, and one of the processes sends its entire
+  image to the other.  The algorithm recurses with the group of processes
+  that received images until only one process has an image.
+  \index{single~image~strategy!tree}
+\end{Description}

@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{May 23, 2006}
+\setDate{September 20, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetEnable}{Kenneth Moreland}{\IceT Reference}{\icetEnable, \icetDisable --  enable/disable an \IceT feature.}
 
@@ -10,11 +10,11 @@
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{4}
-    \textC{void }\icetEnable&\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}\\
-    \textC{void }\icetDisable&\textC{(}&\textC{GLenum}&\CArg{pname}\quad\textC{);}
+    \textC{void }\icetEnable&\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}\\
+    \textC{void }\icetDisable&\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
   \end{Table}
 
   
@@ -25,34 +25,17 @@
   be turned on or off.  Valid values for \CArg{pname} are:
 
   \begin{Description}[xxxxxxxx]
+  \item[\CEnum{ICET\_COMPOSITE\_ONE\_BUFFER}] Turn this option on when
+    performing z-buffer compositing of a color image and the only result
+    you need is the color image itself (not the depth buffer).  This is
+    common if you are just creating an image and are not interested in
+    doing depth queries.  This option is on by default.
   \item[\CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND}] Colored backgrounds are
     problematic when performing color blended compositing in that the
     background color will be additively blended from each image.  Enabling
     this flag will internally cause the color to be reset to black and then
     cause the color to be blended back into the resulting images.  This
     flag is disabled by default.
-  \item[\CEnum{ICET\_DISPLAY}] If enabled, the final, composited image for
-    each tile is written back to the frame buffer before the return of
-    \CFunc{icetDrawFrame}.  This flag is enabled by default.
-  \item[\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND}] If this and
-    \CEnum{ICET\_DISPLAY} are enabled, uses \OpenGL blending to ensure that
-    all background is set to the correct color.  This flag is disabled by
-    default.  This option does not affect the images returned from
-    \icetGetColorBuffer or \icetGetDepthBuffer; it only affects the image
-    in the \OpenGL color buffer.
-  \item[\CEnum{ICET\_DISPLAY\_INFLATE}] If this and \CEnum{ICET\_DISPLAY}
-    are enabled and the renderable window is larger then the displayed tile
-    (as determined by the current \OpenGL viewport), then resample the
-    image to fit within the renderable window before writing back to frame
-    buffer.  This flag is disabled by default.  This option does not affect
-    the images returned from \icetGetColorBuffer or \icetGetDepthBuffer; it
-    only affects the image in the OpenGL color buffer.
-  \item[\CEnum{ICET\_DISPLAY\_INFLATE\_WITH\_HARDWARE}] This option
-    determines how images are inflated.  When enabled (the default), images
-    are inflated by creating a texture and allowing the hardware the
-    inflate the image.  When disabled, images are inflated on the CPU.
-    This option has no effect unless both \CEnum{ICET\_DISPLAY} and
-    \CEnum{ICET\_DISPLAY\_INFLATE} are also enabled.
   \item[\CEnum{ICET\_FLOATING\_VIEWPORT}] If enabled, the projection will
     be shifted such that the geometry will be rendered in one shot whenever
     possible, even if the geometry straddles up to four tiles.  This flag
@@ -66,6 +49,37 @@
     enabled, you should call \CFunc{icetCompositeOrder} between each frame
     to update the image order as camera angles change.  This flag is
     disabled by default.
+  \end{Description}
+
+  In addition, if you are using the \OpenGL layer (i.e., have called
+  \CFunc{icetGLInitialize}), these options, defined in \textC{IceTGL.h},
+  are also available.
+
+  \begin{Description}[xxxxxxxx]
+  \item[\CEnum{ICET\_GL\_DISPLAY}] If enabled, the final, composited image
+    for each tile is written back to the frame buffer before the return of
+    \CFunc{icetGLDrawFrame}.  This flag is enabled by default.
+  \item[\CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND}] If this and
+    \CEnum{ICET\_GL\_DISPLAY} are enabled, \IceT uses \OpenGL blending to
+    ensure that all background is set to the correct color.  This flag is
+    disabled by default.  This option does not affect the images returned
+    from \CFunc{icetGLDrawFrame}; it only affects the image in the \OpenGL
+    color buffer.
+  \item[\CEnum{ICET\_GL\_DISPLAY\_INFLATE}] If this and
+    \CEnum{ICET\_GL\_DISPLAY} are enabled and the renderable window is
+    larger than the displayed tile (as determined by the current \OpenGL
+    viewport), then resample the image to fit within the renderable window
+    before writing back to frame buffer.  This flag is disabled by default.
+    This option does not affect the images returned from
+    \CFunc{icetGLDrawFrame}; it only affects the image in the \OpenGL color
+    buffer.  If this option is not enabled, then images are written at
+    their natural size in the lower left corner of the window.
+  \item[\CEnum{ICET\_GL\_DISPLAY\_INFLATE\_WITH\_HARDWARE}] This option
+    determines how images are inflated.  When enabled (the default), images
+    are inflated by creating a texture and allowing the hardware to inflate
+    the image.  When disabled, images are inflated on the CPU.  This option
+    has no effect unless both \CEnum{ICET\_GL\_DISPLAY} and
+    \CEnum{ICET\_GL\_DISPLAY\_INFLATE} are also enabled.
   \end{Description}
 
 
@@ -91,12 +105,7 @@
   \mansection{Copyright}
   Copyright \copyright 2003 Sandia Corporation
 
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the U.S. Government.
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that this Notice and any statement
-  of authorship are reproduced on all copies.
-
+  @copyright@
 
   \mansection{See Also}
 

@@ -1,0 +1,76 @@
+% -*- latex -*-
+
+
+\setDate{September 20, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetImageNull}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetImageNull} -- retrieve a placeholder for an empty image.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{3}
+    \CType{IceTImage}\textC{ }\CFunc{icetImageNull}\textC{(}&\textC{void}&\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Images are created internally by the \IceT library.  Sometimes it is
+  convenient to have a placeholder for a \index{image!null}``null'' image,
+  an image that does not and cannot hold data.  Null images require no
+  allocated memory to function.
+
+  If your code has the potential of using an \CType{IceTImage} image object
+  that might not otherwise be initialized, use \CFunc{icetImageNull} to set
+  it to a null object.  This will ensure that \IceT image functions that
+  operate on it will behave deterministically.
+
+  A null image simply looks like an image with no pixels and has no color
+  buffers.  \CFunc{icetImageGetWidth}, \CFunc{icetImageGetHeight}, and
+  \CFunc{icetImageGetNumPixels} all return $0$ for a null image.
+  \icetSetColorFormat and \icetSetDepthFormat return
+  \CEnum{ICET\_IMAGE\_COLOR\_NONE} and \CEnum{ICET\_IMAGE\_DEPTH\_NONE},
+  respectively.
+
+  You can identify a null image with the \CFunc{icetImageIsNull} function.
+
+
+  \mansection{Return Value}
+
+  A null image object.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetImageIsNull}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

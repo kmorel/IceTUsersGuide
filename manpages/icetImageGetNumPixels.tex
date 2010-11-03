@@ -1,0 +1,79 @@
+% -*- latex -*-
+
+
+\setDate{August  9, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetImageGetNumPixels}{Kenneth Moreland}{\IceT Reference}{\icetImageGetWidth, \icetImageGetHeight, \icetImageGetNumPixels -- get dimensions of an image}
+
+  \label{manpage:icetImageGetWidth}
+  \index{icetImageGetWidth|(textbf}
+
+  \label{manpage:icetImageGetHeight}
+  \index{icetImageGetHeight|(textbf}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{5}
+    \textC{IceTSizeType}&\icetImageGetWidth&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+    \textC{IceTSizeType}&\icetImageGetHeight&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+    \textC{IceTSizeType}&\icetImageGetNumPixels&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  \icetImageGetWidth, \icetImageGetHeight, and \icetImageGetNumPixels allow
+  you to query the size of an \CArg{image} with respect to the number of
+  pixels.  These functions define the buffer size returned by
+  \CFunc{icetImageGetColor} and \CFunc{icetImageGetDepth}.
+
+
+  \mansection{Return Value}
+
+  \icetImageGetWidth returns the number of pixels along the horizontal axis
+  of the \CArg{image} and \icetImageGetHeight returns the number of pixels
+  along the vertical axis of the \CArg{image}.  \icetImageGetNumPixels is a
+  convenience function that returns the total number of pixels in
+  \CArg{image} (the width times the height).
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetImageGetColor},
+  \CFuncSeeAlso{icetImageGetDepth}
+
+  \index{icetImageGetWidth|)textbf}
+
+  \index{icetImageGetHeight|)textbf}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

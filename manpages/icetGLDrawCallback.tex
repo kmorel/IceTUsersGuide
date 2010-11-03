@@ -1,0 +1,116 @@
+% -*- latex -*-
+
+
+\setDate{August  9, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetGLDrawCallback}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGLDrawCallback} -- set a callback for drawing with \OpenGL.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceTGL.h>}
+
+  \textC{typedef void (*} \CType{IceTGLDrawCallbackType}\textC{)( void );}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetGLDrawCallback}\textC{(}&\CType{IceTGLDrawCallbackType}&\CArg{callback}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \CFunc{icetGLDrawCallback} function sets a callback that is used to
+  draw the geometry from a given viewpoint.  It will be implicitly called
+  from within \CFunc{icetGLDrawFrame}.
+
+  \CArg{callback} should be a function that issues appropriate \OpenGL
+  calls to draw geometry in the current \OpenGL context.  After
+  \CArg{callback} is called, the image left in the frame buffer specified
+  by \CFunc{icetGLSetReadBuffer} will be read back for compositing.
+
+  \CArg{callback} should \emph{not} modify the
+  \CEnum{GL\_PROJECTION\_MATRIX} as this would cause \IceT to place image
+  data in the wrong location in the tiled display and improperly cull
+  geometry.  It is acceptable to add transformations to
+  \CEnum{GL\_MODELVIEW\_MATRIX}, but the bounding vertices given with
+  \CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox} are assumed to
+  already be transformed by any such changes to the modelview matrix.
+  Also, \CEnum{GL\_MODELVIEW\_MATRIX} must be restored before the draw
+  function returns.  Therefore, any changes to
+  \CEnum{GL\_MODELVIEW\_MATRIX} are to be done with care and should be
+  surrounded by a pair of glPushMatrix and glPopMatrix functions.
+
+  It is also important that \CArg{callback} \emph{not} attempt the change the
+  clear color.  In some composting modes, \IceT needs to read, modify, and
+  change the background color.  These operations will be lost if
+  \CArg{callback} changes the background color, and severe color blending
+  artifacts may result.
+
+  \IceT may call \CArg{callback} several times from within a call to
+  \CFunc{icetGLDrawFrame} or not at all if the current bounds lie outside
+  the current viewpoint.  This can have a subtle but important impact on
+  the behavior of \CArg{callback}.  For example, counting frames by
+  incrementing a frame counter in \CArg{callback} is obviously wrong
+  (although you could count how many times a render occurs).
+  \CArg{callback} should also leave \OpenGL in a state such that it will be
+  correct for a subsequent run of \CArg{callback}.  Any matrices or
+  attributes pushed in \CArg{callback} should be popped before
+  \CArg{callback} returns, and any state that is assumed to be true on
+  entrance to \CArg{callback} should also be true on return.
+
+  The \CArg{callback} function pointer is placed in the
+  \CEnum{ICET\_GL\_DRAW\_FUNCTION} state variable.
+
+  \CFunc{icetGLDrawCallback} is similar to \CFunc{icetDrawCallback}.  The
+  difference is that the callback set by \CFunc{icetGLDrawCallback} is used
+  by \CFunc{icetGLDrawFrame} and the callback set by
+  \CFunc{icetDrawCallback} is used by \CFunc{icetDrawFrame}.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
+    Raised if the \CFunc{icetGLInitialize} has not been called.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  \CArg{callback} is tightly coupled with the bounds set with
+  \CFunc{icetBoundingVertices} or \CFunc{icetBoundingBox}.  If the geometry
+  drawn by \CArg{callback} is dynamic (changes from frame to frame), then the
+  bounds may need to be changed as well.  Incorrect bounds may cause the
+  geometry to be culled in surprising ways.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetBoundingBox},
+  \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetDrawCallback},
+  \CFuncSeeAlso{icetGLDrawFrame}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

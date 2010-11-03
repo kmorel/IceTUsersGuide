@@ -27,17 +27,49 @@ To combine two images together, a \keyterm{compositing operation} is
 applied to every corresponding pair of pixels.  Three or more images are
 combined by applying the compositing operation multiple times to eventually
 reduce everything to one image.  (The compositing operations supported by
-\IceT are associative, so order does not matter.  \IceT takes advantage of
+\IceT are associative, so the order is flexible.  \IceT takes advantage of
 this fact to efficiently perform the compositing in parallel.)
 
-\IceT supports two compositing operations.  The first type of compositing
-operation is a depth comparison and the other is an alpha blend.    The
-depth comparison is a bit faster and is easier to use, but only works for
-opaque surfaces.  If you are performing
-\index{volume~rendering}\keyterm{volume rendering}, the translucent
-rendering of 3-dimensional volumes, or any other rendering that involves
-transparent data, then you will have to use the alpha blend compositing
-operation.
+\IceT supports two compositing operations, set with
+\CFunc{icetCompositeMode}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCompositeMode}\textC{(}&\textC{IceTEnum}&\CArg{mode}\quad\textC{);}
+\end{Table}
+
+The first type of compositing operation,
+\CEnum{ICET\_COMPOSITE\_MODE\_Z\_BUFFER}, is a depth comparison and the
+other, \CEnum{ICET\_COMPOSITE\_MODE\_BLEND}, is an alpha blend.  The depth
+comparison is a bit faster and is easier to use, but only works for opaque
+surfaces.  If you are performing \index{volume~rendering}\keyterm{volume
+  rendering}, the translucent rendering of 3-dimensional volumes, or any
+other rendering that involves transparent data, then you will have to use
+the alpha blend compositing operation.
+
+Each compositing operation relies on certain buffers to exist (or not
+exist) in images.  For example, z-buffer compositing can use a color buffer
+and requires a depth buffer whereas blended compositing requires a color
+buffer and cannot work with a depth buffer.  The buffers created in images
+by \IceT, and their formats, is controlled by the
+\CFunc{icetSetColorFormat} and \CFunc{icetSetDepthFormat} functions.  It is
+important to ensure that the setting for \CFunc{icetCompositeMode} is
+compatible with the settings for \CFunc{icetSetColorFormat} and
+\CFunc{icetSetDepthFormat}.
+
+\begin{Table}{3}
+  \textC{void }\icetSetColorFormat\textC{(}&\textC{IceTEnum}&\CArg{color\_format}\quad\textC{);} \\
+  \textC{void }\icetSetDepthFormat\textC{(}&\textC{IceTEnum}&\CArg{depth\_format}\quad\textC{);}
+\end{Table}
+
+The following \CArg{color\_format}s are valid for use in
+\CFunc{icetSetColorFormat}.
+
+\input{enumerations/image_color}
+
+The following \CArg{depth\_format}s are valid for use in
+\CFunc{icetSetDepthFormat}.
+
+\input{enumerations/image_depth}
 
 \subsection{Z-Buffer Compositing}
 \label{sec:Customizing_Compositing:User_Defined_Communicators}
@@ -52,33 +84,39 @@ removal already taking place in the OpenGL pipeline.  \IceT pulls the
 from the OpenGL image buffers.  The compositing operation then just
 compares the depth values of two pixels and chooses the one that is closer.
 
-Z-buffer compositing is used whenever the depth buffer is chosen as one of
-the input buffers.  The input (and output) buffers are chosen with the
-\CFunc{icetInputOutputBuffers} function.
+Z-buffer compositing is used when the composite mode (set with
+\CFunc{icetCompositeMode}) is \CEnum{ICET\_COMPOSITE\_MODE\_Z\_BUFFER}.
+Z-buffer compositing also requires a depth buffer.  An error will occur
+during compositing if z-buffer compositing is being used without a depth
+buffer (i.e. \CFunc{icetSetDepthFormat} is set to
+\CEnum{ICET\_IMAGE\_DEPTH\_NONE}.)
 
-\begin{Table}{3}
-  \textC{void }\CFunc{icetInputOutputBuffers}\textC{(}&\textC{GLenum}&\CArg{inputs}\textC{,} \\
-  &\textC{GLenum}&\CArg{outputs}\quad\textC{);}
-\end{Table}
-
-By default, both the the color and the depth buffer are selected as input
-buffers and the color buffer is selected as the only output buffer.  This
-means that the depth buffer will be used to do z-buffer compositing, but
-only the color buffer will be fully composited.  (Not computing the depth
-buffer may save some network transfer time.)
+By default, z-buffer compositing is enabled and both the the color and the
+depth buffer are selected as input buffers.  Also by default \IceT will
+\emph{not} produce a depth buffer.  (Not computing the depth buffer may
+save some network transfer time.)  This behavior is controlled by the
+\CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option, which is enabled by default.
 
 If you need the depth buffer composited in addition to the color buffer
 (for example, to help with a picking operation), you can do so by simply
-setting the depth buffer as one of the output buffers.
+disabling the \CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option.
+
 \begin{code}
-  icetInputOutputBuffers(ICET_COLOR_BUFFER_BIT | ICET_DEPTH_BUFFER_BIT,
-                         ICET_COLOR_BUFFER_BIT | ICET_DEPTH_BUFFER_BIT);
+icetCompositeMode(ICET_COMPOSITE_MODE_Z_BUFFER);
+icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_UBYTE);
+icetSetDepthFormat(ICET_IMAGE_DEPTH_FLOAT);
+icetDisable(ICET_COMPOSITE_ONE_BUFFER);
 \end{code}
+
 Alternatively, if you only need the depth buffer (for example, as a shadow
-map), you can do so by setting both the input and output buffers to just
-the depth buffer.
+map), you can do so by setting the color format to
+\CEnum{ICET\_IMAGE\_COLOR\_NONE}.  In this case, the
+\CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option will have no effect
+
 \begin{code}
-  icetInputOutputBuffers(ICET_DEPTH_BUFFER_BIT, ICET_DEPTH_BUFFER_BIT);
+icetCompositeMode(ICET_COMPOSITE_MODE_Z_BUFFER);
+icetSetColorFormat(ICET_IMAGE_COLOR_NONE);
+icetSetDepthFormat(ICET_IMAGE_DEPTH_FLOAT);
 \end{code}
 
 \index{compositing!z-buffer|)}
@@ -105,21 +143,25 @@ that all the pixels get composited in the correct order requires additional
 information about and constraints on the geometry.
 
 When z-buffer compositing is not applicable, you must use \keyterm{blended
-  compositing}.  Blended compositing is automatically turned on when there
-is no z-buffer specified as an input buffer.  That generally means you will
-be setting both the input and output buffers to the color buffer.
+  compositing}.  To use blended compositing, set the composite mode (with
+\CFunc{icetCompositeMode}) to \CEnum{ICET\_COMPOSITE\_MODE\_BLEND} and turn
+off depth buffers (i.e. \CFunc{icetSetDepthFormat} is set to
+\CEnum{ICET\_IMAGE\_DEPTH\_NONE}).
+
 \begin{code}
-  icetInputOutputBuffers(ICET_COLOR_BUFFER_BIT, ICET_COLOR_BUFFER_BIT);
+icetCompositeMode(ICET_COMPOSITE_MODE_BLEND);
+icetSetColorFormat(ICET_IMAGE_COLOR_RGBA_UBYTE);
+icetSetDepthFormat(ICET_IMAGE_DEPTH_NONE);
 \end{code}
 
 The blending composite operator relies on the \index{alpha}\keyterm{alpha}
 (\index{$\alpha$}\keyterm{$\alpha$}) channel of the color buffer (the A in
-RGBA colors).  Note that the alpha values must actually be available in the
-OpenGL color buffers in order for blended compositing to work.  Many
-applications create OpenGL buffers without alpha bit planes in them because
-they are often not necessary to render images in serial.  Make sure your
-application creates alpha bit planes before attempting to composite
-translucent images with \IceT (or any other library).
+RGBA colors).  Note that when using \OpenGL, the alpha values must actually
+be available in the \OpenGL color buffers in order for blended compositing
+to work.  Many applications create \OpenGL buffers without alpha bit planes
+in them because they are often not necessary to render images in serial.
+Make sure your application creates alpha bit planes before attempting to
+composite translucent images with \IceT (or any other library).
 
 The blending operation is the standard
 \index{over~operator}\index{under~operator}\keyterm{over/under operator}
@@ -138,7 +180,7 @@ the red, green, and blue values are scaled by the alpha parameter.  Thus, a
 fully red color at half transparency is represented by the vector $\langle
 0.5, 0, 0, 0.5 \rangle$ rather than $\langle 1, 0, 0, 0.5 \rangle$.  In
 pre-multiplied colors, none of the red, green, or blue values ever exceed
-the alpha value.  Note that colors are often provided in OpenGL as
+the alpha value.  Note that colors are often provided in \OpenGL as
 non-pre-multiplied values, and the blending equation $C_o \leftarrow C_f
 \alpha_f + C_b (1 - \alpha_f)$ is used instead of the one in
 Equation~\ref{eq:VolumeRendering:OverOperator}.  Although this blending
@@ -174,15 +216,15 @@ and the implementation is detailed in the following paper:
 Ordered compositing is turned on by simply passing the
 \CEnum{ICET\_ORDERED\_COMPOSITE} flag to \CFunc{icetEnable}.
 \begin{code}
-  icetEnable(ICET_ORDERED_COMPOSITE);
+icetEnable(ICET_ORDERED_COMPOSITE);
 \end{code}
 
 Once ordered compositing is enabled, it is very important to use
 \CFunc{icetCompositeOrder} to specify the visibility order of the geometry
 associated with each process.  This must generally be done before each call
-to \CFunc{icetDrawFrame}.
+to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \begin{Table}{1}
-  \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const GLint *}
+  \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const IceTInt *}
   \CArg{process\_ranks} \textC{);}
 \end{Table}
 The \CFunc{icetCompositeOrder} function takes an array of processes.  It is
@@ -218,37 +260,28 @@ behind the geometry of process $B$, and the resulting image will be
 invalid.
 
 If your background is a solid color, then \IceT can fix this problem
-automatically.  Simply set the OpenGL background (clear) color like you
-normally would and enable the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND}
-feature.
-
-\index{glClearColor}
-\begin{code}
-  glClearColor(0.0, 0.0, 1.0, 1.0);
-  icetEnable(ICET_CORRECT_COLORED_BACKGROUND)
-\end{code}
+automatically.  Both \CFunc{icetDrawFrame} and \CFunc{icetGLDrawFrame} have
+the ability take a solid background color and modify it as appropriate for
+compositing.  \CFunc{icetDrawFrame} takes the background color as an
+explicit parameter whereas \CFunc{icetGLDrawFrame} implicitly gets the
+background color from the \OpenGL clear color.
 
 When the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} feature is enabled and
 blended compositing is on, \IceT will change the background to $\langle 0,
-0, 0, 0 \rangle$, perform the rendering and compositing, blend the result
-into the specified background color, and finally restore the OpenGL clear
-color.
+0, 0, 0 \rangle$, perform the rendering and compositing, and blend the
+result into the specified background color.
 
-If you do not actually need to get the image result back from
-\CFunc{icetGetColorBuffer}, you can use the
-\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND}.
+If you are using \CFunc{icetGLDrawFrame} to render with the \OpenGL layer
+and if you do not actually need to use the image returned from
+\CFunc{icetGLDrawFrame}, you can use the
+\CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} option instead.
 
-\begin{code}
-  glClearColor(0.0, 0.0, 1.0, 1.0);
-  icetEnable(ICET_CORRECT_COLORED_BACKGROUND)
-\end{code}
-
-\CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} operates similar to
+\CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} operates similar to
 \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} with the exception that it uses
 the OpenGL graphics hardware to blend the composited image to the colored
 background, and may therefore get a modest performance increase.  However,
 it also means that the result will not be available in the memory buffer
-returned by \CFunc{icetGetColorBuffer}.
+returned by \CFunc{icetGLDrawFrame}.
 
 \index{background~color|)}
 
@@ -260,7 +293,7 @@ returned by \CFunc{icetGetColorBuffer}.
 
 \section{Image Inflation}
 \label{sec:Customizing_Compositing:Image_Inflation}
-\index{image~inflation|(}
+\index{image!inflation|(}
 
 Because \IceT is an image-based \index{sort-last}sort-last parallel
 rendering library, its overhead is proportional to the size of the images
@@ -270,16 +303,16 @@ frame rate that can be achieved.
 A simple way to increase the frame rate is to reduce the resolution of the
 images being displayed.  If the display resolution is larger than necessary
 (and ``larger than necessary'' is a flexible metric that can change
-regularly as an application runs), then you can tell \IceT to render
-smaller images and then \keyterm{inflate} the images to fill the display.
-A major use case for a reduced resolution image is for maintaining
-application interactivity.  Many applications, particularly visualization
-applications, contain bursts of interactivity.  The user will interact with
-the data (move the camera or objects) and then hold still and analyse the
-results.  While interacting, application responsiveness is much more
-important than image details, so during this time a lower resolution image
-can be rendered and inflated.  When the user stops interacting and starts
-analysing, a full resolution image can be created.
+regularly as an application runs), then you can render smaller images and
+then \keyterm{inflate} the images to fill the display.  A major use case
+for a reduced resolution image is for maintaining application
+interactivity.  Many applications, particularly visualization applications,
+contain bursts of interactivity.  The user will interact with the data
+(move the camera or objects) and then hold still and analyze the results.
+While interacting, application responsiveness is much more important than
+image details, so during this time a lower resolution image can be rendered
+and inflated.  When the user stops interacting and starts analyzing, a full
+resolution image can be created.
 
 You can instruct \IceT to render and composite smaller images by simply
 specifying a lower resolution display with the \CFunc{icetAddTile}
@@ -295,30 +328,32 @@ using these functions.
 Between rendering and display, the smaller images must be inflated to fill
 the display.  An application can always perform this inflation itself (and
 that is probably necessary if the images are shipped to a remote display).
-When \IceT is displaying the data (i.e. \CEnum{ICET\_DISPLAY} is enabled),
-\IceT has the ability to automatically inflate the images.  Turn on this
-feature by enabling \CEnum{ICET\_DISPLAY\_INFLATE}.  \IceT contains two
-modes for inflating images: using the CPU or using texture mapping in
-OpenGL.  When \CEnum{ICET\_DISPLAY\_INFLATE\_WITH\_HARDWARE} is enabled
-(the default), then texture mapping is used.  In either case,
-\CFunc{icetGetColorBuffer} and \CFunc{icetGetDepthBuffer} return the
-smaller image size specified by \CFunc{icetAddTile}.
+When using \IceT's \OpenGL layer (i.e. rendering with calls to
+\CFunc{icetGLDrawFrame}) and \IceT is displaying the data
+(i.e. \CEnum{ICET\_GL\_DISPLAY} is enabled), \IceT has the ability to
+automatically inflate the images.  Turn on this feature by enabling
+\CEnum{ICET\_GL\_DISPLAY\_INFLATE}.  \IceT contains two modes for inflating
+images: using the CPU or using texture mapping in OpenGL.  When
+\CEnum{ICET\_GL\_DISPLAY\_INFLATE\_WITH\_HARDWARE} is enabled (the
+default), then texture mapping is used.  In either case,
+\CFunc{icetGLDrawFrame} returns the smaller image size specified by
+\CFunc{icetAddTile}.
 
 One final note: Regardless of what size you set for the displays in
-\CFunc{icetAddTile}, you should keep the viewport (specified by
-\CFuncExternal{glViewport}) as large as possible.  The size of the graphics
-viewport and the size of the tile images can be different so long as each
-viewport is at least as large as the largest tile image.  In fact, it is
-advantageous to have the viewport larger than the specified tiles.  The
-first reason is that the \CEnum{ICET\_DISPLAY\_INFLATE} feature fills the
-image to the OpenGL viewport.  If the dimensions the two are the same, then
-no inflation will actually take place.  The second reason is that \IceT
-will use the entire OpenGL viewport for rendering.  For a multi-tile
-display, this can dramatically reduce the number of times the render
-callback needs to be called.  Thus, in general it is best to keep the
-OpenGL viewport as large as possible.
+\CFunc{icetAddTile}, you should render images as large as possible (by
+setting \CFunc{icetPhysicalRenderSize} or \CFuncExternal{glViewport} as
+large as possible).  The size of the rendered images and the size of the
+tile images can be different so long as each rendered image is at least as
+large as the largest tile image.  In fact, it is advantageous to have the
+rendered images larger than the specified tiles.  The first reason is that
+the \CEnum{ICET\_GL\_DISPLAY\_INFLATE} feature fills the image to the
+OpenGL viewport.  If the dimensions the two are the same, then no inflation
+will actually take place.  The second reason is that \IceT will use the
+entire renderable space.  For a multi-tile display, this can dramatically
+reduce the number of times the render callback needs to be called.  Thus,
+in general it is best to keep the rendered images as large as possible.
 
-\index{image~inflation|)}
+\index{image!inflation|)}
 
 \section{Floating Viewport}
 \label{sec:Customizing_Compositing:Floating_Viewport}
@@ -337,17 +372,16 @@ Consider the geometry shown in Figure~\ref{fig:FloatingViewport} that
 projects onto a screen space that fits within a single tile but is moved in
 the horizontal and vertical directions so that it straddles four tiles.  If
 the system limits itself to projecting onto physical tiles, the processor
-must render and read back four images; although it could generate a single
+must render four images even though it could generate a single
 image that contains the entire geometry with the exact same pixel spacing.
-Instead of rendering four tiles, the system can \keyterm{float} the
+Instead of rendering four tiles, \IceT can \keyterm{float} the
 viewport in the global display to the space straddling the tiles.  That is,
-the system may project the geometry to the space shown by the dotted line
+\IceT may project the geometry to the space shown by the dotted line
 in Figure~\ref{fig:FloatingViewport} and split the resulting image back
 into pieces that can be displayed directly on each tile.  Hence, the system
-does not need to render any polygon more than once, and the frame buffer is
-read back one time instead of four.
+does not need to render any polygon more than once.
 
-When a processor’s geometry fits within the floating viewport, it can cut
+When a processor's geometry fits within the floating viewport, it can cut
 the rendering time dramatically.  This is most likely to happen when the
 number of tiles is small compared to the number of processors and the
 spatial coherency of the data is good.
@@ -372,21 +406,21 @@ geometry often occupies only a fraction of the screen space in some or all
 of the tiles in which it lies.  Consequently, the initial images
 distributed between processors at the beginning of composition often have a
 significant amount of blank space within them.  Explicitly sending this
-information between processors is a waste of bandwidth.  Transferring
+data between processors is a waste of bandwidth.  Transferring
 sparse image data rather than full image data is a well-known way to reduce
 network overhead.  So far, our best method to do this has been with
 active-pixel encoding.
 
 Active-pixel encoding is a form of run-length encoding.  A traditional
 run-length encoding groups pixels into contiguous groups where the color
-and/or depth does not change.  However, in a practical 3D rendering, both
+or depth does not change.  However, in a practical 3D rendering, both
 the color and depth change almost everywhere except in the background areas
 where nothing is rendered.  To take advantage of this, images are grouped
 into alternating run lengths of \keyterm{active pixels}, pixels that
 contain geometry information, and \keyterm{inactive pixels}, pixels that
 have no geometry drawn on them.  The active-pixel run length is followed by
 pairs of color and depth values (or just one of the two if that is the only
-data available)..  The inactive pixels are not accompanied by any color or
+data available).  The inactive pixels are not accompanied by any color or
 depth information.  The depth information is assumed to be of maximum
 depth, and the color values are ignored since they contain no geometry
 information.
@@ -398,30 +432,26 @@ properties:
 
 \begin{description}
 \item[Fast encoding]  Image encoding requires each pixel to be visited
-  exactly once.  Each visit includes a single depth buffer comparison, a
+  exactly once.  Each visit includes a single alpha or depth comparison, a
   single addition, and at most one copy.
-\item[Free decoding]  Processors typically perform a depth comparison as
-  soon as they receive incoming data.  The depth comparison can be done
+\item[Free decoding]  Processors typically perform a compositing as
+  soon as they receive incoming data.  The compositing can be done
   directly against an image that is still encoded in sparse form.  In fact,
-  the depth comparison can skip the comparisons for the inactive pixels.
-  Thus doing depth comparisons against encoded images is often faster than
+  the compositing can skip the comparisons for the inactive pixels.
+  Thus doing compositing against encoded images is often faster than
   against unencoded images.
 \item[Effective compression]  During the early stages of composition when
-  the largest images must be transferred, the sparse data is commonly less
+  the most image data must be transferred, the sparse data is commonly less
   than one fifth the size of the original data.
-\item[Good worst case behavior] No image with both color and depth
-  information (the most common case) will ever grow by more than a few
+\item[Good worst case behavior] No image will ever grow by more than a few
   bytes of header information.  Images that have geometry drawn on every
   pixel will only have one run length.  Even images that alternate between
   active and inactive status for every pixel, and hence have a run length
   for every pixel, do not grow when encoded.  The number of bytes required
-  to record two run lengths is equal to the number of bytes saved by not
-  recording color and depth information for a single inactive pixel.  Thus,
-  there is no penalty for recording run lengths of size one.  If only color
-  or only depth is being recorded, it is possible to grow data in the
-  pathological case where pixels alternate between active and inactive, but
-  in practice background pixels are grouped and the data never really
-  grows.
+  to record two run lengths, which are stored as 16-bit integers each, is
+  no more than the number of bytes saved by not recording either color or
+  depth data for a single inactive pixel, which is at least 32-bits.  Thus,
+  there is no penalty for recording run lengths of size one.
 \end{description}
 
 Active-pixel encoding is performed automatically during the compositing
@@ -477,9 +507,10 @@ To set up data replication groups, it is your responsibility to partition
 and replicate geometry.  (\IceT knows nothing about geometry.)  You then
 report what the data replication groups are with the
 \CFunc{icetDataReplicationGroup} function.
+
 \begin{Table}{3}
-  \textC{void }\CFunc{icetDataReplicationGroup}\textC{(}&\textC{GLint}&\CArg{size}\textC{,} \\
-  &\textC{const GLint *}&\CArg{processes}\quad\textC{);}
+  \textC{void }\CFunc{icetDataReplicationGroup}\textC{(}&\textC{IceTInt}&\CArg{size}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{processes}\quad\textC{);}
 \end{Table}
 
 \CFunc{icetDataReplicationGroup} simply takes an array defining the
@@ -491,7 +522,7 @@ define the data replication groups by assigning an identifier (i.e. color)
 to each partition and having each process report the partition color in
 which it belongs.
 \begin{Table}{3}
-  \textC{void }\CFunc{icetDataReplicationGroupColor}\textC{(}&\textC{GLint}&\CArg{color}\quad\textC{);}
+  \textC{void }\CFunc{icetDataReplicationGroupColor}\textC{(}&\textC{IceTInt}&\CArg{color}\quad\textC{);}
 \end{Table}
 
 As an example, let us say that processes 0--3 share the same geometry, 4--7
@@ -500,7 +531,7 @@ replication groups could be reported with the following call (where
 \textC{rank} is the local process id as stored in the \CEnum{ICET\_RANK}
 state variable).
 \begin{code}
-  icetDataReplicationGroupColor(rank/4);
+icetDataReplicationGroupColor(rank/4);
 \end{code}
 
 The data replication group is stored in the
@@ -518,31 +549,35 @@ local process.
 \label{sec:Customizing_Compositing:Timing}
 \index{timing|(}
 
-Whenever \CFunc{icetDrawFrame} is called, \IceT measures the amount of time
-spent in the various tasks required for parallel rendering.  These timings
-are stored in the \IceT state and can be retrieved with \CFunc{icetGet}.
-The state variables containing these timing metrics (in seconds) are as
-follows.
+Whenever \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} is called, \IceT
+measures the amount of time spent in the various tasks required for
+parallel rendering.  These timings are stored in the \IceT state and can be
+retrieved with \CFunc{icetGet}.  The state variables containing these
+timing metrics (in seconds) are as follows.
 
 \begin{Description}[xxxxxxxx]
 \item[\CEnum{ICET\_RENDER\_TIME}] The total time spent in the drawing
-  callback during the last call to \CFunc{icetDrawFrame}.
-\item[\CEnum{ICET\_BUFFER\_READ\_TIME}] The total time spent reading from
-  OpenGL buffers during the last call to \CFunc{icetDrawFrame}.
+  callback during the last call to \CFunc{icetDrawFrame} or
+  \CFunc{icetGLDrawFrame}.
+\item[\CEnum{ICET\_BUFFER\_READ\_TIME}] The total time spent copying buffer
+  data and reading from \OpenGL buffers during the last call to
+  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_BUFFER\_WRITE\_TIME}] The total time spent writing to
-  OpenGL buffers during the last call to \CFunc{icetDrawFrame}.
+  OpenGL buffers during the last call to \CFunc{icetGLDrawFrame}.  Always
+  set to 0.0 after a call to \CFunc{icetDrawFrame}.
 \item[\CEnum{ICET\_COMPRESS\_TIME}] The total time spent in compressing
   image data using active pixel encoding during the last call to
-  \CFunc{icetDrawFrame}.
+  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_BLEND\_TIME}]/\CEnum{ICET\_COMPARE\_TIME} The total time
   spent in performing Z comparisons or color blending of images during the
-  last call to \CFunc{icetDrawFrame}.  These two variables always return
-  the same value.
-\item[\CEnum{ICET\_RENDER\_TIME}] The total time spent in the drawing
-  callback during the last call to \CFunc{icetDrawFrame}.
+  last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  These two
+  variables always return the same value.
+\item[\CEnum{ICET\_TOTAL\_DRAW\_TIME}] The total time spent in the drawing
+  callback during the last call to \CFunc{icetDrawFrame} or
+  \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_COMPOSITE\_TIME}] The total time spent in compositing
-  during the last call to \CFunc{icetDrawFrame}.  Equal to
-  $\CEnum{ICET\_TOTAL\_DRAW\_TIME} - \CEnum{ICET\_RENDER\_TIME} -
+  during the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+  Equal to $\CEnum{ICET\_TOTAL\_DRAW\_TIME} - \CEnum{ICET\_RENDER\_TIME} -
   \CEnum{ICET\_BUFFER\_READ\_TIME} - \CEnum{ICET\_BUFFER\_WRITE\_TIME}$.
 \end{Description}
 
@@ -553,7 +588,8 @@ the calling process for transferring image data during the last call to
 \CFunc{icetDrawFrame}.  Obviously, each process could have a different
 value for \CEnum{ICET\_BYTES\_SENT}.
 
-\IceT also keeps track of the number of times \CFunc{icetDrawFrame} has
-been called.  This number is stored in \CEnum{ICET\_FRAME\_COUNT}.
+\IceT also keeps track of the number of times \CFunc{icetDrawFrame} or
+\CFunc{icetGLDrawFrame} has been called.  This number is stored in
+\CEnum{ICET\_FRAME\_COUNT}.
 
 \index{timing|)}

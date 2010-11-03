@@ -1,13 +1,13 @@
 % -*- latex -*-
 
 
-\setDate{December  1, 2006}
+\setDate{August  9, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetSetContext}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetSetContext} -- changes the current context.}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
     \textC{void }\CFunc{icetSetContext}\textC{(}&\CType{IceTContext}&\CArg{context}\quad\textC{);}
@@ -46,20 +46,13 @@
   The behavior of \CFunc{icetSetContext} is somewhat indeterminate if
   \CArg{context} is not valid.  Usually, an
   \CErrorEnum{ICET\_INVALID\_VALUE} error will be raised, but it is
-  possible that the context will be set to some other context.  Under any
-  circumstances, a valid context will be current when this function
-  returns.
+  possible that the context will be set to some other context.
 
 
   \mansection{Copyright}
   Copyright \copyright 2003 Sandia Corporation
 
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the U.S. Government.
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that this Notice and any statement
-  of authorship are reproduced on all copies.
-
+  @copyright@
 
   \mansection{See Also}
 

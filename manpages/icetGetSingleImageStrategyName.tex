@@ -1,0 +1,72 @@
+% -*- latex -*-
+
+
+\setDate{August 23, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetGetSingleImageStrategyName}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGetSingleImageStrategyName} -- retrieve single image sub-strategy name.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{3}
+    \textC{const char *}\CFunc{icetGetSingleImageStrategyName}\textC{(}&\textC{void}&\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  \CFunc{icetGetSingleImageStrategyName} retrieves a human-readable name
+  for the current single image sub-strategy.
+
+
+  \mansection{Return Value}
+
+  Returns a short, null terminated string identifying the single image
+  strategy currently in effect.  Helpful for printing out debugging or
+  diagnostic statements.
+
+
+  \mansection{Errors}
+
+  None.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Notes}
+
+  The string returned does \emph{not} contain the identifier used in a C
+  program.  For example, if the current single image strategy is
+  \CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_BSWAP},
+  \CFunc{icetGetSingleImageStrategyName} returns ``Binary Swap,'' not
+  ``ICET\_SINGLE\_IMAGE\_STRATEGY\_BSWAP.''
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetGetStrategyName},
+  \CFuncSeeAlso{icetSingleImageStrategy}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

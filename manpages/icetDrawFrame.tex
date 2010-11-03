@@ -1,60 +1,86 @@
 % -*- latex -*-
 
 
-\setDate{February 14, 2008}
+\setDate{August  9, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetDrawFrame}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetDrawFrame} -- renders and composites a frame}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \textC{void }\CFunc{icetDrawFrame}\textC{(void);}
+    \CType{IceTImage}\textC{ }\CFunc{icetDrawFrame}\textC{(}
+    &\textC{const IceTDouble *}&\CArg{projection\_matrix}\textC{,} \\
+    &\textC{const IceTDouble *}&\CArg{modelview\_matrix}\textC{,} \\
+    &\textC{const IceTFloat *}&\CArg{background\_color}\quad\textC{);}
   \end{Table}
 
   
   \mansection{Description}
 
-  Initiates a frame draw using the current \OpenGL transformation matrices
-  (modelview and projection).
+  Initiates a frame draw using the given transformation matrices (modelview
+  and projection).  If you are using \OpenGL, you should probably use the
+  \CFunc{icetGLDrawFrame} function and associated
+  \CFunc{icetGLDrawCallback}.
 
-  \IceT may render an image, the tile display needs to be defined (using
-  \CFunc{icetAddTile}) and the drawing function needs to be set (using
-  \CFunc{icetDrawFunc}).  The composite strategy may also optionally be set
-  (using \CFunc{icetStrategy}).
+  Before \IceT may render an image, the tiled display needs to be defined
+  (using \CFunc{icetAddTile}), the drawing function needs to be set (using
+  \CFunc{icetDrawCallback}), and composite strategy must be set (using
+  \CFunc{icetStrategy}).  The single image sub-strategy may also optionally
+  be set (using \CFunc{icetSingleImageStrategy}).
 
-  If \CEnum{ICET\_DISPLAY} is enabled, then the fully composited image is
-  written back to the \OpenGL framebuffer for display.  It is the
-  application's responsibility to synchronize the processes and swap front
-  and back buffers.  If the \OpenGL background color is set to something
-  other than black, \CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND} should also
-  be enabled.  Displaying with \CEnum{ICET\_DISPLAY\_COLORED\_BACKGROUND}
-  disabled may be slightly faster (depending on graphics hardware) but can
-  result in black rectangles in the background.  If
-  \CEnum{ICET\_DISPLAY\_INFLATE} is enabled and the size of the renderable
-  window (determined by the current \OpenGL viewport) is greater than that
-  of the tile being displayed, then the image will first be `inflated' to
-  the size of the actual display.  If \CEnum{ICET\_DISPLAY\_INFLATE} is
-  disabled, the image is drawn at its original resolution at the lower left
-  corner of the display.
+  All processes in the current \IceT context must call
+  \CFunc{icetDrawFrame} for it to complete.
 
-  The image remaining in the frame buffer is undefined if
-  \CEnum{ICET\_DISPLAY} is disabled or the process is not displaying a
-  tile.
+  During compositing, \IceT uses the given \CArg{projection\_matrix} and
+  \CArg{modelview\_matrix}, as well as the bounds given in the last call to
+  \CFunc{icetBoundingBox} or \CFunc{icetBoundingVertices}, to determine
+  onto which pixels the local geometry projects.  If the given matrices are
+  not the same used in the rendering or the given bounds do not contain the
+  geometry, \IceT may clip the geometry in surprising ways.  Furthermore,
+  \IceT will modify the \CArg{projection\_matrix} for the drawing callback
+  to change the projection onto (or in between) tiles.  Thus, you should
+  pass the desired \CArg{projection\_matrix} to \CFunc{icetDrawFrame} and
+  then use the version passed to the drawing callback.
+
+
+  \mansection{Return Value}
+
+  On each \index{display~process}display process (as defined by
+  \CFunc{icetAddTile}, \CFunc{icetDrawFrame} returns an image of the fully
+  composited image.  The contents of the image are undefined for any
+  non-display process.
+
+  If the \CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option is on and both a color
+  and depth buffer is specified with \icetSetColorFormat and
+  \icetSetDepthFormat, then the returned image might be missing the depth
+  buffer.  The rational behind this option is that often both the color and
+  depth buffer is necessary in order to composite the color buffer, but the
+  composited depth buffer is not needed.  In this case, the compositing
+  might save some time by not transferring depth information at the latter
+  stage of compositing.
+
+  The returned image uses memory buffers that will be reclaimed the next
+  time \IceT renders a frame.  Do not use this image after the next call to
+  \CFunc{icetDrawFrame} (unless you have changed the \IceT context).
 
 
   \mansection{Errors}
 
   \begin{Description}[ICET\_INVALID\_OPERATION]
   \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
-    Raised if the drawing function has not been set.  Also can be raised if
+    Raised if the \CFunc{icetGLInitialize} has not been called or if the
+    drawing callback has not been set.  Also can be raised if
     \CFunc{icetDrawFrame} is called recursively, probably from within the
     drawing callback.
   \item[\CErrorEnum{ICET\_OUT\_OF\_MEMORY}]
     Not enough memory left to hold intermittent frame buffers and other
     temporary data.
   \end{Description}
+
+  \CFunc{icetDrawFrame} may also indirectly raise an error if there is an
+  issue with the strategy or callback.
 
 
   \mansection{Warnings}
@@ -64,41 +90,27 @@
 
   \mansection{Bugs}
 
-  If compositing with color blending on, the image returned with
-  \icetGetColorBuffer may have values of $\langle R, G, B, A \rangle =
-  \langle 0, 0, 0, 0 \rangle$ and the rest of the image may be blended with
-  black rather than the correct background color.
-
-  During compositing, image compression is employed that relies on knowing
-  the maximum possible value in the z-buffer.  Unfortunately, different
-  rendering hardware can give different results for this value.  \IceT
-  tries to dermine this value up front by clearing the screen and reading
-  the z-buffer value, but this test sometimes fails, resulting in a
-  classification of background.  The side effects of this are minimal, and
-  \IceT usually quickly fixes the problem by continually checking depth
-  values.
+  If compositing with color blending on, the image returned may have a
+  black background instead of the \CArg{background\_color} requested.  This
+  can be corrected by blending the returned image over the desired
+  background.  This will be done for you if the
+  \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} is on.
 
 
   \mansection{Copyright}
   Copyright \copyright 2003 Sandia Corporation
 
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the U.S. Government.
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that this Notice and any statement
-  of authorship are reproduced on all copies.
-
+  @copyright@
 
   \mansection{See Also}
 
-  \CFuncSeeAlso{icetResetTiles},
   \CFuncSeeAlso{icetAddTile},
   \CFuncSeeAlso{icetBoundingBox},
   \CFuncSeeAlso{icetBoundingVertices},
-  \CFuncSeeAlso{icetDrawFunc},
-  \CFuncSeeAlso{icetStrategy},
-  \CFuncSeeAlso{icetGetColorBuffer},
-  \CFuncSeeAlso{icetGetDepthBuffer}
+  \CFuncSeeAlso{icetDrawCallback},
+  \CFuncSeeAlso{icetGLDrawFrame},
+  \CFuncSeeAlso{icetSingleImageStrategy},
+  \CFuncSeeAlso{icetStrategy}
 
 \end{Name}
 

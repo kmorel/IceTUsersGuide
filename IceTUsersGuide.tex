@@ -6,6 +6,7 @@
 \usepackage[fancyhdr]{latex2man}
 \usepackage{ifthen}
 \usepackage{xspace}
+\usepackage{relsize}
 \usepackage{fancyvrb}
 
 %%% % Comment this if not a draft.
@@ -39,7 +40,9 @@
 % Set the title, author, and date
 %
 
-\title{@TITLE@}
+\title{@TITLE@ \\
+  \relsize{-2}Version @VERSION@
+}
 \author{Kenneth~Moreland \\
   Data Analysis and Visualization \\
   Sandia National Laboratories \\
@@ -55,8 +58,8 @@
 % -----------------------------------------------------------------------------
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2009-3170}
-\SANDprintDate{June 2009}
+\SANDnum{SAND2010-7451}
+\SANDprintDate{November 2010}
 \SANDauthor{Kenneth~Moreland}
 
 % -----------------------------------------------------------------------------
@@ -68,7 +71,7 @@
 %-----------------------------------------------------------------------------
 % The following definition does not have a default value and will not
 % print anything, if not defined
-%\SANDsupersed{SAND1901-0001}{January 1901}
+\SANDsupersed{SAND2009-3170}{May 2009}
 
 %-----------------------------------------------------------------------------
 % Commands for inserting common words.
@@ -128,6 +131,28 @@
   \index{\currentmansection|)}
 }
 
+% Change the latex2man Table environment.  Mostly to get rid of the
+% indentation it places on the left hand side.  The nopagebreak option
+% tries to avoid adding a page break (which can add a lot of space on the
+% previous page).  The raggedbottom option says that if a page break is
+% absolutely necessary, do not try to make the bottom of the previous page
+% to the bottom of the page; it will add a bunch of space in the middle
+% that will look bad.  The flush bottom option restores normal page flush
+% operation.
+\newlength{\tableindent}
+\settowidth{\tableindent}{\enspace}
+\addtolength{\tableindent}{\parindent}
+\renewenvironment{Table}[1]{%
+  \raggedbottom%
+  \par\hspace*{-\tableindent}%
+  \begin{tabular}{*{#1}{l}}%
+}{%
+  \end{tabular}%
+  \nopagebreak[3]%
+  \flushbottom%
+  \par%
+}
+
 % Commands for typesetting C identifiers.
 \newcommand{\textC}[1]{\texttt{#1}}                     % Basic C code.
 \newcommand{\textCF}[1]{\textbf{\textC{#1}}}
@@ -165,20 +190,105 @@
 % Functions that have aliases for cross referencing and indexing.
 \newcommand{\icetBoundingBoxf}{\CFunc[icetBoundingBox]{icetBoundingBoxf}\xspace}
 \newcommand{\icetBoundingBoxd}{\CFunc[icetBoundingBox]{icetBoundingBoxd}\xspace}
+
 \newcommand{\icetEnable}{\CFunc[icetEnable]{icetEnable}\xspace}
 \newcommand{\icetDisable}{\CFunc[icetEnable]{icetDisable}\xspace}
+
+\newcommand{\icetGetBitFieldv}{\CFunc[icetGet]{icetGetBitFieldv}\xspace}
 \newcommand{\icetGetBooleanv}{\CFunc[icetGet]{icetGetBooleanv}\xspace}
 \newcommand{\icetGetDoublev}{\CFunc[icetGet]{icetGetDoublev}\xspace}
+\newcommand{\icetGetEnumv}{\CFunc[icetGet]{icetGetEnumv}\xspace}
 \newcommand{\icetGetFloatv}{\CFunc[icetGet]{icetGetFloatv}\xspace}
 \newcommand{\icetGetIntegerv}{\CFunc[icetGet]{icetGetIntegerv}\xspace}
 \newcommand{\icetGetPointerv}{\CFunc[icetGet]{icetGetPointerv}\xspace}
-\newcommand{\icetGetColorBuffer}{\CFunc{icetGetColorBuffer}\xspace}
-\newcommand{\icetGetDepthBuffer}{%
+
+\newcommand{\icetSetColorFormat}{\CFunc{icetSetColorFormat}\xspace}
+\newcommand{\icetSetDepthFormat}{%
   \ifthenelse%
-    {\equal{\currentmansection}{icetGetColorBuffer}}%
-    {\CFunc[icetGetColorBuffer]{icetGetDepthBuffer}}%
-    {\CFunc{icetGetDepthBuffer}}%
+    {\equal{\currentmansection}{icetSetColorFormat}}%
+    {\CFunc[icetSetColorFormat]{icetSetDepthFormat}}%
+    {\CFunc{icetSetDepthFormat}}%
     \xspace%
+}
+
+\newcommand{\icetImageGetColorFormat}{\CFunc{icetImageGetColorFormat}\xspace}
+\newcommand{\icetImageGetDepthFormat}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetColorFormat}}%
+    {\CFunc[icetImageGetColorFormat]{icetImageGetDepthFormat}}%
+    {\CFunc{icetImageGetDepthFormat}}%
+    \xspace%
+}
+
+\newcommand{\icetImageGetNumPixels}{\CFunc{icetImageGetNumPixels}\xspace}
+\newcommand{\icetImageGetWidth}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetNumPixels}}%
+    {\CFunc[icetImageGetNumPixels]{icetImageGetWidth}}%
+    {\CFunc{icetImageGetWidth}}%
+    \xspace%
+}
+\newcommand{\icetImageGetHeight}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetNumPixels}}%
+    {\CFunc[icetImageGetNumPixels]{icetImageGetHeight}}%
+    {\CFunc{icetImageGetHeight}}%
+    \xspace%
+}
+
+\newcommand{\icetImageGetColor}{\CFunc{icetImageGetColor}\xspace}
+\newcommand{\icetImageGetColorub}{\CFunc[icetImageGetColor]{icetImageGetColorub}\xspace}
+\newcommand{\icetImageGetColorui}{\CFunc[icetImageGetColor]{icetImageGetColorui}\xspace}
+\newcommand{\icetImageGetColorf}{\CFunc[icetImageGetColor]{icetImageGetColorf}\xspace}
+
+\newcommand{\icetImageGetDepth}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetColor}}%
+    {\CFunc[icetImageGetColor]{icetImageGetDepth}}%
+    {\CFunc{icetImageGetDepth}}%
+    \xspace%
+}
+\newcommand{\icetImageGetDepthf}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetColor}}%
+    {\CFunc[icetImageGetColor]{icetImageGetDepthf}}%
+    {\CFunc[icetImageGetDepth]{icetImageGetDepthf}}%
+    \xspace%
+}
+
+\newcommand{\icetImageCopyColor}{\CFunc{icetImageCopyColor}\xspace}
+\newcommand{\icetImageCopyColorub}{\CFunc[icetImageCopyColor]{icetImageCopyColorub}\xspace}
+\newcommand{\icetImageCopyColorf}{\CFunc[icetImageCopyColor]{icetImageCopyColorf}\xspace}
+
+\newcommand{\icetImageCopyDepth}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageCopyColor}}%
+    {\CFunc[icetImageCopyColor]{icetImageCopyDepth}}%
+    {\CFunc{icetImageCopyDepth}}%
+    \xspace%
+}
+\newcommand{\icetImageCopyDepthf}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageCopyColor}}%
+    {\CFunc[icetImageCopyColor]{icetImageCopyDepthf}}%
+    {\CFunc[icetImageCopyDepth]{icetImageCopyDepthf}}%
+    \xspace%
+}
+
+\newcommand{\icetUnsafeStateGetDouble}{%
+  \CFunc[icetUnsafeStateGet]{icetUnsafeStateGetDouble}\xspace%
+}
+\newcommand{\icetUnsafeStateGetFloat}{%
+  \CFunc[icetUnsafeStateGet]{icetUnsafeStateGetFloat}\xspace%
+}
+\newcommand{\icetUnsafeStateGetInteger}{%
+  \CFunc[icetUnsafeStateGet]{icetUnsafeStateGetInteger}\xspace%
+}
+\newcommand{\icetUnsafeStateGetBoolean}{%
+  \CFunc[icetUnsafeStateGet]{icetUnsafeStateGetBoolean}\xspace%
+}
+\newcommand{\icetUnsafeStateGetPointer}{%
+  \CFunc[icetUnsafeStateGet]{icetUnsafeStateGetPointer}\xspace%
 }
 
 %-----------------------------------------------------------------------------
@@ -240,6 +350,8 @@ collecting dust on a crashed RAID somewhere.
 
 \input{Communicators.tex}
 
+\input{Transitioning.tex}
+
 
 \chapter{Future Work}
 
@@ -272,35 +384,6 @@ be handled on an as needed basis, assuming the need should arise.
   communication layer, but all the strategies still have to be ready to
   quit once a communication is canceled due to an abort (or at the very
   least ignore it without crashing).
-\item[Decouple from OpenGL.] In retrospect, tying the \IceT library so
-  closely to \OpenGL was a mistake.  Although most graphical applications,
-  even today, use \OpenGL for their rendering, it unnecessarily precludes
-  the use of any other graphics library (such as \index{DirectX}DirectX,
-  for example) or any application that does not use a graphics API to
-  create images.  The direct interfacing with \OpenGL can even complicate
-  the integration with applications that also use \OpenGL.  Although there
-  should always be a layer to simplify the interface with \OpenGL, ideally
-  you should be able to use a compositing library like \IceT independently
-  of \OpenGL.
-\item[Allow higher precision color buffers.]  The internal representation
-  of images in \IceT uses 8-bit colors.  This was an intentional design so
-  that RGBA colors can be treated as single 32-bit integers and greatly
-  speed up compositing operations.  Even today, this is fine representation
-  for colors.  Few display devices can provide more color resolution.
-  However, when blending colors stored as 8-bit values, quantization errors
-  can occur.  Most of the time this is not an issue with \IceT, but it can
-  create seams in images with very low opacity.
-\item[Automatically count network communication.] The way \IceT builds the
-  communication metric stored in \CEnum{ICET\_BYTES\_SENT} is to require
-  each strategy to count how many bytes they send.  This is a rather
-  fragile implementation.  A better approach would be to have the
-  communications layer count bytes.
-\item[Source file names.]  The names of the internal \IceT source files are
-  a bit too generic.  Names like image.c and draw.c are not clearly part of
-  \IceT and might conflict with other source file names in projects where
-  the libraries are used.  Although this will not cause any namespace
-  collisions in linking, it can be irritating while debugging if the file
-  names are not easily resolved.
 \end{description}
 
 % -----------------------------------------------------------------------------
@@ -328,12 +411,14 @@ available in the \IceT API.
 % The first printing.
 \begin{SANDdistribution}[NM]
   % External addresses first
-  \SANDdistExternal{3}{Berk Geveci\\ Kitware, Inc.\\ 28 Corporate Drive\\
+  \SANDdistExternal{1}{Berk Geveci\\ Kitware, Inc.\\ 28 Corporate Drive\\
     Clifton Park, NY 12065}
+  \SANDdistExternal{1}{Wesley Kendall\\ 1208 Lula Bell Dr\\
+    Powell, TN 37849}
   \bigskip
 
    % Internal addresses next
-  \SANDdistInternal{8}{1323}{Kenneth Moreland}{1424}
+  \SANDdistInternal{3}{1323}{Kenneth Moreland}{1424}
 \end{SANDdistribution}
 
 \end{document}

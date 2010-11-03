@@ -1,0 +1,113 @@
+% -*- latex -*-
+
+
+\setDate{September 20, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetGLDrawFrame}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGLDrawFrame} -- renders and composites a frame using \OpenGL}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceTGL.h>}
+
+  \begin{Table}{3}
+    \textC{void}\quad\CFunc{icetGLDrawFrame}\textC{( void );}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  Initiates a frame draw using the current \OpenGL transformation matrices
+  (modelview and projection).
+
+  Before \IceT may render an image, the tiled display needs to be defined
+  (using \CFunc{icetAddTile}), the drawing function needs to be set (using
+  \CFunc{icetGLDrawCallback}), and composite strategy must be set (using
+  \CFunc{icetStrategy}).  The single image sub-strategy may also optionally
+  be set (using \CFunc{icetSingleImageStrategy}).
+
+  All processes in the current \IceT context must call
+  \CFunc{icetGLDrawFrame} for it to complete.
+
+  The \OpenGL projection matrix and modelview matrix must be set using
+  \CFuncExternal{glLoadMatrix} or a number of other functions.  Likewise,
+  the \OpenGL background color must be set with
+  \CFuncExternal{glClearColor}.  \IceT will use the matrices to determine
+  what pixels need to be rendered and composited.  \IceT will also modify
+  the projection matrix to project onto (or in between) tiles.
+
+  If \CEnum{ICET\_GL\_DISPLAY} is enabled, then the fully composited image
+  is written back to the \OpenGL framebuffer for display.  It is the
+  application's responsibility to synchronize the processes and swap front
+  and back buffers.  If the \OpenGL background color is set to something
+  other than black, \CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} should
+  also be enabled.  Displaying with
+  \CEnum{ICET\_GL\_DISPLAY\_COLORED\_BACKGROUND} disabled may be slightly
+  faster (depending on graphics hardware) but can result in black
+  rectangles in the background.  If \CEnum{ICET\_GL\_DISPLAY\_INFLATE} is
+  enabled and the size of the renderable window (determined by the current
+  \OpenGL viewport) is greater than that of the tile being displayed, then
+  the image will first be ``inflated'' to the size of the actual display.
+  This inflation will be assisted by texture hardware if
+  \CEnum{ICET\_GL\_DISPLAY\_INFLATE\_WITH\_HARDWARE} is on.  If
+  \CEnum{ICET\_GL\_DISPLAY\_INFLATE} is disabled, the image is drawn at its
+  original resolution at the lower left corner of the display.
+
+  The image remaining in the frame buffer is undefined if
+  \CEnum{ICET\_GL\_DISPLAY} is disabled or the process is not displaying a
+  tile.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
+    Raised if the drawing callback has not been set.  Also can be raised if
+    \CFunc{icetDrawFrame} is called recursively, probably from within the
+    drawing callback.
+  \item[\CErrorEnum{ICET\_OUT\_OF\_MEMORY}]
+    Not enough memory left to hold intermittent frame buffers and other
+    temporary data.
+  \end{Description}
+
+  \CFunc{icetGLDrawFrame} may also indirectly raise an error if there is an
+  issue with the strategy or callback.
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  If compositing with color blending on, the image returned may have a
+  black background instead of the \CArg{background\_color} requested.  This
+  can be corrected by blending the returned image over the desired
+  background.  This will be done for you if the
+  \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} is on.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2003 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetAddTile},
+  \CFuncSeeAlso{icetBoundingBox},
+  \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetDrawFrame},
+  \CFuncSeeAlso{icetGLDrawCallback},
+  \CFuncSeeAlso{icetSingleImageStrategy},
+  \CFuncSeeAlso{icetStrategy}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

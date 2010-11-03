@@ -1,22 +1,22 @@
 % -*- latex -*-
 
 
-\setDate{November 15, 2006}
+\setDate{August 23, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetGetStrategyName}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGetStrategyName} -- retrieve strategy name.}
 
   \mansection{Synopsis}
 
-  \textC{\#include <GL/ice-t.h>}
+  \textC{\#include <IceT.h>}
 
   \begin{Table}{3}
-    \textC{const GLubyte }\CFunc{icetGetStrategyName}\textC{(}&\textC{void}&\textC{);}
+    \textC{const char *}\CFunc{icetGetStrategyName}\textC{(}&\textC{void}&\textC{);}
   \end{Table}
 
   
   \mansection{Description}
 
-  \CFunc{icetGetStrategyName} retrieves a human readable name for the
+  \CFunc{icetGetStrategyName} retrieves a human-readable name for the
   current strategy.
 
 
@@ -29,7 +29,10 @@
 
   \mansection{Errors}
 
-  None.
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_ENUM}]
+    A strategy was never set with \CFunc{icetStrategy}.
+  \end{Description}
 
 
   \mansection{Warnings}
@@ -44,26 +47,20 @@
 
   \mansection{Notes}
 
-  The string returned does
-  \emph{not}
-  contain the identifier used in a C program.  For example, if the current
-  strategy is
-  \CEnum{ICET\_STRATEGY\_REDUCE}, \CFunc{icetGetStrategyName}
-  returns ``Reduce,'' not ``ICET\_STRATEGY\_REDUCE.''
+  The string returned does \emph{not} contain the identifier used in a C
+  program.  For example, if the current strategy is
+  \CEnum{ICET\_STRATEGY\_REDUCE}, \CFunc{icetGetStrategyName} returns
+  ``Reduce,'' not ``ICET\_STRATEGY\_REDUCE.''
 
 
   \mansection{Copyright}
   Copyright \copyright 2003 Sandia Corporation
 
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the U.S. Government.
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that this Notice and any statement
-  of authorship are reproduced on all copies.
-
+  @copyright@
 
   \mansection{See Also}
 
+  \CFuncSeeAlso{icetGetSingleImageStrategyName},
   \CFuncSeeAlso{icetStrategy}
 
 \end{Name}

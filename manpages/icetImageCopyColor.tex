@@ -1,0 +1,116 @@
+% -*- latex -*-
+
+
+\setDate{September 20, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetImageCopyColor}{Kenneth Moreland}{\IceT Reference}{\icetImageCopyColor, \icetImageCopyDepth -- retrieve pixel data from image}
+
+  \label{manpage:icetImageCopyDepth}
+  \index{icetImageCopyDepth|(textbf}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{4}
+    \textC{void}&\icetImageCopyColorub\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}\textC{,} \\
+    &&\textC{IceTUByte *}&\CArg{color\_buffer}, \\
+    &&\textC{IceTEnum}&\CArg{color\_format}\quad\textC{);} 
+  \end{Table}
+
+  \begin{Table}{4}
+    \textC{void}&\icetImageCopyColorf\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}\textC{,} \\
+    &&\textC{IceTFloat *}&\CArg{color\_buffer}, \\
+    &&\textC{IceTEnum}&\CArg{color\_format}\quad\textC{);}
+  \end{Table}
+
+  \begin{Table}{4}
+    \textC{void}&\icetImageCopyDepthf\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}\textC{,} \\
+    &&\textC{IceTFloat *}&\CArg{depth\_buffer}, \\
+    &&\textC{IceTEnum}&\CArg{depth\_format}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The \icetImageCopyColor suite of functions retrieve color data from images
+  and the \icetImageCopyDepth functions retrieve depth data from images.
+  Each function takes a pointer to an existing buffer that must be large
+  enough to hold all pixels in the image.  The data from the images is
+  copied into these buffers, performing format conversions as necessary.
+  Because data is copied into the provided buffer, subsequently changing
+  values in the buffer has no effect on the image object (as opposed to the
+  behavior of \icetImageGetColor and \icetImageGetDepth).
+
+  The pixel data is always tightly packed in horizontal major order.  Color
+  data that comprises tuples such as RGBA have the components for each
+  pixel packed together in that order.  The first entry in the array
+  corresponds to the pixel in the lower left corner of the image.  The next
+  entry is immediately to the right of the first pixel, and so on.  The
+  dimensions of the array can be retrieved with the \icetImageGetWidth and
+  \icetImageGetHeight functions.
+
+  Each of these functions provides a typed version of the image data array.
+  They can only succeed if the type the request matches the type specified
+  by the \CArg{color\_format} or \CArg{depth\_format} argument.  It is an
+  error, for example, to request unsigned byte color data for a floating
+  point color format.  Although specifying the format may be redundant (it
+  could be implied by the type being retrieved), \IceT requires it for
+  completeness and to support possible future data formats.
+
+  Use \icetImageCopyColorub to retrieve an array of 8-bit unsigned bytes.
+  Using this function is only valid if \CArg{color\_format} is
+  \CEnum{ICET\_IMAGE\_COLOR\_RGBA\_UBYTE}.
+
+  Use \icetImageCopyColorf to retrieve an array of floating point color
+  values.  Using this function is only valid if \CArg{color\_format} is
+  \CEnum{ICET\_IMAGE\_COLOR\_RGBA\_FLOAT}.
+
+  Use \icetImageGetDepthf to retrieve an array of floating point depth
+  values.  Using this function is only valid if \CArg{depth\_format} is
+  \CEnum{ICET\_IMAGE\_DEPTH\_FLOAT}.
+
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_OPERATION}]
+    The \CArg{image} object does not have a color or depth buffer from
+    which to copy data.
+  \item[\CErrorEnum{ICET\_INVALID\_ENUM}]
+    The requested \CArg{color\_format} or \CArg{depth\_format} is
+    incompatible with the type of the buffer.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetImageGetColor},
+  \CFuncSeeAlso{icetImageGetDepth}
+
+  \index{icetImageCopyDepth|)textbf}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:

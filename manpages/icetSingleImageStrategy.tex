@@ -1,0 +1,75 @@
+% -*- latex -*-
+
+
+\setDate{August  9, 2010}
+% The following must all be on one line for latex2man to work.
+\begin{Name}{3}{icetSingleImageStrategy}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetSingleImageStrategy} -- set the sub-strategy used to composite the image for a single tile.}
+
+  \mansection{Synopsis}
+
+  \textC{\#include <IceT.h>}
+
+  \begin{Table}{3}
+    \textC{void }\CFunc{icetSingleImageStrategy}\textC{(}&\textC{IceTEnum}&\CArg{strategy}\quad\textC{);}
+  \end{Table}
+
+  
+  \mansection{Description}
+
+  The main \IceT algorithms are specially designed to composite data
+  defined on multiple tiles.  Some of these algorithms, namely
+  \CEnum{ICET\_STRATEGY\_REDUCE} and \CEnum{ICET\_STRATEGY\_SEQUENTIAL},
+  operate at least in part by compositing single images together.  \IceT
+  also comes with multiple separate strategies for performing this single
+  image compositing, and this can be selected with the
+  \CFunc{icetSingleImageStrategy} function.
+
+  A single image strategy is chosen from one of the following provided
+  enumerated values:
+
+  @enum_single_image_strategy@
+
+  By default \IceT sets the single image strategy to
+  \CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_AUTOMATIC} when a context is
+  created.  This is the single image strategy that will be used if no other
+  is selected.
+
+  \mansection{Errors}
+
+  \begin{Description}[ICET\_INVALID\_OPERATION]
+  \item[\CErrorEnum{ICET\_INVALID\_ENUM}]
+    The \CArg{strategy} argument does not represent a valid single image
+    strategy.
+  \end{Description}
+
+
+  \mansection{Warnings}
+
+  None.
+
+
+  \mansection{Bugs}
+
+  None known.
+
+
+  \mansection{Copyright}
+  Copyright \copyright 2010 Sandia Corporation
+
+  @copyright@
+
+  \mansection{See Also}
+
+  \CFuncSeeAlso{icetDrawFrame},
+  \CFuncSeeAlso{icetGetStrategyName}
+  \CFuncSeeAlso{icetSingleImageStrategy}
+
+\end{Name}
+
+
+% These are emacs settings that go at the end of the file.
+% Local Variables:
+% writestamp-format: "%B %e, %Y"
+% writestamp-prefix: "^\\\\setDate{"
+% writestamp-suffix: "}$"
+% End:
