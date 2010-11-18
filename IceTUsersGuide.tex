@@ -240,6 +240,9 @@
 \newcommand{\icetImageGetColorub}{\CFunc[icetImageGetColor]{icetImageGetColorub}\xspace}
 \newcommand{\icetImageGetColorui}{\CFunc[icetImageGetColor]{icetImageGetColorui}\xspace}
 \newcommand{\icetImageGetColorf}{\CFunc[icetImageGetColor]{icetImageGetColorf}\xspace}
+\newcommand{\icetImageGetColorcub}{\CFunc[icetImageGetColor]{icetImageGetColorcub}\xspace}
+\newcommand{\icetImageGetColorcui}{\CFunc[icetImageGetColor]{icetImageGetColorcui}\xspace}
+\newcommand{\icetImageGetColorcf}{\CFunc[icetImageGetColor]{icetImageGetColorcf}\xspace}
 
 \newcommand{\icetImageGetDepth}{%
   \ifthenelse%
@@ -253,6 +256,13 @@
     {\equal{\currentmansection}{icetImageGetColor}}%
     {\CFunc[icetImageGetColor]{icetImageGetDepthf}}%
     {\CFunc[icetImageGetDepth]{icetImageGetDepthf}}%
+    \xspace%
+}
+\newcommand{\icetImageGetDepthcf}{%
+  \ifthenelse%
+    {\equal{\currentmansection}{icetImageGetColor}}%
+    {\CFunc[icetImageGetColor]{icetImageGetDepthcf}}%
+    {\CFunc[icetImageGetDepth]{icetImageGetDepthcf}}%
     \xspace%
 }
 

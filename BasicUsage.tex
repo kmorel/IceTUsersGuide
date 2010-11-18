@@ -1041,6 +1041,14 @@ functions to get buffers to write data into.
   \textC{IceTFloat *}&\icetImageGetDepthf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)};
 \end{Table}
 
+  \begin{Table}{4}
+    \textC{const IceTUByte *}&\icetImageGetColorcub&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \textC{const IceTUInt *}&\icetImageGetColorcui&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \textC{const IceTFloat *}&\icetImageGetColorcf&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \\
+    \textC{const IceTFloat *}&\icetImageGetDepthcf&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)};
+  \end{Table}
+
 The various forms of \icetImageGetColor and \icetImageGetDepth return typed
 arrays for the buffer of data.  The type of the data must conform to the
 internal format of the data; the functions will raise an error otherwise.

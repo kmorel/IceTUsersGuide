@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{August  9, 2010}
+\setDate{November 18, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetImageGetColor}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetImageGetColor}, \icetImageGetDepth -- retrieve pixel data buffer from image}
 
@@ -18,6 +18,18 @@
     \textC{IceTFloat *}&\icetImageGetColorf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
     \\
     \textC{IceTFloat *}&\icetImageGetDepthf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)};
+  \end{Table}
+
+  \begin{Table}{4}
+    \textC{const IceTUByte *}&\icetImageGetColorcub&\textC{(}
+    \quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \textC{const IceTUInt *}&\icetImageGetColorcui&\textC{(}
+    \quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \textC{const IceTFloat *}&\icetImageGetColorcf&\textC{(}
+    \quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+    \\
+    \textC{const IceTFloat *}&\icetImageGetDepthcf&\textC{(}
+    \quad\textC{const }\CType{IceTImage}&\CArg{image}\quad\textC{)};
   \end{Table}
 
   
