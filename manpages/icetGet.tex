@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{September 20, 2010}
+\setDate{November 30, 2010}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetGet}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGet} -- get an \IceT state parameter}
 
@@ -205,7 +205,9 @@
     viewports are listed in the same order as the tiles were defined with
     \CFunc{icetAddTile}.
   \item[\CEnum{ICET\_TOTAL\_DRAW\_TIME}] Time spent in the last call to
-    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  Stored as a double.
+    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  This includes all
+    the time to render, read back, compress, and composite images.  Stored
+    as a double.
   \end{Description}
 
   In addition, if you are using the \OpenGL layer (i.e., have called
