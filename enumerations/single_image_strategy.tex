@@ -12,6 +12,12 @@
   partitioned into two groups that each have the same image part, and the
   algorithm recurses.
   \index{single~image~strategy!binary~swap}
+\item[\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_RADIXK}] The radix-k
+  acompositing algorithm is similar to binary swap except that groups of
+  processes can be larger than two.  Larger groups require more overall
+  messages but overlap blending and communication.  The size of the groups
+  is indirectly controlled by the \CEnum{ICET\_MAGIC\_K} environment
+  variable or CMake variable.
 \item[\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_TREE}] At each phase, each
   process partners with another, and one of the processes sends its entire
   image to the other.  The algorithm recurses with the group of processes

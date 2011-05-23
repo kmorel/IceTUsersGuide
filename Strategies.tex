@@ -207,6 +207,69 @@ step.
 \index{binary~swap~composite|)}
 \index{compositing!binary~swap|)}
 
+\subsection{Radix-k Compositing}
+
+\index{compositing!radix-k|(}
+\index{radix-k~composite|(}
+
+The third single image compositing algorithm provided by \IceT is the
+\keyterm{radix-k} algorithm.  The radix-k composite sub-strategy is
+selected by calling \CFunc{icetSingleImageStrategy} with
+\CEnum{ICET\_SINGLE\_IMAGE\_STRATEGY\_RADIXK}.  An example communication
+network for radix-k is shown in Figure~\ref{fig:RadixK}.
+
+\begin{figure}
+  \centering
+  \fbox{Example of 3x2 radix-k network.}
+  \caption[Radix-k composite network.]{Radix-k composite network using a
+    round of $k=3$ and then a round of $k=2$.  Arrows represent the passing
+    of data from one stage to the next.  Processes receiving multiple
+    images composite or stitch them together.  The distribution of image
+    data can be inferred from the target images.}
+  \label{fig:RadixK}
+\end{figure}
+
+Radix-k compositing is similar to binary swap.  Both algorithms are
+organized in stages.  However, where in binary swap processes pair up in
+groups of 2, radix-k groups processes in arbitrary (but consistent) groups
+of size $k$.  Within each group, the image is split into $k$ pieces, each
+piece is assigned to a process in the group, and all image pieces are sent
+to the assigned process.  At the end of the stage, all processes with the
+same image piece are collected and recursed into.  The binary-swap
+algorithm is a special case of radix-k with $k=2$ for every stage.
+
+Using radix-k with $k>2$ offers two advantages.  First, some high speed
+interconnects work more efficiently when there is more than one message
+being transferred over the network a time.  Second, when a process is
+receiving more than one image piece at a time it has the opportunity to
+overlap pixel blending with the data transfer.  As soon as the first image
+comes in it can be blended with the local image while the subsequent images
+are still in transit.  However, the total number of messages created grows
+quadratically with $k$, so too large a value will make the communication
+less efficient.
+
+The $k$ value to use for each round is automatically determined by the
+number of processes participating in compositing.  The $k$ values can be
+indirectly controlled by setting the \CEnum{ICET\_MAGIC\_K} environment
+variable.  When set, \IceT will pick $k$ values as close as the
+\CEnum{ICET\_MAGIC\_K} value as possible.  If the \CEnum{ICET\_MAGIC\_K}
+value is not set, then a hard-coded target $k$ value is used, which can be
+set at compile time with the \CEnum{ICET\_MAGIC\_K} \index{CMake}CMake
+variable.
+
+For more details on the radix-k algorithm, see the following paper.
+
+\begin{quote}
+  Tom Peterka, David Goodell, Robert Ross, Han-Wei Shen, and Rajeev Thakur.
+  ``A Configurable Algorithm for Parallel Image-Compositing Applications,''
+  In \emph{Proceedings of the Conference on High Performance Computing
+    Networking, Storage and Analysis (SC '09)}, November 2009,
+  DOI=10.1145/1654059.1654064.
+\end{quote}
+
+\index{radix-k~composite|)}
+\index{compositing!radix-k|)}
+
 \subsection{Automatic Algorithm Selection}
 
 \index{automatic~composite~selection|(}
