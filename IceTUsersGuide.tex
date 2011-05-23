@@ -301,6 +301,16 @@
   \CFunc[icetUnsafeStateGet]{icetUnsafeStateGetPointer}\xspace%
 }
 
+% Avoid putting figures on their own page.
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\topfraction}{0.95}
+
+% Make sure this is big enough so that only big figures end up on their own
+% page but small enough so that if a figure does have to be on its own
+% page, it won't push everything to the bottom because it's not big enough
+% to have its own page.
+\renewcommand{\floatpagefraction}{.75}
+
 %-----------------------------------------------------------------------------
 % The actual document.
 
