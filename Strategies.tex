@@ -1410,6 +1410,37 @@ These functions just grab the current context's communicator.
   \textC{int }\CFunc{icetCommRank}\textC{(void);}
 \end{Table}
 
+In addition to these \MPI-like functions, \textC{IceTDevCommunication.h}
+provides a couple of helper functions for finding ranks in process groups.
+A group in \IceT is simply represented by an integer array that maps (via
+the index) the rank in the group to the rank of the same process in the
+current context's communicator.  An example of such a group is passed to
+the single image strategy compose function as demonstrated in
+Section~\ref{sec:Strategies:New}.
+
+\label{manpage:icetFindRankInGroup}
+\begin{Table}{3}
+  \textC{int }\CFunc{icetFindRankInGroup}\textC{(}&\textC{const int *}&\CArg{group}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{group\_size}\textC{,}\\
+  &\textC{int}&\CArg{rank\_to\_find}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetFindMyRankInGroup}
+\begin{Table}{3}
+  \textC{int }\CFunc{icetFindMyRankInGroup}\textC{(}&\textC{const int *}&\CArg{group}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{group\_size}\quad\textC{);}
+\end{Table}
+
+These functions provide the reverse mapping of a rank from the context's
+communicator to a rank in the group.  The first form,
+\CFunc{icetFindRankInGroup}, takes a \CArg{group} (and its
+\CArg{group\_size}) and a \CArg{rank} and returns the index in \CArg{group}
+that contains \CArg{rank}.  If \CArg{rank} is not in \CArg{group}, -1 is
+returned.  \CFunc{icetFindMyRankInGroup} is similar except that it returns
+the index for the local rank.  Calling \CFunc{icetFindMyRankInGroup} is
+equivalent to calling \CFunc{icetFindRankInGroup} with \CArg{rank} set to
+the value in the state variable \CEnum{ICET\_RANK}.
+
 \subsubsection{Transferring Images}
 \label{sec:Strategies:New:Communications:Transferring_Images}
 
