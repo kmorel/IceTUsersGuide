@@ -960,6 +960,31 @@ to store the image of the given dimensions and the formats specified by the
 \CEnum{ICET\_COLOR\_FORMAT} and \CEnum{ICET\_DEPTH\_FORMAT} state
 variables.
 
+\label{manpage:icetImageAssignBuffer}
+\label{manpage:icetSparseImageAssignBuffer}
+It is also possible, although discouraged, to convert a previously
+allocated buffer into an image object with one of the following functions.
+
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetImageAssignBuffer}\textC{(}&\textC{IceTVoid *}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \CType{IceTSparseImage}\textC{ }\CFunc{icetSparseImageAssignBuffer}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{IceTVoid *}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+In each case it is assumed that the buffer is at least as large as that
+indicated by the \CFunc{icetImageBufferSize} or
+\CFunc{icetSparseImageBufferSize} function.
+
 It is fairly common to need to clear an image.  This is common in a
 multi-tile strategy when returning an image for which no geometry is
 rendered.  \IceT provides convenience functions for setting all the data in
