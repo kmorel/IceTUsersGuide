@@ -497,11 +497,10 @@ of them may be empty.
 Since the single image compositing algorithms support ordered
 compositing, the sequential strategy also supports ordered compositing.
 
-The sequential strategy is really only implemented as a baseline algorithm to
-compare other algorithms.  In general, the reduce strategy does at least as
-well or outperforms the sequential strategy.  We have observed this even in
-single tile mode, possibly because the reduce strategy can throw away empty
-images.
+The sequential strategy is most useful in the special (but common) case of
+rendering to a single tile.  In this case the sequential strategy can skip
+much of the global collective communication necessary for other strategies
+that must manage the sparse collection of tiles.
 
 \index{strategy!sequential|)}
 
@@ -652,7 +651,8 @@ state variables generally should be read from, not written to.
   all processes.  Given process $p$ and tile $t$, the entry at
   $(\CEnum{ICET\_NUM\_TILES} \times p)+t$ contains the flag describing
   whether process $p$ renders a non-blank image for tile $t$.  This
-  variable is the same on all processes.
+  variable is the same on all processes.  This state variable is \emph{not}
+  set when using the \index{strategy!sequential}sequential strategy.
 \item[\CEnum{ICET\_CONTAINED\_TILES\_LIST}] (integer,
   \CEnum{ICET\_NUM\_CONTAINED\_TILES}) All the tiles into which the local
   geometry projects.  In other words, this is the list of tiles which will
@@ -694,10 +694,14 @@ state variables generally should be read from, not written to.
   invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_TILE\_CONTRIB\_COUNTS}] (integer,
   \CEnum{ICET\_NUM\_TILES}) For each tile, provides the number of processes
-  that will produce a non-empty image for that tile.
+  that will produce a non-empty image for that tile.  This state variable
+  is \emph{not} set when using the \index{strategy!sequential}sequential
+  strategy.
 \item[\CEnum{ICET\_TOTAL\_IMAGE\_COUNT}] (integer, 1) The total number of
   non-empty images produced by all processes for all tiles.  This variable
-  is the sum of all entries in \CEnum{ICET\_TILE\_CONTRIB\_COUNTS}.
+  is the sum of all entries in \CEnum{ICET\_TILE\_CONTRIB\_COUNTS}.  This
+  state variable is \emph{not} set when using the
+  \index{strategy!sequential}sequential strategy.
 \end{Description}
 
 \label{manpage:icetUnsafeStateGet}

@@ -5,9 +5,10 @@
     Basically applies a ``traditional'' single tile composition (such as
     binary swap) to each tile in the order they were defined.  Because each
     process must take part in the composition of each tile regardless of
-    whether they draw into it, this strategy is usually inefficient
-    when compositing for more than one tile, but is fine for the single
-    tile case.
+    whether they draw into it, this strategy is usually inefficient when
+    compositing for more than one tile, but is recommended for the single
+    tile case because it bypasses some of the communication necessary for
+    the other multi-tile strategies.
     \index{strategy!sequential}
   \item[\CEnum{ICET\_STRATEGY\_DIRECT}] As each process renders an image
     for a tile, that image is sent directly to the process that will
@@ -28,7 +29,9 @@
     tile composition is performed for each tile.  Since each process
     contains an image for only one tile, all these compositions may happen
     simultaneously.  This is a well rounded strategy that seems to perform
-    well in a wide variety of applications.
+    well in a wide variety of multi-tile applications.  (However, in the
+    special case where only one tile is defined, the sequential strategy is
+    probably better.)
     \index{strategy!reduce}
   \item[\CEnum{ICET\_STRATEGY\_VTREE}] An extension to the binary tree
     algorithm for image composition.  Sets up a ``virtual'' composition

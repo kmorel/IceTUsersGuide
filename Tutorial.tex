@@ -280,7 +280,15 @@ be an all-around good performer.
 \begin{code}
 icetStrategy(ICET_STRATEGY_REDUCE);
 \end{code}
-Like with the display set up, all processes must set the same strategy.
+However, when rendering only a single tile, your best bet is to use the
+\index{strategy!sequential}\keyterm{sequential strategy}, which bypasses
+some of the collective communication necessary for other strategies.
+\begin{code}
+icetStrategy(ICET_STRATEGY_SEQUENTIAL);
+\end{code}
+Chapter~\ref{chap:Strategies} gives more detailed descriptions and advice
+about the strategies.  Like with the display set up, all processes must set
+the same strategy.
 
 \IceT is almost ready to go.  We just need to tell it some minimal
 information about how to render your geometry.  First, \IceT needs to know
