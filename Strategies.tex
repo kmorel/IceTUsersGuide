@@ -591,13 +591,17 @@ the group of processes contributing.  A new single-image strategy function
 would look something like this.
 
 \begin{code}
-void icetCustomSingleImageCompose(IceTInt *compose_group, IceTInt group_size,
+void icetCustomSingleImageCompose(const IceTInt *compose_group,
+                                  IceTInt group_size,
                                   IceTInt image_dest,
-                                  IceTImage image)
+                                  IceTSparseImage input_image,
+                                  IceTSparseImage *result_image,
+                                  IceTSizeType *piece_offset)
 {
     /* Transfer data. */
     /* Composite pixels. */
-    /* Store results in image. */
+    /* Point result_image to image object with results. */
+    /* Store offset of local piece in piece_offset. */
 }
 \end{code}
 
@@ -605,13 +609,25 @@ The first argument, \CArg{compose\_group}, is an array of process ranks.
 The pixels are to be composited in the order specified in this array.  The
 second argument, \CArg{group\_size}, specifies how many processes are
 contributing to the image and also specifies the length of
-\CArg{compose\_group}.  The third argument, \CArg{image\_dest}, specifies
-the process in which the final composed image should be placed.  It is an
-index into \CArg{compose\_group}, not the actual rank of the process.  The
-final argument, \CArg{image} contains the input images to be composited
-together.  It is also used to store the results of the compositing.  The
-process with rank \textC{\CArg{compose\_group}[\CArg{image\_dest}]} fills
-\CArg{image} with the resulting composited image.
+\CArg{compose\_group}.
+
+The third argument, \CArg{image\_dest}, specifies the process in which the
+final composed image should be placed.  It is an index into
+\CArg{compose\_group}, not the actual rank of the process.
+\CArg{image\_dest} is really just a hint and can be ignored.  The single
+image composite does not need to collect the composited pixels to a single
+process.  It can (and usually does) return with pieces of the composited
+image distributed amongst nodes in the group.  Any distribution is
+supported so long as the pieces are continuous, non-overlapping, and
+collectively define all the pixels in the image.
+
+The fourth argument, \CArg{input\_image}, contains the input image to be
+composited with the corresponding images in the other processes.  The
+resulting image is returned via the final two arguments.
+\CArg{result\_image} gets the sparse image object containing the composited
+image piece of the local process.  It can have zero pixels if the local
+process has no image data.  \CArg{piece\_offset} gets the offset, in pixels,
+of the local image piece in the entire image.
 
 To expose the single-image strategy from the \IceT interface, add an
 identifier to \textC{IceT.h} starting with
@@ -1726,10 +1742,12 @@ source code.
 
 \label{manpage:icetSingleImageCompose}
 \begin{Table}{3}
-  \textC{void }\CFunc{icetSingleImageCompose}\textC{(}&\textC{IceTInt *}&\CArg{compose\_group}\textC{,} \\
+  \textC{void }\CFunc{icetSingleImageCompose}\textC{(}&\textC{const IceTInt *}&\CArg{compose\_group}\textC{,} \\
   &\textC{IceTInt}&\CArg{group\_size}\textC{,} \\
   &\textC{IceTInt}&\CArg{image\_dest}\textC{,} \\
-  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+  &\CType{IceTSparseImage}&\CArg{input\_image}\textC{,} \\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{result\_image}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{piece\_offset}\quad\textC{);}
 \end{Table}
 
 \CFunc{icetSingleImageCompose} performs an image composition using the
@@ -1739,14 +1757,68 @@ performs them on a subset with arbitrary ordering. (Note that ordering
 matters when doing alpha blending as opposed to the z-buffer operation.)
 \CArg{compose\_group} is the mapping of processes from the communicator
 ranks to the ``group'' ranks.  The size of the groups (and the length of
-the \CArg{compose\_group} array) is specified by \CArg{group\_size}.  The
-compose image ends up in the processor with rank
-$\CArg{compose\_group}[\CArg{image\_dest}]$.  \CArg{image} should contain
-the partial input image to be composited. (Of course, each process should
-have its own partial image.  All processes should provide images of
-identical dimensions.)  On the process with the rank
-$\CArg{compose\_group}[\CArg{image\_dest}]$, the final image will be stored
-in this buffer.
+the \CArg{compose\_group} array) is specified by \CArg{group\_size}.
+
+The \CArg{image\_dest} argument provides a hint to the single image
+compositing algorithm where you plan to collect the resulting image data
+(usually with the \CFunc{icetSingleImageCollect} function described next).
+The composed image evenutally will end up in the processor with rank
+$\CArg{compose\_group}[\CArg{image\_dest}]$.  The compositing algorithm may
+use this hint to favor moving pixels to the indicated process.
+
+\CArg{input\_image} should contain the partial input image to be
+composited. (Of course, each process should have its own partial image.
+All processes should provide images of identical dimensions.)  The contents
+of this buffer may be changed.  \CArg{result\_image} will be set to point
+to a composited image.  In general, this is a partial image, so its size
+will likely be smaller than the original \CArg{input\_image}.  The location
+of the resulting piece is returned in \CArg{piece\_offset}.
+
+\CFunc{icetSingleImageCompose} will generally return with the composited
+image partitioned amongst the processes in the group.  If the
+\CEnum{ICET\_COLLECT\_IMAGES} is on, then these peices must be collected to
+the display process.  This is most easily done with the
+\CFunc{icetSingleImageCollect} function.
+
+\label{manpage:icetSingleImageCollect}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSingleImageCollect}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const }\CType{IceTSparseImage}&\CArg{input\_image}\textC{,} \\
+  &\textC{IceTInt}&\CArg{dest}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{piece\_offset}\textC{,} \\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{result\_image}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetSingleImageCollect} collects image partitions distributed
+amongst processes.  It is particularly useful after a call to
+\CFunc{icetSingleImageCompose}.  Unlike \CFunc{icetSingleImageCompose},
+however, this function must be called on all processes, not just those in a
+group.  Processes that have no piece of the image should pass 0 for
+\CArg{piece\_offset} and a null or other zero-size image for
+\CArg{input\_image}.
+
+The argument \CArg{input\_image} contains the composited image partition
+returned from \CFunc{icetSingleImageCompose}.  \CArg{dest} is the rank of
+the process to where the image should be collected.  Be aware that this is
+generally a different value than the \CArg{image\_dest} parameter of
+\CFunc{icetSingleImageCompose}.  \CArg{piece\_offset} is the offset to the
+start of the valid pixels.  This is the same value as that returned from
+\CFunc{icetSingleImageCompose}.  \CArg{result\_image} is an allocated image
+in which to place the uncompressed results of the collection.
+
+If the \CEnum{ICET\_COLLECT\_IMAGES} option is off, then the image
+collection, which can be one of the most time consuming parts of image
+compositing, can be skipped.  If the image collection is skipped, then each
+process should set the values of \CEnum{ICET\_VALID\_PIXELS\_TILE},
+\CEnum{ICET\_VALID\_PIXELS\_OFFSET}, and \CEnum{ICET\_VALID\_PIXELS\_NUM}
+to the tile, offset, and size, respectively, of the image piece returned by
+the local process.  Setting these variables is unnecessary when images are
+collected to the display processes.  It is valid to collect images even
+when \CEnum{ICET\_COLLECT\_IMAGES} is off, but an error to not collect the
+images when this option is on.
 
 The following is a very simple example of compositing the image on tile 0
 and providing the result on the process displaying that tile.  If ordered
@@ -1763,12 +1835,21 @@ first tile is composited.
 \index{icetGetStateBufferImage}
 \index{icetGetStateBuffer}
 \index{ICET\_COMPOSITE\_ORDER}
+\index{icetFindRankInGroup}
 \index{icetRaiseError}
-\index{icetGetTileImage}
+\index{icetGetCompressedTileImage}
 \index{icetSingleImageCompose}
+\index{icetSingleImageCollect}
+\index{ICET\_COLLECT\_IMAGES}
+\index{ICET\_VALID\_PIXELS\_TILE}
+\index{ICET\_VALID\_PIXELS\_OFFSET}
+\index{ICET\_VALID\_PIXELS\_NUM}
+\index{icetSparseImageGetNumPixels}
+\index{icetDecompressSubImageCorrectBackground}
 \begin{code}
-#define COMPOSE_TILE_0_IMAGE_BUFFER     ICET_STRATEGY_BUFFER_0
-#define COMPOSE_TILE_0_COMPOSE_GROUP    ICET_STRATEGY_BUFFER_1
+#define COMPOSE_TILE_0_INPUT_IMAGE_BUFFER       ICET_STRATEGY_BUFFER_0
+#define COMPOSE_TILE_0_OUTPUT_IMAGE_BUFFER      ICET_STRATEGY_BUFFER_1
+#define COMPOSE_TILE_0_COMPOSE_GROUP            ICET_STRATEGY_BUFFER_2
 
 IceTImage ComposeTile0(void)
 {
@@ -1779,7 +1860,9 @@ IceTImage ComposeTile0(void)
   IceTInt *display_nodes;
   IceTInt image_dest;
   IceTBoolean ordered_composite;
-  IceTImage image;
+  IceTSparseImage input_image;
+  IceTSparseImage composited_image;
+  IceTInt piece_offset;
   IceTInt *compose_group;
 
   icetGetIntegerv(ICET_NUM_TILES, &num_tiles);
@@ -1790,8 +1873,10 @@ IceTImage ComposeTile0(void)
   display_nodes = icetUnsafeStateGetInteger(ICET_DISPLAY_NODES);
   ordered_composite = icetIsEnabled(ICET_ORDERED_COMPOSITE);
 
-  image = icetGetStateBufferImage(COMPOSE_TILE_0_IMAGE_BUFFER,
-                                  max_width, max_height);
+  input_image = icetGetStateBufferSparseImage(COMPOSE_TILE_0_INPUT_IMAGE_BUFFER,
+                                              max_width, max_height);
+  output_image = icetGetStateBufferImage(COMPOSE_TILE_0_OUTPUT_IMAGE_BUFFER,
+                                         max_width, max_height);
   compose_group = icetGetStateBuffer(COMPOSE_TILE_0_COMPOSE_GROUP,
                                      sizeof(IceTInt)*num_proc);
 
@@ -1804,21 +1889,44 @@ IceTImage ComposeTile0(void)
     }
   }
 
-  /* Determine which node in compose_group is displaying tile 0.
-  image_dest = 0;
-  while (compose_group[image_dest] != display_nodes[0]) {
-    image_dest++;
-    if (image_dest >= num_proc) {
-      icetRaiseError("Could not find display node in composite order.",
-                     ICET_SANITY_CHECK_FAIL);
-      break;
+  /* Determine which node in compose_group is displaying tile 0. */
+  image_dest = icetFindRankInGroup(compose_group, num_proc, display_nodes[0]);
+  if (image_dest < 0) {
+    icetRaiseError("Could not find display node in composite order.",
+                   ICET_SANITY_CHECK_FAIL);
+  }
+
+  icetGetCompressedTileImage(0, input_image);
+  icetSingleImageCompose(compose_group,
+                         num_proc,
+                         image_dest,
+                         input_image,
+                         &composited_image,
+                         &piece_offset);
+
+  if (icetIsEnabled(ICET_COLLECT_IMAGES)) {
+    icetSingleImageCollect(composited_image,
+                           display_nodes[0],
+                           piece_offset,
+                           output_image);
+  } else {
+    IceTSizeType piece_size = icetSparseImageGetNumPixels(composited_image);
+    if (piece_size > 0) {
+      icetDecompressSubImageCorrectBackground(composited_image,
+                                              piece_offset,
+                                              output_image);
+      icetStateSetInteger(ICET_VALID_PIXELS_TILE, 0);
+      icetStateSetInteger(ICET_VALID_PIXELS_OFFSET, piece_offset);
+      icetStateSetInteger(ICET_VALID_PIXELS_NUM, piece_size);
+    } else {
+      output_image = icetImageNull();
+      icetStateSetInteger(ICET_VALID_PIXELS_TILE, -1);
+      icetStateSetInteger(ICET_VALID_PIXELS_OFFSET, 0);
+      icetStateSetInteger(ICET_VALID_PIXELS_NUM, 0);
     }
   }
 
-  icetGetTileImage(0, image);
-  icetSingleImageCompose(compose_group, num_proc, image_dest, image);
-
-  return image;
+  return output_image;
 }
 \end{code}
 
