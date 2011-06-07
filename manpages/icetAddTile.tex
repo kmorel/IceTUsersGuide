@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{August 10, 2010}
+\setDate{June  7, 2011}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetAddTile}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetAddTile} -- add a tile to the logical display.}
 
@@ -57,10 +57,11 @@
   \mansection{Errors}
 
   \begin{Description}[ICET\_INVALID\_OPERATION]
-  \item[\CErrorEnum{ICET\_INVALID\_VALUE}]
-    Raised if \CArg{display\_rank} is not a valid process rank or
-    \CArg{display\_rank} is already assigned to another tile.  If this
-    error is raised, nothing is done and -1 is returned.
+  \item[\CErrorEnum{ICET\_INVALID\_VALUE}] Raised if \CArg{display\_rank}
+    is not a valid process rank, if \CArg{display\_rank} is already
+    assigned to another tile, or if \CArg{width} or \CArg{height} is
+    smaller than 1.  If this error is raised, nothing is done and -1 is
+    returned.
   \end{Description}
 
 
