@@ -1323,11 +1323,20 @@ types, however, are specified as one of the following \IceT data types:
 \CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}
 
 Note that each function is missing an argument specifying the communicator.
-These functions just grab the current context's communicator.
+These functions just grab the current context's communicator.  Also unlike
+\MPI, these functions do not return error codes.  It is assumed that errors
+are fatal.  Some functions, like \CFunc{icetCommSize},
+\CFunc{icetCommRank}, and \CFunc{icetCommWaitAny} use the function return
+value instead of passing a value back in a pointer argument.
 
 \label{manpage:icetCommDuplicate}
 \begin{Table}{3}
   \textC{struct }\CType{IceTCommunicatorStruct}\textC{ *}\CFunc{icetCommDuplicate}\textC{(void);}
+\end{Table}
+
+\label{manpage:icetCommBarrier}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommBarrier}\textC{(void);}
 \end{Table}
 
 \label{manpage:icetCommSend}
@@ -1362,9 +1371,37 @@ These functions just grab the current context's communicator.
   &\textC{int}&\CArg{recvtag}\quad\textC{);}
 \end{Table}
 
+\label{manpage:icetCommGather}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommGather}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{datatype}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\textC{,}\\
+  &\textC{int}&\CArg{root}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommGatherv}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommGatherv}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{datatype}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\textC{,}\\
+  &\textC{const IceTSizeType *}&\CArg{recvcounts}\textC{,}\\
+  &\textC{const IceTSizeType *}&\CArg{recvoffsets}\textC{,}\\
+  &\textC{int}&\CArg{root}\quad\textC{);}
+\end{Table}
+
 \label{manpage:icetCommAllgather}
 \begin{Table}{3}
   \textC{void }\CFunc{icetCommAllgather}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{type}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommAlltoall}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommAlltoall}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
   &\textC{int}&\CArg{sendcount}\textC{,}\\
   &\textC{IceTEnum}&\CArg{type}\textC{,}\\
   &\textC{void *}&\CArg{recvbuf}\quad\textC{);}
