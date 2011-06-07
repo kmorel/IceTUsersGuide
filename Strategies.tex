@@ -1349,13 +1349,17 @@ All of these functions are based off of those found in the \MPI standard.
 For documentation, see that for the corresponding \MPI function.  Data
 types, however, are specified as one of the following \IceT data types:
 \CEnum{ICET\_BOOLEAN}, \CEnum{ICET\_BYTE}, \CEnum{ICET\_SHORT},
-\CEnum{ICET\_INT}, \CEnum{ICET\_FLOAT}, or \CEnum{ICET\_DOUBLE}
+\CEnum{ICET\_INT}, \CEnum{ICET\_SIZE\_TYPE}, \CEnum{ICET\_FLOAT}, or
+\CEnum{ICET\_DOUBLE}.  There is also an \CEnum{ICET\_IN\_PLACE\_COLLECT}
+identifier that takes the place of \CEnum{MPI\_IN\_PLACE} for the gather
+functions (\CFunc{icetCommGather}, \CFunc{icetCommGatherv}, and
+\CFunc{icetCommAllgather}).
 
 Note that each function is missing an argument specifying the communicator.
 These functions just grab the current context's communicator.  Also unlike
 \MPI, these functions do not return error codes.  It is assumed that errors
 are fatal.  Some functions, like \CFunc{icetCommSize},
-\CFunc{icetCommRank}, and \CFunc{icetCommWaitAny} use the function return
+\CFunc{icetCommRank}, and \CFunc{icetCommWaitany} use the function return
 value instead of passing a value back in a pointer argument.
 
 \label{manpage:icetCommDuplicate}
