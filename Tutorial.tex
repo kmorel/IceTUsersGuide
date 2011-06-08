@@ -105,7 +105,7 @@ necessary build settings.
 \begin{code}
 FIND_PACKAGE(IceT REQUIRED)
 
-INCLUDE_DIRECTORIES(${ICET_INCLUDE_DIRECTORIES})
+INCLUDE_DIRECTORIES(${ICET_INCLUDE_DIRS})
 \end{code}
 %$
 
@@ -115,7 +115,7 @@ Assuming that CMake finds \IceT, the CMake variable
 The variables \CEnum{ICET\_CORE\_LIBS}, \CEnum{ICET\_GL\_LIBS}, and
 \CEnum{ICET\_MPI\_LIBS} are also defined and can be used with a
 \index{TARGET\_LINK\_LIBRARIES}TARGET\_LINK\_LIBRARIES command to link in
-the respective \IceT libraries.
+the respective \IceT libraries as described later.
 
 Any application using \IceT will probably also be using \OpenGL and \MPI.
 In addition, the example in the following section also uses
