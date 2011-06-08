@@ -7,7 +7,8 @@
 The \IceT API was written while its strategies were being developed.  As
 such, the design yields for the relatively simplistic addition of both new
 multi-tile strategies and new single-image strategies.  This chapter will
-provide the basic overview of how to add a new strategy.  It is probably
+provide the basic overview of how to add a new strategy for those
+interested in adding new compositing algorithms to \IceT.  It is probably
 easiest to start by modifying your \IceT source to insert your own strategy
 in the \textC{src/strategies} directory of the \IceT source distribution.
 
@@ -821,6 +822,31 @@ The \CArg{destBuffer}, \CArg{srcBuffer} and \CArg{srcOnTop} arguments are
 the same as those in \CFunc{icetCompressedComposite}.  The \CArg{offset}
 argument and the number of pixels in \CArg{srcBuffer} specify a region of
 contiguous pixels in \CArg{destBuffer} to perform the compositing in.
+
+Because single image strategies accept a sparse image as its input and
+return a sparse image as its output, their most common compositing
+operation is to composite two sparse images together.  Compositing together
+two sparse images allows the composition to skip over inactive pixels in
+both images.  However, because the compositing cannot be done in place, the
+results must be written to a third sparse image, which results in extra
+memory allocation and copying.
+
+\label{manpage:icetCompressedCompressedComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetCompressedCompressedComposite}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{front\_buffer}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{back\_buffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{dest\_buffer}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetCompressedCompressedComposite} takes two images, composites
+them, and places the results in \CArg{dest\_buffer}.  Unlike the previously
+mentioned forms of compositing, the blending order is not determined by a
+flag.  Rather, the first image argument, \CArg{front\_buffer}, is the image
+always considered closer to the viewer.
 
 \section{Communications}
 
