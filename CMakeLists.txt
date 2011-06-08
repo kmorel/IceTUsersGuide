@@ -13,6 +13,7 @@ SET(CHAPTERS
   BasicUsage.tex
   CustomizingCompositing.tex
   Strategies.tex
+  NewStrategies.tex
   Communicators.tex
   Transitioning.tex
   )
