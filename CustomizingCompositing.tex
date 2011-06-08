@@ -545,6 +545,67 @@ local process.
 
 \index{data~replication|)}
 
+\section{Compositing Network Hints}
+\label{sec:Customizing_Compositing:Compositing_Network_Hints}
+\index{compositing!network|(}
+
+By its nature, image compositing requires a significant amount of
+communication amongst processes in a parallel computer.  Each compositing
+algorithm contained in \IceT follows a particular pattern of communication,
+referred to as its \keyterm{compositing network}.  These algorithms and
+their compositing networks are described in Chapter~\ref{chap:Strategies}.
+
+Most compositing networks are fixed although a few have some possible
+variability.  Any variations in the compositing networks are automatically
+chosen, but it is possible to provide hints.  Because the relative
+efficiency of different compositing networks is effected more by the
+underlying hardware than in the application and data running it, these hints
+are specified by either build options or by environment variables.
+
+Build options are specified as \index{CMake}CMake variables.  These CMake
+variables are set using the CMake program at the beginning of the build as
+described in Chapter~\ref{chap:Tutorial}.  These variables are listed as
+``advanced,'' so you will need to turn on advanced variables in the CMake
+to see them.
+
+For each one of these CMake build variables, \IceT also recognizes a
+corresponding environment variable with the same name at run time.  If the
+environment variable is defined, it will be used in place of the option set
+at run time.  The environment variables are read when the \IceT context is
+first created, so subsequent changes to the environment variables will have
+no effect.
+
+The following CMake and environment variable hints are available.
+
+\begin{Description}[xxxxxxxx]
+\item[\CEnum{ICET\_MAGIC\_K}] The radix-k single image strategy described
+  in Chapter~\ref{chap:Strategies} starting on
+  page~\pageref{sec:Strategies:Radix-k} operates by communicating within
+  groups of processes of size $k$.  \IceT's implementation of radix-k
+  automatically determines $k$, but does so by selecting values that are as
+  close as possible to a \index{magic~k}\keyterm{magic k} value.  This
+  magic k value is set with the \CEnum{ICET\_MAGIC\_K} CMake build variable
+  or environment variable.
+\item[\CEnum{ICET\_MAX\_IMAGE\_SPLIT}] The parallel image compositing
+  algorithms in \IceT maintain load balancing by dividing images amongst
+  processes to allow the processes to concurrently composite pixels in
+  independent partitions of the image.  Typically, \IceT subsequently
+  collects the images to the display nodes.  This collection can be one of
+  the longest operations during the compositing, particularly when there
+  are many processes.  It is possible to speed up the collection at the
+  expense of the compositing by limiting the maximum number of times an
+  image may be split.  This limit is set with the
+  \CEnum{ICET\_MAX\_IMAGE\_SPLIT} CMake build variable or environment
+  variable.  Be advised that this option is only a suggestion to
+  compositing.  It is still possible for images to be split beyond this
+  limit.  \IceT will still behave correctly either way.
+\end{Description}
+
+These values may be queried (but not set) at runtime using \CFunc{icetGet}
+with a state variable identifier of the same name.
+
+\index{compositing!network|)}
+
 \section{Timing (and Other Metrics)}
 \label{sec:Customizing_Compositing:Timing}
 \index{timing|(}
