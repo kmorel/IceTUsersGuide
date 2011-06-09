@@ -1595,15 +1595,43 @@ in parallel.
 
 \CArg{image} is an image object big enough to hold color and/or depth
 values that is \CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$
-\CEnum{ICET\_TILE\_MAX\_HEIGHT} big.  \CArg{inSparseImageBuffer} and
-\CArg{outSparseImage} are two buffers big enough to hold sparse color and
-depth information for an image that is \CEnum{ICET\_TILE\_MAX\_WIDTH}
-$\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT} big.  The size for
-\CArg{inSparseImageBuffer} can be determined with the
+\CEnum{ICET\_TILE\_MAX\_HEIGHT} big.  \CArg{outSparseImage} is likewise a
+sparse image that big.  \CArg{inSparseImageBuffer} is a buffer big enough
+to hold sparse color and depth information for an image that is
+\CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT}
+big.  The size for \CArg{inSparseImageBuffer} can be determined with the
 \CFunc{icetSparseImageBufferSize} function in
 \index{IceTDevImage.h}\textC{IceTDevImage.h}.  \CArg{tile\_image\_dest} is
 an array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES\_LIST}, then
 the rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
+
+\textC{common.h} also contains a similar function that does the same thing
+except that images are read back and returned as sparse images.
+
+\label{manpage:icetRenderTransferSparseImages}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetRenderTransferSparseImages}\textC{(}}\\
+  \makebox[2in]{}
+  &\CType{IceTSparseImage}&\CArg{compositeImage1}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{compositeImage2}\textC{,}\\
+  &\textC{IceTVoid *}&\CArg{inSparseImageBuffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{outSparseImage}\textC{,}\\
+  &\textC{IceTInt *}&\CArg{tile\_image\_dest}\textC{,}\\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{resultImage}\quad\textC{);}
+\end{Table}
+
+\CArg{compositeImage1}, \CArg{compositeImage2}, and \CArg{outSparseImage}
+are sparse image objects big enough to hold color and/or depth values that
+is \CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT}
+big.  \CArg{inImageBuffer} is a buffer big enough to hold sparse color and
+depth information for an image that is \CEnum{ICET\_TILE\_MAX\_WIDTH}
+$\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT} as determined by
+\CFunc{icetSparseImageBufferSize}.  \CArg{tile\_image\_dest} is an array
+where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES\_LIST}, then the
+rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
+\CArg{resultImage} will be set to the image with the final results.  It
+will point to either compositeImage1 or compositeImage2 depending on which
+buffer the result happened to end in.
 
 There is also a more general form for transferring images or other large
 data blocks.
