@@ -532,6 +532,29 @@ directly accessing the data in an \CType{IceTSparseImage}.  Instead, data
 is indirectly manipulated via compression and compositing functions, which
 are described in the subsequent sections.
 
+As implied in the previous section on creating images, an \CType{IceTImage}
+or \CType{IceTSparseImage} object has a pointer to a buffer containing the
+actual image data.  It is sometimes helpful to determine if two images have
+the same buffer.
+
+\label{manpage:icetImageEqual}
+\begin{Table}{3}
+  \textC{IceTBoolean }\CFunc{icetImageEqual}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image1}\textC{,}\\
+  &\textC{const }\CType{IceTImage}&\CArg{image1}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImageEqual}
+\begin{Table}{3}
+  \textC{IceTBoolean }\CFunc{icetSparseImageEqual}\textC{(}&\textC{const }\CType{IceTSparseImage}&\CArg{image1}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image1}\quad\textC{);}
+\end{Table}
+
+Both \CFunc{icetImageEqual} and \CFunc{icetSparseImageEqual} take two image
+objects and returns whether these two images point to the same buffer.  If
+two images are equal, then changing the pixel data of one image also
+changes the data of the other.  Two images may have the same data but still
+be considered different if they have separate buffers.
+
 \subsection{Setting Pixel Data}
 
 There are several mechanisms for setting, changing, or copying pixel data
