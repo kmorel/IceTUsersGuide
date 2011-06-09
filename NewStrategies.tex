@@ -470,6 +470,22 @@ In each case it is assumed that the buffer is at least as large as that
 indicated by the \CFunc{icetImageBufferSize} or
 \CFunc{icetSparseImageBufferSize} function.
 
+% label manpage:icetImageNull already in man pages.
+\label{manpage:icetSparseImageNull}
+\IceT also defines a special \index{image!null}\keyterm{null image} that
+can be used as a place holder when no image data is available.  Null images
+for both regular and sparse images are available.  They are retreived with
+the following functions.
+
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetImageNull}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \CType{IceTSparseImage}\textC{ }\CFunc{icetSparseImageNull}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+
+
 \subsection{Querying Images}
 
 \IceT contains several functions that allow you to query basic information
@@ -554,6 +570,20 @@ objects and returns whether these two images point to the same buffer.  If
 two images are equal, then changing the pixel data of one image also
 changes the data of the other.  Two images may have the same data but still
 be considered different if they have separate buffers.
+
+% label manpage:icetImageIsNull already defined in man pages.
+\label{manpage:icetSparseImageIsNull}
+There are also special functions for testing whether an image is the
+\index{image!null}null image.
+
+\begin{Table}{3}
+  \textC{IceTBoolean}\textC{ }\CFunc{icetImageIsNull}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \textC{IceTBoolean}\textC{ }\CFunc{icetSparseImageIsNull}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
 
 \subsection{Setting Pixel Data}
 
