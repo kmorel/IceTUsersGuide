@@ -459,6 +459,77 @@ process.  There is currently no way to turn it off.
 
 \index{active-pixel~encoding|)}
 
+\section{Interlaced Images}
+\label{sec:Customizing_Compositing:Interlaced_Images}
+
+\index{image!interlace|(}
+\index{interlace|see{image, interlace}}
+
+Although active pixel encoding almost always improves the performance of
+compositing, it does introduce an issue of load balancing.  As images are
+partitioned, some regions will have more active pixels than others.  By
+balancing the active pixels assigned to regions, the parallel compositing
+becomes better load balanced and performance can improve even further.
+
+The most straightforward way of balancing active pixels is to
+\keyterm{interlace} the images.  An image is interlaced by rearranging
+pixels in a different order.  This reordering of pixels is designed such
+that when the images are later partitioned, each partition gets pixels from
+all over the images.  Consequently, regions with many active pixels are
+distributed to all the partitions.
+
+Although image interlacing can provide a significant performance increase,
+it also incurs an overhead caused by shuffling pixels around.  This
+overhead can potentially happen in two places during parallel compositing.
+The first overhead is the shuffling of pixels before any compositing or
+message transfers take place.  This overhead tends to be low because it
+occurs when images are their most sparse and the work is distributed
+amongst all the processes.  The second overhead is the reshuffling after
+compositing completes to restore the proper order of the pixels.  This
+second shuffling is substantial as it happens when images are at their most
+full and the maximum amount of pixels must be copied.  Furthermore, because
+pixels must be shuffled over the entire image, this reshuffling must happen
+after image data is collected on a single process.  Thus, the reshuffling
+happens on a single process while all others remain idle.
+
+Classical implementation of image interlacing shuffle pixels in regions,
+but the regions chosen are usually arbitrary (scanlines is a common region
+to pick).  However, the image interlacing algorithm in \IceT chooses
+regions that completely avoid the need for the second, and most time
+consuming, pixel reshuffling.  The algorithm is based on the simple
+observation that at the completion of many parallel compositing algorithms,
+the final image is distributed amongst all the processes in contiguous
+pieces.  If we arrange our initial shuffling such that each of the
+partitions remain a contiguous set of pixels, then we do not need the final
+reshuffling at all.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.8\textwidth]{images/InterlaceDiagram}
+  \caption{Pixel shuffling in \IceT's image interlacing.}
+  \label{fig:Interlacing}
+\end{figure}
+
+\IceT's minimal-copy image interlacing is demonstrated in
+Figure~\ref{fig:Interlacing}.  Rather than picking arbitrary partitions,
+such as scan lines, to interlace, \IceT's interlacing uses the partitions
+that the composite will create anyway.  The image with the interlaced block
+is composited as normal.  Each resulting image partition is already intact,
+it is only the implicit offsets that need to be adjusted.
+
+Image interlacing is always on by default.  It can be turned off by calling
+\CFunc{icetDisable} with \CEnum{ICET\_INTERLACE\_IMAGES}.  Image
+interlacing is only a hint, and compositing strategies are not obligated to
+follow it.  In any case, the observable behavior between interlaced and
+non-interlaced images is the same except for in compositing times.  In
+situations where each process renders to a small portion of an image, the
+overhead for image interlacing is low but its benefits are high.  However,
+in cases where every process renders geometry over the entire view
+(indicative of a poor distribution of geometry), then the overhead for
+image interlacing becomes higher but the benefit becomes lower.
+
+\index{image!interlace|)}
+
 \section{Data Replication}
 \label{sec:Customizing_Compositing:Data_Replication}
 \index{data~replication|(}

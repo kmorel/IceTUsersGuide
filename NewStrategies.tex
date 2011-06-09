@@ -470,21 +470,6 @@ In each case it is assumed that the buffer is at least as large as that
 indicated by the \CFunc{icetImageBufferSize} or
 \CFunc{icetSparseImageBufferSize} function.
 
-It is fairly common to need to clear an image.  This is common in a
-multi-tile strategy when returning an image for which no geometry is
-rendered.  \IceT provides convenience functions for setting all the data in
-an image to the background color.
-
-\label{manpage:icetClearImage}
-\begin{Table}{3}
-  \textC{void }\CFunc{icetClearImage}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
-\end{Table}
-
-\label{manpage:icetClearSparseImage}
-\begin{Table}{3}
-  \textC{void }\CFunc{icetClearSparseImage}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
-\end{Table}
-
 \subsection{Querying Images}
 
 \IceT contains several functions that allow you to query basic information
@@ -566,7 +551,31 @@ The pointers returned from these functions are shared with the
 \CType{IceTImage} object itself, so writing data into the buffer will
 change the image object as well.
 
-\IceT is also able to copy data from one \CType{IceTImage} to another.  The
+There are no equivalent mechanisms for changing pixel data in
+\CType{IceTSparseImage} objects.  Instead, data is indirectly manipulated
+via compression, copy, and compositing functions, which are described in
+the subsequent sections.
+
+It is fairly common to need to clear an image.  This is common in a
+multi-tile strategy when returning an image for which no geometry is
+rendered.  \IceT provides convenience functions for setting all the data in
+an image to the background color.
+
+\label{manpage:icetClearImage}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearImage}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetClearSparseImage}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearSparseImage}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+
+\subsection{Copying Full Pixel Data}
+
+It is common to need to copy pixel data from one image to another.  \IceT
+provides multiple helper functions to copy data amongst images.  The
 first function is \CFunc{icetImageCopyPixels}, which copies a contiguous
 section of pixels.
 
@@ -682,10 +691,248 @@ icetImageCopyRegion(in_image, in_viewport, out_image, out_viewport);
 icetImageClearAroundRegion(out_image, out_viewport);
 \end{code}
 
-There are no equivalent mechanisms for changing pixel data in
-\CType{IceTSparseImage} objects.  Instead, data is indirectly manipulated
-via compression and compositing functions, which are described in the
-subsequent sections.
+\subsection{Copy Sparse Image Data}
+
+\IceT also conatins several functions for efficiently copying pixels in
+sparse images.  Because of the differences in implementation and use, the
+copy functions differ significantly between the full image and sparse image
+copy functions.
+
+\subsubsection{Basic Sparse Image Copy}
+
+\label{manpage:icetSparseImageCopyPixels}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSparseImageCopyPixels}\textC{(}&\textC{const }\CType{IceTSparseImage}&\CArg{in\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{in\_offset}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{num\_pixels}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{out\_image}\textC{);}
+\end{Table}
+
+\CFunc{icetSparseImageCopyPixels} copies a region of continuous pixels from
+\CArg{in\_image} to \CArg{out\_image}.  The region starts a pixel offset
+\CArg{in\_offset} and contains \CArg{num\_pixels}.  \CArg{out\_image} is
+resized to contain only the copied pixels.  The new size will have a width
+of \CArg{num\_pixels} and a height of $1$.
+
+\subsubsection{Sparse Image Split}
+
+Parallel compositing algorithms often involve splitting an image into a
+number of (approximately) equal sized pieces and distributing them amongst
+processes.  This can be achieved by iteratively calling
+\CFunc{icetSparseImageCopyPixels}.  However, each call to
+\CFunc{icetSparseImageCopyPixels} has to search through the pixels in
+\CArg{in\_image} to the appropriate \CArg{in\_offset}.  It is a bit more
+efficient (and convenient) to iterate over the image once and copy to
+multiple different output images as you go.  The
+\CFunc{icetSparseImageSplit} function does just that.
+
+\label{manpage:icetSparseImageSplit}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSparseImageSplit}\textC{(}
+  }\\
+  \makebox[1.5in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{in\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{in\_image\_offset}\textC{,}\\
+  &\textC{IceTInt}&\CArg{num\_partitions}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\textC{,}\\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{out\_images}\textC{,}\\
+  &\textC{IceTSizeType *}&\CArg{offsets}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetSparseImageSplit} takes \CArg{in\_image}, partitions it into
+\CArg{num\_partitions}, and stores the results in the array of
+pre-allocated images \CArg{out\_images}.  As an optimization, the image in
+the first index of \CArg{out\_images} may be the same as \CArg{in\_image}.
+In this case the first partition will be copied ``in place.''  It is an
+error to have \CArg{in\_image} in any other index of \CArg{out\_images}.
+The offset of each image with respect to the original image is stored in
+the corresponding index of the array \CArg{offsets}.
+
+The \CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} are for
+recursive splits, described in the following section.  For a single
+invocation of \CFunc{icetSparseImageSplit} for an image,
+\CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} should be set
+to $0$ and the same value as \CArg{num\_partitions}, respectively.
+
+\label{manpage:icetSparseImageSplitPartitionNumPixels}
+Before calling \CFunc{icetSparseImageSplit}, it is important to allocate
+images with enough pixel space.  To allocate these images, you first need
+to know how big each partition will be.
+\CFunc{icetSparseImageSplitPartitionNumPixels} returns the maximum size of
+each partition in pixels.  Do not assume that a partition size will be the
+total number of pixels divided by the number of partitions.  This assumption
+is wrong when the number of pixels in the original image does not divide by
+the number of partitions.
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSparseImageSplitPartitionNumPixels}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{IceTSizeType}&\CArg{input\_num\_pixels}\textC{,}\\
+  &\textC{IceTInt}&\CArg{num\_partitions}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\quad\textC{);}
+\end{Table}
+
+Because the number of partitions may be large or unknown at compile time,
+it can be problematic to fill the array of output images to
+\CFunc{icetSparseImageSplit} with images created with
+\CFunc{icetGetStateBufferSparseImage} due to the limited number of
+available state variables.  In this case, it is prudent to create a large
+enough buffer with \CFunc{icetGetStateBuffer} and break it up into pieces
+to make sparse image objects with \CFunc{icetSparseImageAssignBuffer}.  The
+following code gives an example of using \CFunc{icetSparseImageSplit}.
+This example uses copy-in-place for the first partition, but a trivial
+change makes a copy to this buffer.
+
+\begin{code}
+#define NUM_SPLITS 8
+
+/* original_image is image to be split. */
+
+original_num_pixels = icetSparseImageGetNumPixels(original_pixels);
+partition_num_pixels
+    = icetSparseImageSplitPartitionNumPixels(original_num_pixels,
+                                             NUM_SPLITS,
+                                             NUM_SPLITS);
+partition_buffer_size = icetSparseImageBufferSize(partition_num_pixels, 1);
+
+split_image_buffer = icetGetStateBuffer(MYCOMPOSITE_SPLIT_IMAGE_BUFFER,
+                                        (NUM_SPLITS-1)*partition_buffer_size);
+
+out_images[0] = original_image;
+for (i = 1; i < NUM_SPLITS; i++) {
+    out_images[i] = icetSparseImageAssignBuffer(split_image_buffer,
+                                                partition_num_pixels, 1);
+    split_image_buffer += partition_buffer_size;
+}
+
+icetSparseImageSplit(original_image,
+                     0,
+                     NUM_SPLITS,
+                     NUM_SPLITS,
+                     out_images,
+                     offsets);
+
+for (i = 0; i < NUM_SPLITS; i++) {
+    DoSomething(out_images[i], offsets[i]);
+}
+\end{code}
+
+\subsubsection{Recursive Sparse Image Split}
+
+Some image compositing algorithms, such as binary swap and radix-k,
+recursively split their images in subsequent rounds.  It is also sometimes
+the case, such as when telescoping, that different processes will split
+images with different factors.  For example, one process might split its
+image into eight pieces with three recursive calls of two partitions while
+another process creates the same partition with one split of two partitions
+and another split of four partitions while yet another makes one split of
+eight partitions.
+
+Regardless of how the image is split, it is often necessary for the final
+partitions to match exactly with respect to offset and size.
+Unfortunately, if the size of the original image is not evenly divisible by
+the eventual number of partitions, different recursive partitions could
+lead to different image pieces.
+
+To get around this problem, \CFunc{icetSparseImageSplit} has the
+\CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} arguments.
+The \CArg{in\_image\_offset} declares that the \CArg{in\_image} came from a
+previous call to \CFunc{icetSparseImageSplit} with the given offset.  The
+\CArg{eventual\_num\_partitions} argument declares the total number of
+partitions that will be made with this call to \CFunc{icetSparseImageSplit}
+and all subsequent calls to \CFunc{icetSparseImageSplit}.  Obviously,
+\CArg{num\_partitions} must be a factor of
+\CArg{eventual\_num\_partitions}, or otherwise
+\CArg{eventual\_num\_partitions} could never be created.  As long as the
+recursive calls to \CFunc{icetSparseImageSplit} are consistent with the
+\CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} arguments,
+the partitions will match up exactly.
+
+The following code example will result in the exact same image partitions
+as those in the previous example, but does it with two recursive calls.
+
+\begin{code}
+#define FIRST_NUM_SPLITS 2
+#define SECOND_NUM_SPLITS 4
+#define TOTAL_NUM_SPLITS (FIRST_NUM_SPLITS * SECOND_NUM_SPLITS)
+
+/* original_image is image to be split. */
+
+/* Perform first level image split. */
+original_num_pixels = icetSparseImageGetNumPixels(original_pixels);
+partition_num_pixels
+    = icetSparseImageSplitPartitionNumPixels(original_num_pixels,
+                                             FIRST_NUM_SPLITS,
+                                             TOTAL_NUM_SPLITS);
+partition_buffer_size = icetSparseImageBufferSize(partition_num_pixels, 1);
+
+split_image_buffer = icetGetStateBuffer(
+                                    MYCOMPOSITE_FIRST_SPLIT_IMAGE_BUFFER,
+                                    (FIRST_NUM_SPLITS-1)*partition_buffer_size);
+
+intermediate_images[0] = original_image;
+for (i = 1; i < FIRST_NUM_SPLITS; i++) {
+    intermediate_images[i] = icetSparseImageAssignBuffer(split_image_buffer,
+                                                         partition_num_pixels,
+                                                         1);
+    split_image_buffer += partition_buffer_size;
+}
+
+icetSparseImageSplit(original_image,
+                     0,
+                     FIRST_NUM_SPLITS,
+                     TOTAL_NUM_SPLITS,
+                     intermediate_images,
+                     interpediate_offsets);
+
+/* Perform second level image split. */
+for (j = 0; j < FIRST_NUM_SPLITS; j++) {
+    intermediate_num_pixels = icetSparseImageGetNumPixels(original_pixels);
+
+    partition_num_pixels = icetSparseImageSplitPartitionNumPixels(
+                                             original_num_pixels,
+                                             SECOND_NUM_SPLITS,
+                                             TOTAL_NUM_SPLITS/FIRST_NUM_SPLITS);
+    partition_buffer_size = icetSparseImageBufferSize(partition_num_pixels, 1);
+
+    split_image_buffer = icetGetStateBuffer(
+                                   MYCOMPOSITE_FIRST_SPLIT_IMAGE_BUFFER,
+                                   (SECOND_NUM_SPLITS-1)*partition_buffer_size);
+
+    out_images[0] = original_image;
+    for (i = 1; i < SECOND_NUM_SPLITS; i++) {
+        out_images[i] = icetSparseImageAssignBuffer(split_image_buffer,
+                                                    partition_num_pixels, 1);
+        split_image_buffer += partition_buffer_size;
+    }
+
+    icetSparseImageSplit(intermediate_images[j],
+                         intermediate_offsets[j],
+                         FIRST_NUM_SPLITS,
+                         TOTAL_NUM_SPLITS/FIRST_NUM_SPLITS,
+                         out_images,
+                         out_offsets);
+
+    for (i = 0; i < SECOND_NUM_SPLITS; i++) {
+        DoSomething(out_images[i], out_offsets[i]);
+    }
+}
+\end{code}
+
+This example is artificial in that the recursive splits are unlikely to be
+done on all partitions.  Typical operation is to split an image and then
+send all images but one to other processes.  Generally, images of the kept
+partition are also collected from other processes and blended.  The
+recursive split then happens only on that one partition kept.
+
+\subsubsection{Interlacing Images}
+
+\index{image!interlace|(}
+
+\index{image!interlace|)}
 
 \subsection{Compressing Images}
 
