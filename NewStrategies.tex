@@ -1119,14 +1119,23 @@ compressing an image with \CFunc{icetCompressSubImage}, the output
 \CType{IceTSparseImage} has its width set to the \CArg{pixels} argument and
 its height set to 1.
 
-\label{manpage:icetDecompressImage}
 A sparse image can be returned to its uncompressed form with
-\CFunc{icetDecompressImage}.
+\CFunc{icetDecompressImage} or \CFunc{icetDecompressSubImage}.
 
+\label{manpage:icetDecompressImage}
 \begin{Table}{3}
   \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressImage}\textC{(}}\\
   \makebox[2in]{}
   &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetDecompressSubImage}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressSubImage}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{offset},\\
   &\CType{IceTImage}&\CArg{image}\quad\textC{);}
 \end{Table}
 
