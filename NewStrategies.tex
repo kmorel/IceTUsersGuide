@@ -786,6 +786,12 @@ following code gives an example of using \CFunc{icetSparseImageSplit}.
 This example uses copy-in-place for the first partition, but a trivial
 change makes a copy to this buffer.
 
+\index{icetSparseImageGetNumPixels}
+\index{icetSparseImageSplitPartitionNumPixels}
+\index{icetSparseImageBufferSize}
+\index{icetGetStateBuffer}
+\index{icetSparseImageAssignBuffer}
+\index{icetSparseImageSplit}
 \begin{code}
 #define NUM_SPLITS 8
 
@@ -854,6 +860,12 @@ the partitions will match up exactly.
 The following code example will result in the exact same image partitions
 as those in the previous example, but does it with two recursive calls.
 
+\index{icetSparseImageGetNumPixels}
+\index{icetSparseImageSplitPartitionNumPixels}
+\index{icetSparseImageBufferSize}
+\index{icetGetStateBuffer}
+\index{icetSparseImageAssignBuffer}
+\index{icetSparseImageSplit}
 \begin{code}
 #define FIRST_NUM_SPLITS 2
 #define SECOND_NUM_SPLITS 4
@@ -931,6 +943,123 @@ recursive split then happens only on that one partition kept.
 \subsubsection{Interlacing Images}
 
 \index{image!interlace|(}
+
+Strategies that use \CFunc{icetSparseImageSplit} should consider honoring
+the \CType{ICET\_INTERLACE\_IMAGES} option.  Image interlacing is described
+in Chapter~\ref{chap:Customizing_Compositing} starting on
+page~\pageref{sec:Customizing_Compositing:Interlaced_Images}.  \IceT
+provides a pair of functions, \CFunc{icetSparseImageInterlace} and
+\CFunc{icetGetInterlaceOffset}, to simplify this.
+
+\label{manpage:icetSparseImageInterlace}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSparseImageInterlace}\textC{(}
+  }\\
+  \makebox[1.5in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{in\_image}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{scratch\_state\_buffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{out\_image}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetSparseImageInterlace} copies all the pixels from
+\CArg{in\_image} to \CArg{out\_image}, but shuffling the pixels around.
+The pixel shuffling is done in such a way that if you subsequently split
+the image with one or more calls to \CFunc{icetSparseImageSplit} to create
+\CArg{eventual\_num\_partitions} (using the appropriate recursive calling
+described previously as necessary), then all the resulting image partitions
+will contain a continuous array of pixels.
+\CFunc{icetSparseImageInterlace} requires a temporary buffer during its
+operation.  It thus requires an identifier to a state variable for a buffer
+not being used.
+
+\label{manpage:icetGetInterlaceOffset}
+Once an interlaced image is completely split, no further pixel shuffling is
+necessary.  However, because the partitions have been shuffled, the offsets
+that are reported by \CFunc{icetSparseImageInterlace} are incorrect.  The
+correct offset is retrieved with \CFunc{icetGetInterlaceOffset}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{IceTSizeType }\CFunc{icetGetInterlaceOffset}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{IceTInt}&\CArg{partition\_index}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{original\_image\_size}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetGetInterlaceOffset} gets information about the original image
+and a particular partition and returns the actual offset of that partition.
+\CArg{partition\_index} is the index of the partition (the same as those
+used by a call to \CFunc{icetSparseImageSplit} that was called
+non-recursively).  \CArg{eventual\_num\_partitions} is the same as that in
+the call to \CFunc{icetSparseImageInterlace} and the first call to
+\CFunc{icetSparseImageSplit}.  \CArg{original\_image\_size} is the number
+of pixels in the starting image before it was split.
+
+The following code is boilerplate for implementing image interlacing in a
+single image strategy.
+
+\index{icetSparseImageGetNumPixels}
+\index{icetIsEnabled}
+\index{icetGetStateBufferSparseImage}
+\index{icetSparseImageInterlace}
+\index{icetGetInterlaceOffset}
+\begin{code}
+#define MY_COMPOSE_INTERLACE_IMAGE      ICET_SI_STRATEGY_BUFFER_0
+#define MY_COMPOSE_DUMMY_ARRAY          ICET_SI_STRATEGY_BUFFER_1
+/*...*/
+
+void icetMySingleImageCompose(IceTInt *compose_group,
+                              IceTInt group_size,
+                              IceTInt image_dest,
+                              IceTSparseImage input_image,
+                              IceTSparseImage *result_image,
+                              IceTSizeType *piece_offset)
+{
+    IceTSizeType original_image_size;
+    IceTInt eventual_num_partitions;
+    IceTBoolean use_interlace;
+    IceTSparseImage working_image;
+    IceTSparseImage final_image;
+    IceTInt my_piece_index;
+    IceTInt my_piece_offset;
+
+    original_image_size = icetSparseImageGetNumPixels(input_image);
+    eventual_num_partitions = /* Num total partitions to be created. */;
+
+    use_interlace  = icetIsEnabled(ICET_INTERLACE_IMAGES);
+    use_interlace &= (eventual_num_partitions > 2);
+    if (use_interlace) {
+        working_image = icetGetStateBufferSparseImage(
+                                         MY_COMPOSE_INTERLACE_IMAGE,
+                                         icetSparseImageGetWidth(input_image),
+                                         icetSparseImageGetHeight(input_image));
+        icetSparseImageInterlace(input_image,
+                                 eventual_num_partitions,
+                                 MY_COMPOSE_DUMMY_ARRAY,
+                                 working_image);
+    } else {
+        working_image = input_image;
+    }
+
+    /* Do image compositing.  Set final_image to my piece to be returned.
+       Set my_piece_index to the index of the partition in final_image.
+       Set my_piece_offset to the appropriate offest returned from
+       icetSparseImageSplit. */
+
+    *result_image = final_image;
+    if (use_interlace) {
+        *piece_offset = icetGetInterlaceOffset(my_piece_index,
+                                               eventual_num_partitions,
+                                               original_image_size);
+    } else {
+        *piece_offset = my_piece_offset;
+    }
+}
+\end{code}
 
 \index{image!interlace|)}
 
