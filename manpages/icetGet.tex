@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{June  8, 2011}
+\setDate{July 11, 2011}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetGet}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGet} -- get an \IceT state parameter}
 
@@ -86,7 +86,11 @@
     \CFunc{icetDrawFrame}.  Stored as a double.
   \item[\CEnum{ICET\_BYTES\_SENT}] The total number of bytes sent by the
     calling process for transferring image data during the last call to
-    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  Stored as an integer.
+    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  Stored as an
+    integer.
+  \item[\CEnum{ICET\_COLLECT\_TIME}] The total time spent in collecting
+    image fragments to display processes during the last call to
+    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
   \item[\CEnum{ICET\_COLOR\_FORMAT}] The color format of images to be
     created by the rendering subsystem and composited by \IceT.  Use
     \CFunc{icetSetColorFormat} to set the color format.  Use

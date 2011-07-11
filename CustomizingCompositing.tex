@@ -704,6 +704,9 @@ timing metrics (in seconds) are as follows.
   spent in performing Z comparisons or color blending of images during the
   last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  These two
   variables always return the same value.
+\item[\CEnum{ICET\_COLLECT\_TIME}] The total time spent in collecting image
+  fragments to display processes during the last call to
+  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_TOTAL\_DRAW\_TIME}] The total time spent in the last
   call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  This includes
   all the time to render, read back, compress, and composite images.
