@@ -197,11 +197,11 @@ functions, which are defined in the
 \index{IceTDevState.h}\textC{IceTDevState.h} header file.
 
 \begin{Table}{4}
-  \textC{IceTDouble *}&\icetUnsafeStateGetDouble\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTFloat *}&\icetUnsafeStateGetFloat\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTInt *}&\icetUnsafeStateGetInteger\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTBoolean *}&\icetUnsafeStateGetBoolean\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
-  \textC{IceTVoid **}&\icetUnsafeStateGetPointer\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
+  \textC{const IceTDouble *}&\icetUnsafeStateGetDouble\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTFloat *}&\icetUnsafeStateGetFloat\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTInt *}&\icetUnsafeStateGetInteger\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTBoolean *}&\icetUnsafeStateGetBoolean\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTVoid **}&\icetUnsafeStateGetPointer\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
 \end{Table}
 
 The implementation for the \CFunc{icetGet} functions is to copy the data
@@ -213,7 +213,9 @@ First, if the state variable is changed, the pointer you receive can become
 invalid.  Second, no type conversion is performed.  You have to make sure
 that you request a pointer of the correct type (or you will get an error).
 Since the state setting functions are hidden from the end user API, it is
-possible to manage these erroneous conditions.
+possible to manage these erroneous conditions.  These functions return
+\textC{const} pointers to discourage you from changing state values by
+directly manipulating the data in the pointers.
 
 \section{Memory Management}
 \label{sec:New_Strategies:Memory_Management}
@@ -1817,7 +1819,7 @@ IceTImage ComposeTile0(void)
   IceTInt max_height;
   IceTInt rank;
   IceTInt num_proc;
-  IceTInt *display_nodes;
+  const IceTInt *display_nodes;
   IceTInt image_dest;
   IceTBoolean ordered_composite;
   IceTSparseImage input_image;
