@@ -216,6 +216,45 @@
     \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  This includes all
     the time to render, read back, compress, and composite images.  Stored
     as a double.
+  \item[\CEnum{ICET\_VALID\_PIXELS\_NUM}] In conjunction with
+    \CEnum{ICET\_VALID\_PIXELS\_OFFSET}, gives the range of valid pixels
+    for the last image returned from \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame}.  Given the arrays of pixels returned with the
+    \CFunc{icetImageGetColor} and \CFunc{icetImageGetDepth} functions, the
+    valid pixels start at the pixel indexed by
+    \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
+    \CEnum{ICET\_VALID\_PIXELS\_NUM}.  The tile to which these pixels
+    belong are captured in the \CEnum{ICET\_VALID\_PIXELS\_TILE} state
+    variable.  If the last call to \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame} did not return pixels for the local process,
+    \CEnum{ICET\_VALID\_PIXELS\_NUM} is set to $0$.  This state variable is
+    only useful when \CEnum{ICET\_COLLECT\_IMAGES} is off.  If on, it can
+    be assumed that all display processes contain all pixels in the image
+    (\CEnum{ICET\_VALID\_PIXELS\_NUM} is the number of pixels in the
+    image), and all other processes have no pixel data.
+  \item[\CEnum{ICET\_VALID\_PIXELS\_OFFSET}] In conjunction with
+    \CEnum{ICET\_VALID\_PIXELS\_NUM}, gives the range of valid pixels for
+    the last image returned from \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame}.  Given the arrays of pixels returned with the
+    \CFunc{icetImageGetColor} and \CFunc{icetImageGetDepth} functions, the
+    valid pixels start at the pixel indexed by
+    \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
+    \CEnum{ICET\_VALID\_PIXELS\_NUM}.  The tile to which these pixels
+    belong are captured in the \CEnum{ICET\_VALID\_PIXELS\_TILE} state
+    variable.  This state variable is only useful when
+    \CEnum{ICET\_COLLECT\_IMAGES} is off.  If on, it can be assumed that
+    all display processes contain all pixels in the image
+    (\CEnum{ICET\_VALID\_PIXELS\_OFFSET} is $0$), and all other processes
+    have no pixel data.
+  \item[\CEnum{ICET\_VALID\_PIXELS\_TILE}] Gives the tile for which the
+    last image returned from \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame} contains pixels.  Each process has its own
+    value.  If the last call to \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame} did not return pixels for the local process,
+    then this state variable is set to $-1$.  This state variable is only
+    useful when \CEnum{ICET\_COLLECT\_IMAGES} is off.  If on, it can be
+    assumed that all display processes have valid pixels for their
+    respective display tiles, and all other processes have no pixel data.
   \end{Description}
 
   In addition, if you are using the \OpenGL layer (i.e., have called

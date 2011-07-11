@@ -492,16 +492,18 @@ pixels must be shuffled over the entire image, this reshuffling must happen
 after image data is collected on a single process.  Thus, the reshuffling
 happens on a single process while all others remain idle.
 
+\index{partitioning!image}
+\index{image!partitioning}
 Classical implementation of image interlacing shuffle pixels in regions,
 but the regions chosen are usually arbitrary (scanlines is a common region
 to pick).  However, the image interlacing algorithm in \IceT chooses
 regions that completely avoid the need for the second, and most time
 consuming, pixel reshuffling.  The algorithm is based on the simple
 observation that at the completion of many parallel compositing algorithms,
-the final image is distributed amongst all the processes in contiguous
-pieces.  If we arrange our initial shuffling such that each of the
-partitions remain a contiguous set of pixels, then we do not need the final
-reshuffling at all.
+the final image is partitioned and distributed among all the processes in
+contiguous pieces.  If we arrange our initial shuffling such that each of
+the partitions remain a contiguous set of pixels, then we do not need the
+final reshuffling at all.
 
 \begin{figure}
   \centering
@@ -676,6 +678,73 @@ These values may be queried (but not set) at runtime using \CFunc{icetGet}
 with a state variable identifier of the same name.
 
 \index{compositing!network|)}
+
+\section{Image Partition Collection}
+\label{sec:Customizing_Compositing:Image_Collection}
+\index{collection|(}
+\index{image!collection|(}
+\index{partitioning!image|(}
+\index{image!partitioning|(}
+
+Many parallel compositing algorithms, including several in \IceT, function
+by partitioning images and distributing the pieces.  These algorithms,
+described in more detail in Chapter~\ref{chap:Strategies}, eventually have
+a composited image partitioned and distributed among most or all of the
+processes involved in the operation.
+
+For most practical purposes, such as displaying the images, the image
+partitions must be collected, and by default \IceT collects each image to
+its associated display process.  However, there exist some use cases where
+this collection may not be necessary.  For example, if the images are only
+to be written to a parallel file system, then it may be as efficient or
+more efficient to collectively write partitions from multiple processes.
+
+The collection of image data to the display process may take a significant
+portion of the overall compositing time, but it is usually necessary.  When
+it is not necessary, it can be disabled by calling \CFunc{icetDisable} with
+\CEnum{ICET\_COLLECT\_IMAGES}.  When this option is turned off, the
+strategy has the option of leaving images partitioned among processes.  Each
+process containing part of a tile's image will return the entire buffer
+from \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} in an
+\CType{IceTImage} object.  However, only certain pixels will be valid.  The
+state variables \CEnum{ICET\_VALID\_PIXELS\_TILE},
+\CEnum{ICET\_VALID\_PIXELS\_OFFSET}, and \CEnum{ICET\_VALID\_PIXELS\_NUM}
+give which tile the pixels belong to and what range of pixels are valid.
+
+The \CEnum{ICET\_VALID\_PIXELS\_TILE} state variable gives the tile for
+which the last image returned from \CFunc{icetDrawFrame} or
+\CFunc{icetGLDrawFrame} contains pixels.  Each process has its own value.
+If the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} did
+not return pixels for the local process, then this state variable is set to
+$-1$.
+
+The \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and
+\CEnum{ICET\_VALID\_PIXELS\_NUM} give the range of valid pixels for the
+last image returned from \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+Given the arrays of pixels returned with the \CFunc{icetImageGetColor} and
+\CFunc{icetImageGetDepth} functions, the valid pixels start at the pixel
+indexed by \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
+\CEnum{ICET\_VALID\_PIXELS\_NUM}.  The tile to which these pixels belong
+are captured in the \CEnum{ICET\_VALID\_PIXELS\_TILE} state variable.  If
+the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} did not
+return pixels for the local process, \CEnum{ICET\_VALID\_PIXELS\_NUM} is
+set to $0$.
+
+The \CEnum{ICET\_VALID\_PIXELS\_TILE}, \CEnum{ICET\_VALID\_PIXELS\_OFFSET},
+and \CEnum{ICET\_VALID\_PIXELS\_NUM} are only really useful when
+\CEnum{ICET\_COLLECT\_IMAGES} is disabled.  When
+\CEnum{ICET\_COLLECT\_IMAGES} is enabled, it is always the case that each
+display process has the entire image (\CEnum{ICET\_VALID\_PIXELS\_TILE} set
+to the tile, \CEnum{ICET\_VALID\_PIXELS\_OFFSET} set to $0$ and
+\CEnum{ICET\_VALID\_PIXELS\_NUM} set to the total image size), and it is
+always the case that each process not displaying a tile has no image
+(\CEnum{ICET\_VALID\_PIXELS\_TILE} set to $-1$ and
+\CEnum{ICET\_VALID\_PIXELS\_NUM} set to $0$).
+
+\index{image!partitioning|)}
+\index{partitioning!image|)}
+\index{image!collection|)}
+\index{collection|)}
 
 \section{Timing (and Other Metrics)}
 \label{sec:Customizing_Compositing:Timing}
