@@ -1892,6 +1892,218 @@ IceTImage ComposeTile0(void)
 }
 \end{code}
 
+
+\section{Matrix Operations}
+
+\index{matrix~operations|(}
+\index{IceTDevMatrix.h|(}
+
+\IceT uses $4 \times 4$ homogeneous transformation matrices to represent
+projections from object space to world and clipping space.  These matrices
+are stored in \textC{IceTDouble} arrays with $16$ values and have a layout
+conforming with matrices in \OpenGL.  To simplify the common operations on
+these matrices, \IceT consolidates several useful matrix functions
+identified by the prototypes in \textC{IceTDevMatrix.h}.
+
+First is macro named \index{ICET\_MATRIX}\textC{ICET\_MATRIX}.  This macro
+takes a pointer to a matrix array and row and column indices and resolves
+to the appropriate value in the matrix.  The \textC{ICET\_MATRIX} macro
+ensures that row-column indices are properly converted to array indices.
+The following example use prints the values of a matrix.
+
+\begin{code}
+IceTDouble matrix[16];
+IceTInt row;
+IceTInt column;
+
+/* Do stuff that fills matrix. */
+
+for (row = 0; row < 4; row++) {
+  for (column = 0; column < 4; column++) {
+    printf("%8.2lf", ICET_MATRIX(matrix, row, column);
+  }
+  printf("\n");
+}
+\end{code}
+
+\label{manpage:icetMatrixMultiply}
+\textC{IceTDevMatrix.h} contains a couple of matrix multiply functions.
+The first form, takes two matrices and stores the result into a third.
+The following computes \CArg{A} $\times$ \CArg{B} and stores the result in
+\CArg{C}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiply}\textC{(}&\textC{IceTDouble *}&\CArg{C}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{A}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{B}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixPostMultiply}
+The second form as performs \CArg{A} $\times$ \CArg{B}, but stores the
+result back into matrix \CArg{A} rather than in a third matrix.  This
+operation is similar to the \CFuncExternal{glMultMatrix} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixPostMultiply}\textC{(}&\textC{IceTDouble *}&\CArg{A}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{B}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixVectorMultiply}
+The \CFunc{icetMatrixVectorMultiply} function multiplies $4 \times 4$
+matrix \CArg{A} with four-component column vector \CArg{v} and stores the
+result in array \CArg{out} (which of course must be allocated to hold 4
+values).
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixVectorMultiply}\textC{(}&\textC{IceTDouble *}&\CArg{out}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{A}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{v}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetDot3}
+\label{manpage:icetDot4}
+\textC{IceTDevMatrix.h} also contains two functions for performing the dot
+product of vectors.  One performs the dot product for 3-component vectors,
+the other for 4-component vectors.
+
+\begin{Table}{3}
+  \textC{IceTDouble }\CFunc{icetDot3}\textC{(}&\textC{const IceTDouble *}&\CArg{v1}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{v2}\quad\textC{);}\\
+  \textC{IceTDouble }\CFunc{icetDot4}\textC{(}&\textC{const IceTDouble *}&\CArg{v1}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{v2}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixCopy}
+The \CFunc{icetMatrixCopy} function provides a simple way to copy the data
+from one matrix array to another.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixCopy}\textC{(}&\textC{IceTDouble *}&\CArg{matrix\_dest}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{matrix\_src}\quad\textC{);}
+\end{Table}
+
+\textC{IceTDevMatrix.h} contains functions to quickly build standard
+transformation matrices: identity, scale, translate, rotate, orthographic
+projection, and frustum projection.  These functions have the same calling
+specifications as the \OpenGL counterparts, \CFuncExternal{glLoadIdentity},
+\CFuncExternal{glScale}, \CFuncExternal{glTranslate},
+\CFuncExternal{glRotate}, \CFuncExternal{glOrtho}, and
+\CFuncExternal{glFrustum}, respectively, except that they all have a
+\CArg{mat\_out} argument to store the resulting matrix.
+
+\label{manpage:icetMatrixIdentity}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixIdentity}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixScale}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixScale}\textC{(}&\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixTranslate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixTranslate}\textC{(}&\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixRotate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixRotate}\textC{(}&\textC{IceTDouble}&\CArg{angle}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixOrtho}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixOrtho}\textC{(}&\textC{IceTDouble}&\CArg{left}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{right}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{bottom}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{top}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{znear}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{zfar}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixFrustum}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixFrustum}\textC{(}&\textC{IceTDouble}&\CArg{left}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{right}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{bottom}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{top}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{znear}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{zfar}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+In addition, \textC{IceTDevMatrix.h} also provides other forms for the
+scale, translate, and rotate functions that apply (i.e. multiply) the
+transformation to an existing matrix.  Again, the transformation is post
+multiplied in the same manner as \OpenGL.
+
+\label{manpage:icetMatrixMultiplyScale}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiplyScale}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixMultiplyTranslate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiplyTranslate}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixMultiplyRotate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiplyRotate}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{angle}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\quad\textC{);}
+\end{Table}
+
+Finally, \textC{IceTDevMatrix.h} provides functions for computing the
+inverse, transpose, and inverse transpose of a matrix.  The functions
+that perform an inverse return an \textC{IceTBoolean} that is
+\CEnum{ICET\_TRUE} if the operation was successful or \CEnum{ICET\_FALSE}
+if the input matrix has no inverse.
+
+\label{manpage:icetMatrixInverse}
+\begin{Table}{3}
+  \textC{IceTBoolean }\CFunc{icetMatrixInverse}\textC{(}&\textC{const IceTDouble *}&\CArg{matrix\_in}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{matrix\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixTranspose}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixTranspose}\textC{(}&\textC{const IceTDouble *}&\CArg{matrix\_in}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{matrix\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixInverseTranspose}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{IceTBoolean }\CFunc{icetMatrixInverseTranspose}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{const IceTDouble *}&\CArg{matrix\_in}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{matrix\_out}\quad\textC{);}
+\end{Table}
+
+\index{IceTDevMatrix.h|)}
+\index{matrix~operations|)}
+
 \section{Raising Diagnostics}
 
 \index{diagnostics|(}
