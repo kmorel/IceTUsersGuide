@@ -171,6 +171,11 @@ state variables generally should be read from, not written to.
 \item[\CEnum{ICET\_NEAR\_DEPTH}] (double, 1) The minimum depth value of the
   local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORT}
   for more details.
+\item[\CEnum{ICET\_NEED\_BACKGROUND\_CORRECTION}] (boolean, 1) If the
+  resulting composited image needs to have its background corrected.  That
+  is, the final image should be blended with the color specified in
+  \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR} or
+  \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR}.
 \item[\CEnum{ICET\_NUM\_CONTAINED\_TILES}] (integer, 1) The number of tiles
   into which the local geometry projects.  This is the length of the
   \CEnum{ICET\_CONTAINED\_TILES\_LIST} variable.
@@ -187,6 +192,13 @@ state variables generally should be read from, not written to.
   is the sum of all entries in \CEnum{ICET\_TILE\_CONTRIB\_COUNTS}.  This
   state variable is \emph{not} set when using the
   \index{strategy!sequential}sequential strategy.
+\item[\CEnum{ICET\_TRUE\_BACKGROUND\_COLOR}] (float, 4) An RGBA color
+  identifying the ``true'' or final background color.  If
+  \CEnum{ICET\_NEED\_BACKGROUND\_CORRECTION} is true, then this color
+  should be blended as the background to all pixels in the final image.
+\item[\CEnum{ICET\_TRUE\_BACKGROUND\_COLOR\_WORD}] (integer, 1) Same as
+  \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR} but stored as 8-bit values packed
+  in an integer.
 \end{Description}
 
 \label{manpage:icetUnsafeStateGet}
@@ -1807,6 +1819,7 @@ first tile is composited.
 \index{ICET\_VALID\_PIXELS\_OFFSET}
 \index{ICET\_VALID\_PIXELS\_NUM}
 \index{icetSparseImageGetNumPixels}
+\index{ICET\_NEED\_BACKGROUND\_CORRECTION}
 \index{icetDecompressSubImageCorrectBackground}
 \begin{code}
 #define COMPOSE_TILE_0_INPUT_IMAGE_BUFFER       ICET_STRATEGY_BUFFER_0
@@ -1874,6 +1887,11 @@ IceTImage ComposeTile0(void)
   } else {
     IceTSizeType piece_size = icetSparseImageGetNumPixels(composited_image);
     if (piece_size > 0) {
+      /* If the image is not collected, then the background of the piece
+         should be corrected if ICET_NEED_BACKGROUND_CORRECTION is true.
+         The icetDecompressSubImageCorrectBackground takes care of all this
+         during decompression for you.  See the following section on
+         background collection for more information. */
       icetDecompressSubImageCorrectBackground(composited_image,
                                               piece_offset,
                                               output_image);
@@ -1891,6 +1909,91 @@ IceTImage ComposeTile0(void)
   return output_image;
 }
 \end{code}
+
+
+\section{Background Correction}
+
+As described in the volume/transparent rendering section of
+Chapter~\ref{sec:Customizing_Compositing:Volume_Rendering} (starting on
+page~\pageref{sec:Customizing_Compositing:Volume_Rendering}), it is
+sometimes necessary for \IceT to correct the background of composited
+images by blending the final image over the background color.  This
+responsibility falls on the compositing strategy (the multi-tile version,
+not the single-tile substrategy).  The rational is that most efficient
+compositing strategies partition images and distribute for concurrent
+blending, and so the strategy can most efficiently correct the background
+by blending the pieces in parallel before it is collected.
+
+Thus, if you are writing a new strategy, you should make sure that the
+background is always corrected when necessary.  When your strategy function
+is called, the state variable \CEnum{ICET\_NEED\_BACKGROUND\_CORRECTION}
+will be set to true if the background needs to be corrected
+(i.e. \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} is true,
+\CFunc{icetCompositeMode} is set to \CEnum{ICET\_COMPOSITE\_MODE\_BLEND},
+and the background color is not $[0, 0, 0, 0]$).  The actual background
+color to mix is stored in \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR} and
+\CEnum{ICET\_TRUE\_BACKGROUND\_COLOR\_WORD}.  These background colors can
+be blended on a per-pixel bases using the \CEnum{ICET\_BLEND\_FLOAT} or
+\CEnum{ICET\_BLEND\_UBYTE} macros defined in
+\index{IceTDevImage.h}\textC{IceTDevImage.h}.
+
+That said, there is generally no any cause for a strategy to directly query
+these state variables.  \IceT provides several helper functions that
+automatically handle the background correction for you.
+
+First, if your strategy is using the \CFunc{icetSimgleImageCollect}
+function, described in the previous section on invoking a single-image
+strategy, this function will automatically correct the background for you.
+No further works needs to be done.
+
+\label{manpage:icetDecompressImageCorrectBackground}
+\label{manpage:icetDecompressSubImageCorrectBackground}
+\index{IceTDevImage.h}\textC{IceTDevImage.h} also provides several
+functions specifically to correct background data.  First are
+\CFunc{icetDecompressImageCorrectBackground} and
+\CFunc{icetDecompressSubImageCorrectBackground}.  These are analagous to
+the \CFunc{icetDecompressImage} and \CFunc{icetDecompressSubImage}
+functions except that they perform background correction if necessary.
+Since strategies often read images as compressed images and must decompress
+them before returning, this is often the most convienient way to correct
+the background.  An example of using one is given in the previous section
+on invoking a single-image strategy for the case when image collection is
+not necessary.
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressImageCorrectBackground}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressSubImageCorrectBackground}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{offset},\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetImageCorrectBackground}
+If your strategy has already decompressed its image, it can correct the
+background by simply passing it to the \CFunc{icetImageCorrectBackground}
+function.  If no background correction is necessary, the function does
+nothing.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageCorrectBackground}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetClearImageTrueBackground}
+Some compositing strategies will do no work for tiles with no geometry
+projected into them.  In this case, the strategy must still return an image
+filled with the background color.  The best way to create such an image is
+to use \CFunc{icetClearImageTrueBackground}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearImageTrueBackground}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
 
 
 \section{Matrix Operations}
