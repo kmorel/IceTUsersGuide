@@ -379,7 +379,9 @@ collecting dust on a crashed RAID somewhere.
 
 The majority of the development for \IceT was finished by 2004.  Since
 then, \IceT has proven to be a stable and versatile library that is
-currently being used in several production applications.
+currently being used in several production applications.  In 2011 several
+scalability tests were run and the compositing algorithms updated to better
+support petascale computing.
 
 The following is a list of potential changes to \IceT.  As of this writing,
 none of these are currently under development.  Rather, these are
@@ -387,18 +389,7 @@ identified shortcomings of various degrees in \IceT.  These features will
 be handled on an as needed basis, assuming the need should arise.
 
 \begin{description}
-\item[Update scalability tests.] The scalability tests for \IceT were run
-  during its major development, which was several years ago.  At the time,
-  64 nodes was considered a pretty enormous big visualization cluster.
-  Nowadays, \IceT is sometimes used to run visualization on supercomputers
-  containing thousands of processes.  Verifying the scalability of the
-  system occasionally is always a good idea.  Also, the
-  \index{strategy!reduce}reduce strategy makes assumptions about the
-  relative performance of the binary tree and binary swap composition
-  algorithms.  The performance point might have changed.  Also, given that
-  binary swap is reducing the image with each step, it might be worthwhile
-  to switch to binary tree in the middle of the binary swap algorithm.
-\item[Render aborts.] In interactive applications, it is often convenient
+\item[Render aborts] In interactive applications, it is often convenient
   to be able to abort a render that takes some time to finish.  Aborting a
   render in the middle of a composite is tricky, because you need to make
   sure that everyone is aware of the abort and that all communication is
@@ -406,6 +397,32 @@ be handled on an as needed basis, assuming the need should arise.
   communication layer, but all the strategies still have to be ready to
   quit once a communication is canceled due to an abort (or at the very
   least ignore it without crashing).
+\item[Multithreaded compositing] \IceT is specifically designed for
+  distributed memory parallel computing.  It is clear that current and
+  future high-performance computers are built with nodes comprising many
+  computing cores each.  It may be necessary to increase the thread safety
+  of \IceT and implement hybrid distributed-shared memory parallel
+  compositing algorithms.
+\item[Memory conservation] \IceT's compositing algorithms require multiple
+  image buffers.  To save allocation time and prevent memory fragmenting,
+  \IceT keeps image buffers around in its own memory pool.
+  Memory-constrained applications may prefer that \IceT releases this memory
+  between frames and take the performance hit.  \IceT's compositing
+  algorithms could also stand a pass at minimizing the memory they use.
+\item[Multi-tile vs. big image compositing] \IceT contains several special
+  algorithms for compositing multi-tile images.  However, these strategies
+  have never been properly compared to the compositing of a single very
+  large image.  This comparison should be done, and if the single
+  compositing is faster then perhaps make a new strategy to combine tiles
+  to a single large image before compositing, then split back up at the
+  end.
+\item[Matrix functions] \IceT contains several convenience functions for
+  $4 \times 4$ matrix transformations (described in
+  Chapter~\ref{sec:New_Strategies:Matrix_Operations} starting on
+  page~\pageref{sec:New_Strategies:Matrix_Operations}).  They are hidden
+  under the assumption that programs using \IceT will have similar
+  functionality from its own rendering system, but perhaps that is not
+  always the case.  Should these functions be exposed?
 \end{description}
 
 % -----------------------------------------------------------------------------
