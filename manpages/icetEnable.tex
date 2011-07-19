@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{September 20, 2010}
+\setDate{July 11, 2011}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetEnable}{Kenneth Moreland}{\IceT Reference}{\icetEnable, \icetDisable --  enable/disable an \IceT feature.}
 
@@ -25,6 +25,16 @@
   be turned on or off.  Valid values for \CArg{pname} are:
 
   \begin{Description}[xxxxxxxx]
+  \item[\CEnum{ICET\_COLLECT\_IMAGES}] When this option is on (the default)
+    images partitions are always collected to display processes.  When this
+    option is turned off, the strategy has the option of leaving images
+    partitioned among processes.  Each process containing part of a tile's
+    image will return the entire buffer from \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame} in an \CType{IceTImage} object.  However, only
+    certain pixels will be valid.  The state variables
+    \CEnum{ICET\_VALID\_PIXELS\_TILE}, \CEnum{ICET\_VALID\_PIXELS\_OFFSET},
+    and \CEnum{ICET\_VALID\_PIXELS\_NUM} give which tile the pixels belong
+    to and what range of pixels are valid.
   \item[\CEnum{ICET\_COMPOSITE\_ONE\_BUFFER}] Turn this option on when
     performing z-buffer compositing of a color image and the only result
     you need is the color image itself (not the depth buffer).  This is
@@ -40,6 +50,9 @@
     be shifted such that the geometry will be rendered in one shot whenever
     possible, even if the geometry straddles up to four tiles.  This flag
     is enabled by default.
+  \item[\CEnum{ICET\_INTERLACE\_IMAGES}] If enabled, pixels in images
+    (might be) shuffled to better load balance the compositing work.  This
+    flag is enabled by default.
   \item[\CEnum{ICET\_ORDERED\_COMPOSITE}] If enabled, the image composition
     will be performed in the order specified by the last call to
     \CFunc{icetCompositeOrder}, assuming the current strategy (specified by

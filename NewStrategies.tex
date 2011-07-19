@@ -1,0 +1,2311 @@
+% -*- latex -*-
+
+
+\chapter{Implementing New Strategies}
+\label{sec:New_Strategies}
+
+The \IceT API was written while its strategies were being developed.  As
+such, the design yields for the relatively simplistic addition of both new
+multi-tile strategies and new single-image strategies.  This chapter will
+provide the basic overview of how to add a new strategy for those
+interested in adding new compositing algorithms to \IceT.  It is probably
+easiest to start by modifying your \IceT source to insert your own strategy
+in the \textC{src/strategies} directory of the \IceT source distribution.
+
+A strategy in \IceT is created by simply defining a function that performs
+the operation.  A multi-tile strategy (one selected with
+\CFunc{icetStrategy}) should take no arguments and return an
+\CType{IceTImage}.  Thus, a new multi-tile strategy function would look
+something like this.  (The following sections will provide details on
+performing the individual tasks of the implementation.)
+
+\begin{code}
+IceTImage icetCustomMultiTileCompose(void)
+{
+    /* Render images. */
+    /* Transfer data. */
+    /* Composite pixels. */
+    /* Store results in image. */
+    return image;
+}
+\end{code}
+
+To expose the strategy from the \IceT interface, add an identifier to
+\textC{IceT.h} starting with \textC{ICET\_STRATEGY\_} to the list of
+existing strategy identifiers.  Then modify the functions in
+\textC{src/strategies/select.c} to expose this new identifier to the rest
+of the \IceT library.  In particular, add your new identifier to the switch
+statements in the following functions.
+
+\begin{description}
+\item[\CFuncExternal{icetStrategyValid}] Simply add your identifier to the
+  list so that \IceT can verify that your strategy is defined.
+\item[\CFuncExternal{icetStrategyNameFromEnum}] Add a short human-readable
+  name for your strategy.  This is the string returned from
+  \CFunc{icetGetStrategyName}.
+\item[\CFuncExternal{icetStrategySupportsOrder}] Return \CEnum{ICET\_TRUE}
+  if your strategy can properly composite based on the ordering given in
+  \CEnum{ICET\_COMPOSITE\_ORDER}.  Return \CEnum{ICET\_FALSE} otherwise.
+  This value gets stored in the \CEnum{ICET\_STRATEGY\_SUPPORTS\_ORDERING}.
+\item[\CFuncExternal{icetInvokeStrategy}] Call the function that invokes
+  your strategy's image compositing (\textC{icetCustomMultiTileCompose} in
+  the example above).
+\end{description}
+
+The process for creating a single-image strategy (one selected with
+\CFunc{icetSingleImageStrategy} is similar.  The first step is define a
+function that performs the compositing.  However, the single-image
+composite function takes arguments that define the image to composite and
+the group of processes contributing.  A new single-image strategy function
+would look something like this.
+
+\begin{code}
+void icetCustomSingleImageCompose(const IceTInt *compose_group,
+                                  IceTInt group_size,
+                                  IceTInt image_dest,
+                                  IceTSparseImage input_image,
+                                  IceTSparseImage *result_image,
+                                  IceTSizeType *piece_offset)
+{
+    /* Transfer data. */
+    /* Composite pixels. */
+    /* Point result_image to image object with results. */
+    /* Store offset of local piece in piece_offset. */
+}
+\end{code}
+
+The first argument, \CArg{compose\_group}, is an array of process ranks.
+The pixels are to be composited in the order specified in this array.  The
+second argument, \CArg{group\_size}, specifies how many processes are
+contributing to the image and also specifies the length of
+\CArg{compose\_group}.
+
+The third argument, \CArg{image\_dest}, specifies the process in which the
+final composed image should be placed.  It is an index into
+\CArg{compose\_group}, not the actual rank of the process.
+\CArg{image\_dest} is really just a hint and can be ignored.  The single
+image composite does not need to collect the composited pixels to a single
+process.  It can (and usually does) return with pieces of the composited
+image distributed amongst nodes in the group.  Any distribution is
+supported so long as the pieces are continuous, non-overlapping, and
+collectively define all the pixels in the image.
+
+The fourth argument, \CArg{input\_image}, contains the input image to be
+composited with the corresponding images in the other processes.  The
+resulting image is returned via the final two arguments.
+\CArg{result\_image} gets the sparse image object containing the composited
+image piece of the local process.  It can have zero pixels if the local
+process has no image data.  \CArg{piece\_offset} gets the offset, in pixels,
+of the local image piece in the entire image.
+
+To expose the single-image strategy from the \IceT interface, add an
+identifier to \textC{IceT.h} starting with
+\textC{ICET\_SINGLE\_IMAGE\_STRATEGY\_} to the list of existing
+single-image strategy identifiers.  Then modify the functions in
+\textC{src/strategies/select.c} to expose this new identifier to the rest
+of the \IceT library.  In particular, add your new identifier to the switch
+statements in the following functions.
+
+\begin{description}
+\item[\CFuncExternal{icetSingleImageStrategyValid}] Simply add your
+  identifier to the list so that \IceT can verify that your strategy is
+  defined.
+\item[\CFuncExternal{icetSingleImageStrategyNameFromEnum}] Add a short
+  human-readable name for your strategy.  This is the string returned from
+  \CFunc{icetGetSingleImageStrategyName}.
+\item[\CFuncExternal{icetInvokeSingleImageStrategy}] Call the function that
+  invokes your strategy's image compositing
+  (\textC{icetCustomSingleImageCompose} in the example above).
+\end{description}
+
+\section{Internal State Variables for Compositing}
+
+The strategy compose functions are expected to get many of its parameters
+and other relevant information from the \IceT state.  Many of the relevant
+state variables are described in the documentation for the \CFunc{icetGet}
+functions (as well as elsewhere throughout this document).  There are also
+several ``hidden'' state variables for internal use.  The ones specifically
+useful for within a composite function are listed here (along with the
+variable type, number of entries, and a description).  Note that these
+state variables generally should be read from, not written to.
+
+\begin{Description}[xxxxxxxx]
+\item[\CEnum{ICET\_ALL\_CONTAINED\_TILES\_MASKS}] (boolean,
+  \CEnum{ICET\_NUM\_TILES} $\times$ \CEnum{ICET\_NUM\_PROCESSES}) Contains
+  an appended list of \CEnum{ICET\_CONTAINED\_TILES\_MASK} variables for
+  all processes.  Given process $p$ and tile $t$, the entry at
+  $(\CEnum{ICET\_NUM\_TILES} \times p)+t$ contains the flag describing
+  whether process $p$ renders a non-blank image for tile $t$.  This
+  variable is the same on all processes.  This state variable is \emph{not}
+  set when using the \index{strategy!sequential}sequential strategy.
+\item[\CEnum{ICET\_CONTAINED\_TILES\_LIST}] (integer,
+  \CEnum{ICET\_NUM\_CONTAINED\_TILES}) All the tiles into which the local
+  geometry projects.  In other words, this is the list of tiles which will
+  not be empty after local rendering.  The local processor should generate
+  images for these tiles and participate in the composition of them.
+\item[\CEnum{ICET\_CONTAINED\_TILES\_MASK}] (boolean,
+  \CEnum{ICET\_NUM\_TILES}) This is a list of boolean flags, one per tile.
+  The flag is true if the local geometry projects onto the tile (that is,
+  the local render will not be empty for that tile) and false otherwise.
+  This gives the same information as \CEnum{ICET\_CONTAINED\_TILES\_LIST},
+  but in a different way that can be more convenient in some circumstances.
+\item[\CEnum{ICET\_CONTAINED\_VIEWPORT}] (integer, 4) Describes the region
+  of the viewport that the geometry being rendered locally projects onto.
+  The bounds of the data (given by \CFunc{icetBoundingBox} or
+  \CFunc{icetBoundingVertices}) projected onto the tiled display determines
+  the region of the tiled display the data covers.  The values in the
+  four-tuple correspond to x, y, width, and height, respectively, of the
+  projection in global pixel coordinates.  This variable in conjunction
+  with the \CEnum{ICET\_NEAR\_DEPTH} and \CEnum{ICET\_FAR\_DEPTH} give the
+  full 3D projection of the local data in window space.
+\item[\CEnum{ICET\_FAR\_DEPTH}] (double, 1) The maximum depth value of the
+  local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORT}
+  for more details.
+\item[\CEnum{ICET\_IS\_DRAWING\_FRAME}] (boolean, 1) Set to true while in a
+  call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} and set to false
+  otherwise.  This should always be set to true while the compose function
+  is being executed.
+\item[\CEnum{ICET\_MODELVIEW\_MATRIX}] (double, 16) The current modelview
+  matrix as passed to \CFunc{icetDrawFrame} or read from \OpenGL at the
+  invocation of \CFunc{icetGLDrawFrame}.
+\item[\CEnum{ICET\_NEAR\_DEPTH}] (double, 1) The minimum depth value of the
+  local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORT}
+  for more details.
+\item[\CEnum{ICET\_NEED\_BACKGROUND\_CORRECTION}] (boolean, 1) If the
+  resulting composited image needs to have its background corrected.  That
+  is, the final image should be blended with the color specified in
+  \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR} or
+  \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR}.
+\item[\CEnum{ICET\_NUM\_CONTAINED\_TILES}] (integer, 1) The number of tiles
+  into which the local geometry projects.  This is the length of the
+  \CEnum{ICET\_CONTAINED\_TILES\_LIST} variable.
+\item[\CEnum{ICET\_PROJECTION\_MATRIX}] (double, 16) The current projection
+  matrix as passed to \CFunc{icetDrawFrame} or read from \OpenGL at the
+  invocation of \CFunc{icetGLDrawFrame}.
+\item[\CEnum{ICET\_TILE\_CONTRIB\_COUNTS}] (integer,
+  \CEnum{ICET\_NUM\_TILES}) For each tile, provides the number of processes
+  that will produce a non-empty image for that tile.  This state variable
+  is \emph{not} set when using the \index{strategy!sequential}sequential
+  strategy.
+\item[\CEnum{ICET\_TOTAL\_IMAGE\_COUNT}] (integer, 1) The total number of
+  non-empty images produced by all processes for all tiles.  This variable
+  is the sum of all entries in \CEnum{ICET\_TILE\_CONTRIB\_COUNTS}.  This
+  state variable is \emph{not} set when using the
+  \index{strategy!sequential}sequential strategy.
+\item[\CEnum{ICET\_TRUE\_BACKGROUND\_COLOR}] (float, 4) An RGBA color
+  identifying the ``true'' or final background color.  If
+  \CEnum{ICET\_NEED\_BACKGROUND\_CORRECTION} is true, then this color
+  should be blended as the background to all pixels in the final image.
+\item[\CEnum{ICET\_TRUE\_BACKGROUND\_COLOR\_WORD}] (integer, 1) Same as
+  \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR} but stored as 8-bit values packed
+  in an integer.
+\end{Description}
+
+\label{manpage:icetUnsafeStateGet}
+In addition to several internal state variables, \IceT also has several
+internal functions for accessing them.  The most important set for
+implementing a strategy is the \CFunc{icetUnsafeStateGet} suite of
+functions, which are defined in the
+\index{IceTDevState.h}\textC{IceTDevState.h} header file.
+
+\begin{Table}{4}
+  \textC{const IceTDouble *}&\icetUnsafeStateGetDouble\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTFloat *}&\icetUnsafeStateGetFloat\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTInt *}&\icetUnsafeStateGetInteger\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTBoolean *}&\icetUnsafeStateGetBoolean\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);} \\
+  \textC{const IceTVoid **}&\icetUnsafeStateGetPointer\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
+\end{Table}
+
+The implementation for the \CFunc{icetGet} functions is to copy the data
+into a memory buffer you provide, performing type conversion as necessary.
+The \CFunc{icetUnsafeStateGet} functions simply return the internal pointer
+where the data is stored.  This can be faster and more convenient (since
+you do not have to allocate your own memory), but is unsafe in two ways.
+First, if the state variable is changed, the pointer you receive can become
+invalid.  Second, no type conversion is performed.  You have to make sure
+that you request a pointer of the correct type (or you will get an error).
+Since the state setting functions are hidden from the end user API, it is
+possible to manage these erroneous conditions.  These functions return
+\textC{const} pointers to discourage you from changing state values by
+directly manipulating the data in the pointers.
+
+\section{Memory Management}
+\label{sec:New_Strategies:Memory_Management}
+
+Compositing algorithms by their nature require buffers of memory of
+non-trivial size to hold images, among other data, that are not needed in
+between calls to the compositing.  One approach is to simply use the
+standard C \CFuncExternal{malloc} and \CFuncExternal{free} functions.
+However, some implementations of
+\CFuncExternal{malloc}/\CFuncExternal{free} are not always efficient, and
+even the best implementations can have a tendency to fragment memory over
+time as large buffers are allocated and released.
+
+During typical \IceT operation, a strategy (whether it be a multi-tile
+strategy or a single-image strategy) is invoked multiple times.  Each
+invocation will require multiple buffers to manipulate images and other
+data.  One way to do this is to allocate these buffers as needed and
+free them by the end of the invocation.  However, this can lead to
+the inefficiencies and memory fragmentation previously mentioned.  It is
+also problematic when returning an image buffer as the responsibility for
+deallocating the buffer becomes undefined.
+
+A better approach is to allocate the buffers as needed and then keep the
+buffers around for the next invocation of the strategy.  This approach
+requires a certain amount of overhead to check when buffers need to be
+allocated or resized and when they can be freed.  \IceT uses its own state
+mechanism to assist in managing memory buffers.  You do this by creating a
+\index{state~buffer}\keyterm{state buffer}, a buffer attached to a state
+variable.  This is done with the \CFunc{icetGetStateBuffer} function, which
+is defined in \index{IceTDevState.h}\textC{IceTDevState.h}.
+
+\label{manpage:icetGetStateBuffer}
+\begin{Table}{3}
+  \textC{IceTVoid *}\CFunc{icetGetStateBuffer}\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{num\_bytes}\quad\textC{);}
+\end{Table}
+
+The \CFunc{icetGetStateBuffer} takes a state variable and a buffer size in
+bytes.  It then checks to see if a buffer of the appropriate size has
+already been allocated to that state variable.  If so, it is returned.  If
+not, a new buffer is allocated and returned.  There are also similar
+functions called \CFunc{icetGetStateBufferImage} and
+\CFunc{icetGetStateBufferSparseImage}, described in the following section,
+that allocate image buffers.
+
+Because each buffer is assigned to a state variable, it is important to
+assign the buffer to a state variable that is both valid and unused by
+other \IceT components.  To this end, there are several state variables
+reserved for multi-tile strategies or single-image strategies.  The state
+variables for multi-tile strategies are named
+\CEnum{ICET\_STRATEGY\_BUFFER}\textC{\_$i$} numbered from 0 to 15.  That
+is, \CEnum{ICET\_STRATEGY\_BUFFER\_0}, \CEnum{ICET\_STRATEGY\_BUFFER\_1},
+and so on up to \CEnum{ICET\_STRATEGY\_BUFFER\_15}.
+
+By convention, your multi-tile strategy implementation should start by
+creating \textC{\#define} enumerations that alias these variables to
+logical names for the buffers.  This will help prevent confusion or
+accidental sharing of buffers.  Also by convention, try to make the largest
+buffers ``first'' (that is, \CEnum{ICET\_STRATEGY\_BUFFER\_0} has the
+largest buffer, \CEnum{ICET\_STRATEGY\_BUFFER\_1} has the next largest, and
+so on) so that if the strategy is changed, the large buffers will most
+likely be shared.
+
+As an example, consider the following code taken from the virtual trees
+strategy implementation that aliases the buffer state variables it uses.
+
+\begin{code}
+#define VTREE_IMAGE_BUFFER              ICET_STRATEGY_BUFFER_0
+#define VTREE_IN_SPARSE_IMAGE_BUFFER    ICET_STRATEGY_BUFFER_1
+#define VTREE_OUT_SPARSE_IMAGE_BUFFER   ICET_STRATEGY_BUFFER_2
+#define VTREE_INFO_BUFFER               ICET_STRATEGY_BUFFER_3
+#define VTREE_ALL_CONTAINED_TMASKS_BUFFER ICET_STRATEGY_BUFFER_4
+\end{code}
+
+And here is an example of these buffers being allocated.
+
+\begin{code}
+sparseImageSize = icetSparseImageBufferSize(max_width, max_height);
+
+image                = icetGetStateBufferImage(VTREE_IMAGE_BUFFER,
+                                               max_width, max_height);
+inSparseImageBuffer  = icetGetStateBuffer(VTREE_IN_SPARSE_IMAGE_BUFFER,
+                                          sparseImageSize);
+outSparseImage       = icetGetStateBufferSparseImage(
+                                              VTREE_OUT_SPARSE_IMAGE_BUFFER,
+                                              max_width, max_height);
+info                 = icetGetStateBuffer(VTREE_INFO_BUFFER,
+                                         sizeof(struct node_info)*num_proc);
+all_contained_tmasks = icetGetStateBuffer(VTREE_ALL_CONTAINED_TMASKS_BUFFER,
+                                    sizeof(IceTBoolean)*num_proc*num_tiles);
+\end{code}
+
+Once allocated, these buffers can be used and never need to be freed.
+\IceT will handle the memory management.  However, do not expect any of
+these buffers to contain the same data or even exist on the next invocation
+of the strategy.  Each invocation of the strategy should call
+\CFunc{icetGetStateBuffer}, \CFunc{icetGetStateBufferImage}, and
+\CFunc{icetGetStateBufferSparseImage} to ensure that it has a valid buffer.
+
+There is a separate set of state variables reserved for buffers used in
+single-image strategies.  These are named
+\CEnum{ICET\_SI\_STRATEGY\_BUFFER}\textC{\_$i$} numbered from 0 to 15.
+That is, \CEnum{ICET\_SI\_STRATEGY\_BUFFER\_0},
+\CEnum{ICET\_SI\_STRATEGY\_BUFFER\_1}, and so on up to
+\CEnum{ICET\_SI\_STRATEGY\_BUFFER\_15}.  It is important \emph{not} to use
+the multi-tile strategy buffer variables in a single-image strategy because
+the multi-tile strategy will call the single-image strategy while it is
+still operating and the single-image strategy can invalidate the buffers of
+the multi-tile strategy.
+
+\section{Image Manipulation Functions}
+
+\IceT defines two image types: \CType{IceTImage} and
+\CType{IceTSparseImage}.  Both image types can hold color data or depth
+data or both.  The \CType{IceTImage} type stores pixels as raw data, simple
+2D arrays holding color or pixel data in horizontal-major order.  The
+\CType{IceTSparseImage} stores images using
+\index{active-pixel~encoding}active-pixel encoding, the run length encoding
+described in the Active-Pixel Encoding section of
+Chapter~\ref{sec:Customizing_Compositing:Active_Pixel_Encoding}.
+
+Both the \CType{IceTImage} type and the \CType{IceTSparseImage} type are
+opaque to compositing algorithms.  \IceT provides functions for creating
+and manipulating images.  Some of these functions are defined in
+\index{IceT.h}\textC{IceT.h} and exposed to user code.  These exposed
+functions are documented in the Image Objects section of
+Chapter~\ref{sec:Basic_Usage:Image_Objects} starting on
+page~\pageref{sec:Basic_Usage:Image_Objects}.  Other functions are
+protected from the user level code and reserved for use by the compositing
+algorithms and other parts of \IceT.  These functions are defined in
+\index{IceTDevImage.h}\textC{IceTDevImage.h} and are documented here.  When
+creating a compositing strategy, be sure to include both of these header
+files.
+
+\subsection{Creating Images}
+
+\label{manpage:icetGetStateBufferImage}
+\label{manpage:icetGetStateBufferSparseImage}
+The easiest and safest way to create an image is to use the
+\CFunc{icetGetStateBufferImage} function (or
+\CFunc{icetGetStateBufferSparseImage} for sparse images).
+
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetGetStateBufferImage}\textC{(}&\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \CType{IceTSparseImage}\textC{ }\CFunc{icetGetStateBufferSparseImage}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{IceTEnum}&\CArg{pname}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+Each of these functions allocates a \index{state~buffer}state buffer
+(described in the previous section on Memory Management) for an image of
+size \CArg{width} by \CArg{height} on the given state variable
+(\CArg{pname}), and returns an initialized image object.  The image object
+is allocated and initialized for the color and depth formats specified by
+the \CEnum{ICET\_COLOR\_FORMAT} and \CEnum{ICET\_DEPTH\_FORMAT} state
+variables.  Here is some code taken from the virtual trees strategy
+implementation that demonstrates the use of these functions.
+
+\begin{code}
+image                = icetGetStateBufferImage(VTREE_IMAGE_BUFFER,
+                                               max_width, max_height);
+outSparseImage       = icetGetStateBufferSparseImage(
+                                              VTREE_OUT_SPARSE_IMAGE_BUFFER,
+                                              max_width, max_height);
+\end{code}
+
+\label{manpage:icetImageSetDimensions}
+\label{manpage:icetSparseImageSetDimensions}
+After an image is allocated, it is possible to resize the image, but only
+to dimensions that are less than or equal to those for which the image was
+created. This is done with the \CFunc{icetImageSetDimensions} or
+\CFunc{icetSparseImageSetDimensions} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageSetDimensions}\textC{(}&\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);} \\
+\end{Table}
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSparseImageSetDimensions}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);} \\
+\end{Table}
+
+These functions do not resize the internal buffer of the image.  Rather,
+they set the internal width and height parameters of the image and reuse
+the original (and potentially larger than necessary) buffer.  This is why
+they cannot be used to size the image larger than the original buffer
+allocation.  It is for this reason that it is typical for a multi-tile
+strategy to create images of size \CEnum{ICET\_TILE\_MAX\_WIDTH} and
+\CEnum{ICET\_TILE\_MAX\_HEIGHT}.  A well designed compositing algorithm
+should never need more space than that.  Likewise, it is typical for a
+single-image strategy to create images of the same size as the input
+image.
+
+\label{manpage:icetImageBufferSize}
+\label{manpage:icetSparseImageBufferSize}
+It is sometimes necessary to know the size of buffer required to store
+image data.  This most often occurs when allocating buffers to receive
+images (as described in detail in the following section on Transferring
+Images starting on
+page~\pageref{sec:New_Strategies:Communications:Transferring_Images}).
+Getting the necessary buffer size is done with the
+\CFunc{icetImageBufferSize} and \CFunc{icetSparseImageBufferSize}
+functions.
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetSparseImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+Each of these functions returns the \emph{maximum} number of bytes required
+to store the image of the given dimensions and the formats specified by the
+\CEnum{ICET\_COLOR\_FORMAT} and \CEnum{ICET\_DEPTH\_FORMAT} state
+variables.
+
+\label{manpage:icetImageAssignBuffer}
+\label{manpage:icetSparseImageAssignBuffer}
+It is also possible, although discouraged, to convert a previously
+allocated buffer into an image object with one of the following functions.
+
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetImageAssignBuffer}\textC{(}&\textC{IceTVoid *}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \CType{IceTSparseImage}\textC{ }\CFunc{icetSparseImageAssignBuffer}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{IceTVoid *}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+In each case it is assumed that the buffer is at least as large as that
+indicated by the \CFunc{icetImageBufferSize} or
+\CFunc{icetSparseImageBufferSize} function.
+
+% label manpage:icetImageNull already in man pages.
+\label{manpage:icetSparseImageNull}
+\IceT also defines a special \index{image!null}\keyterm{null image} that
+can be used as a place holder when no image data is available.  Null images
+for both regular and sparse images are available.  They are retreived with
+the following functions.
+
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetImageNull}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \CType{IceTSparseImage}\textC{ }\CFunc{icetSparseImageNull}\textC{(}&\textC{void}&\textC{);}
+\end{Table}
+
+
+\subsection{Querying Images}
+
+\IceT contains several functions that allow you to query basic information
+about an image object such as dimensions and data formats.  Each function
+takes an information object and returns the appropriate size or identifier.
+(More detail for the functions that work on \CType{IceTImage} objects is
+given in the Image Objects section of
+Chapter~\ref{sec:Basic_Usage:Image_Objects} starting on
+page~\pageref{sec:Basic_Usage:Image_Objects}.)
+
+\begin{Table}{5}
+  \textC{IceTSizeType}&\icetImageGetWidth&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTSizeType}&\icetImageGetHeight&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTSizeType}&\icetImageGetNumPixels&\textC{(}\quad\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);}
+\end{Table}
+
+\begin{Table}{5}
+  \textC{IceTEnum}&\icetImageGetColorFormat\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);} \\
+  \textC{IceTEnum}&\icetImageGetDepthFormat\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image}&\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImageGetWidth}
+\label{manpage:icetSparseImageGetHeight}
+\label{manpage:icetSparseImageGetNumPixels}
+\begin{Table}{4}
+  \multicolumn{4}{l}{
+    \textC{IceTSizeType }\CFunc{icetSparseImageGetWidth}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);} \\
+  \multicolumn{4}{l}{
+    \textC{IceTSizeType }\CFunc{icetSparseImageGetHeight}\textC{(}
+  } \\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);} \\
+  \multicolumn{4}{l}{
+    \textC{IceTSizeType }\CFunc{icetSparseImageGetNumPixels}\textC{(}
+  } \\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImageGetColorFormat}
+\label{manpage:icetSparseImageGetDepthFormat}
+\begin{Table}{4}
+  \multicolumn{4}{l}{
+    \textC{IceTEnum }\CFunc{icetSparseImageGetColorFormat}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);} \\
+  \multicolumn{4}{l}{
+    \textC{IceTEnum }\CFunc{icetSparseImageGetDepthFormat}\textC{(}
+  } \\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image}&\textC{);}
+\end{Table}
+
+\IceT also provides several functions for retrieving data from
+\CType{IceTImage} objects.  These functions are described in the Image
+Objects section of Chapter~\ref{sec:Basic_Usage:Image_Objects} starting on
+page~\pageref{sec:Basic_Usage:Image_Objects}.  There is no mechanism for
+directly accessing the data in an \CType{IceTSparseImage}.  Instead, data
+is indirectly manipulated via compression and compositing functions, which
+are described in the subsequent sections.
+
+As implied in the previous section on creating images, an \CType{IceTImage}
+or \CType{IceTSparseImage} object has a pointer to a buffer containing the
+actual image data.  It is sometimes helpful to determine if two images have
+the same buffer.
+
+\label{manpage:icetImageEqual}
+\begin{Table}{3}
+  \textC{IceTBoolean }\CFunc{icetImageEqual}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image1}\textC{,}\\
+  &\textC{const }\CType{IceTImage}&\CArg{image1}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImageEqual}
+\begin{Table}{3}
+  \textC{IceTBoolean }\CFunc{icetSparseImageEqual}\textC{(}&\textC{const }\CType{IceTSparseImage}&\CArg{image1}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{image1}\quad\textC{);}
+\end{Table}
+
+Both \CFunc{icetImageEqual} and \CFunc{icetSparseImageEqual} take two image
+objects and returns whether these two images point to the same buffer.  If
+two images are equal, then changing the pixel data of one image also
+changes the data of the other.  Two images may have the same data but still
+be considered different if they have separate buffers.
+
+% label manpage:icetImageIsNull already defined in man pages.
+\label{manpage:icetSparseImageIsNull}
+There are also special functions for testing whether an image is the
+\index{image!null}null image.
+
+\begin{Table}{3}
+  \textC{IceTBoolean}\textC{ }\CFunc{icetImageIsNull}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \textC{IceTBoolean}\textC{ }\CFunc{icetSparseImageIsNull}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+
+\subsection{Setting Pixel Data}
+
+There are several mechanisms for setting, changing, or copying pixel data
+in \CType{IceTImage} objects.  Foremost are the \icetImageGetColor and
+\icetImageGetDepth functions that return the data buffer containing the
+color or depth values.
+
+\begin{Table}{4}
+  \textC{IceTUByte *}&\icetImageGetColorub&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \textC{IceTUInt *}&\icetImageGetColorui&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \textC{IceTFloat *}&\icetImageGetColorf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)}; \\
+  \\
+  \textC{IceTFloat *}&\icetImageGetDepthf&\textC{(}\quad\CType{IceTImage}&\CArg{image}\quad\textC{)};
+\end{Table}
+
+The pointers returned from these functions are shared with the
+\CType{IceTImage} object itself, so writing data into the buffer will
+change the image object as well.
+
+There are no equivalent mechanisms for changing pixel data in
+\CType{IceTSparseImage} objects.  Instead, data is indirectly manipulated
+via compression, copy, and compositing functions, which are described in
+the subsequent sections.
+
+It is fairly common to need to clear an image.  This is common in a
+multi-tile strategy when returning an image for which no geometry is
+rendered.  \IceT provides convenience functions for setting all the data in
+an image to the background color.
+
+\label{manpage:icetClearImage}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearImage}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetClearSparseImage}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearSparseImage}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+
+\subsection{Copying Full Pixel Data}
+
+It is common to need to copy pixel data from one image to another.  \IceT
+provides multiple helper functions to copy data amongst images.  The
+first function is \CFunc{icetImageCopyPixels}, which copies a contiguous
+section of pixels.
+
+\label{manpage:icetImageCopyPixels}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageCopyPixels}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{in\_image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{in\_offset}\textC{,} \\
+  &\CType{IceTImage}&\CArg{out\_image}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{out\_offset}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{num\_pixels}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetImageCopyPixels} copies pixel data from \CArg{in\_image} to
+\CArg{out\_image}.  \CArg{in\_image} and \CArg{out\_image} must have the
+same format.  Both color and depth values are copied when available.  The
+data is taken from the input starting at index \CArg{in\_offset} and are
+placed in the output starting at index \CArg{out\_offset}.
+\CArg{num\_pixels} are copied in all.  The following example code copies
+the entire contents from \textC{in\_image} to \textC{out\_image} (assuming
+they have the same sizes and formats).
+
+\begin{code}
+icetImageCopyPixels(in_image, 0, out_image, 0, icetImageGetNumPixels(in_image));
+\end{code}
+
+This example copies the third row of data from the input image to the fifth
+row of data in the output image.
+
+\begin{code}
+width = icetImageGetWidth(in_image);
+icetImageCopyPixels(in_image, 3*width, out_image, 5*width, width);
+\end{code}
+
+This example copies the second half of pixels in \textC{in\_image} and
+places it in the first part of \textC{out\_image}.  Notice that coping a
+contiguous region of pixels makes it easy to divide images in halves (or
+thirds, or whatevers), which is a common operation in image compositing,
+without having to worry about image dimensions.
+
+\begin{code}
+num_pixels = icetImageGetNumPixels(in_image);
+icetImageCopyPixels(in_image, num_pixels/2, out_image, 0, num_pixels/2);
+\end{code}
+
+A second convenience function for copying data amongst arrays is
+\CFunc{icetImageCopyRegion}.  This function works much like
+\CFunc{icetImageCopyPixels}, except that you specify a rectangular 2D
+viewport window to copy rather than a 1D array region of pixels.
+
+\label{manpage:icetImageCopyRegion}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageCopyRegion}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{in\_image}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{in\_viewport}\textC{,} \\
+  &\CType{IceTImage}&\CArg{out\_image}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{out\_viewport}\quad\textC{);}
+\end{Table}
+
+\CArg{in\_viewport} is an array containing 4 values that specify the
+rectangular region from which to copy.  The first 2 values specify the $x$
+and $y$ position of the lower left corner of the region.  The second 2
+values specify the width and height of the region.  \CArg{out\_viewport} is
+a similar array that specifies the destination region.  The width and
+height of \CArg{in\_viewport} and \CArg{out\_viewport} must be the same.
+Here is a simple example of copying all the pixels from \textC{in\_image}
+to \textC{out\_image}.
+
+\begin{code}
+IceTInt full_viewport[4];
+
+full_viewport[0] = 0;
+full_viewport[1] = 0;
+full_viewport[2] = icetImageGetWidth(in_image);
+full_viewport[3] = icetImageGetHeight(out_image);
+
+icetImageCopyRegion(in_image, full_viewport, out_image, full_viewport);
+\end{code}
+
+This example copies a $50 \times 50$ region of pixels from the lower left
+corner of \textC{in\_image} to the upper right corner of
+\textC{out\_image}.
+
+\begin{code}
+IceTInt in_viewport[4], out_viewport[3];
+
+in_viewport[0] = 0;   in_viewport[1] = 0;
+in_viewport[2] = 50;  in_viewport[3] = 50;
+
+out_viewport[0] = icetImageGetWidth(in_image) - 50;
+out_viewport[1] = icetImageGetHeight(in_image) - 50;
+out_viewport[2] = 50;
+out_viewport[3] = 50;
+
+icetImageCopyRegion(in_image, in_viewport, out_image, out_viewport);
+\end{code}
+
+As mentioned previously, there is a \CFunc{icetClearImage} function to
+clear the contents of an image to background.  There is also another
+function called \CFunc{icetImageClearAroundRegion} that sets the image to
+background everywhere but in a specified 2D viewport window.
+
+\label{manpage:icetImageClearAroundRegion}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageClearAroundRegion}\textC{(}&\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{region}\quad\textC{);}
+\end{Table}
+
+Expanding on the previous example, here is code that copies a region of
+pixels and then clears everything outside of this region in the
+destination.
+
+\begin{code}
+icetImageCopyRegion(in_image, in_viewport, out_image, out_viewport);
+icetImageClearAroundRegion(out_image, out_viewport);
+\end{code}
+
+\subsection{Copy Sparse Image Data}
+
+\IceT also conatins several functions for efficiently copying pixels in
+sparse images.  Because of the differences in implementation and use, the
+copy functions differ significantly between the full image and sparse image
+copy functions.
+
+\subsubsection{Basic Sparse Image Copy}
+
+\label{manpage:icetSparseImageCopyPixels}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSparseImageCopyPixels}\textC{(}&\textC{const }\CType{IceTSparseImage}&\CArg{in\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{in\_offset}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{num\_pixels}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{out\_image}\textC{);}
+\end{Table}
+
+\CFunc{icetSparseImageCopyPixels} copies a region of continuous pixels from
+\CArg{in\_image} to \CArg{out\_image}.  The region starts a pixel offset
+\CArg{in\_offset} and contains \CArg{num\_pixels}.  \CArg{out\_image} is
+resized to contain only the copied pixels.  The new size will have a width
+of \CArg{num\_pixels} and a height of $1$.
+
+\subsubsection{Sparse Image Split}
+
+Parallel compositing algorithms often involve splitting an image into a
+number of (approximately) equal sized pieces and distributing them amongst
+processes.  This can be achieved by iteratively calling
+\CFunc{icetSparseImageCopyPixels}.  However, each call to
+\CFunc{icetSparseImageCopyPixels} has to search through the pixels in
+\CArg{in\_image} to the appropriate \CArg{in\_offset}.  It is a bit more
+efficient (and convenient) to iterate over the image once and copy to
+multiple different output images as you go.  The
+\CFunc{icetSparseImageSplit} function does just that.
+
+\label{manpage:icetSparseImageSplit}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSparseImageSplit}\textC{(}
+  }\\
+  \makebox[1.5in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{in\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{in\_image\_offset}\textC{,}\\
+  &\textC{IceTInt}&\CArg{num\_partitions}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\textC{,}\\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{out\_images}\textC{,}\\
+  &\textC{IceTSizeType *}&\CArg{offsets}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetSparseImageSplit} takes \CArg{in\_image}, partitions it into
+\CArg{num\_partitions}, and stores the results in the array of
+pre-allocated images \CArg{out\_images}.  As an optimization, the image in
+the first index of \CArg{out\_images} may be the same as \CArg{in\_image}.
+In this case the first partition will be copied ``in place.''  It is an
+error to have \CArg{in\_image} in any other index of \CArg{out\_images}.
+The offset of each image with respect to the original image is stored in
+the corresponding index of the array \CArg{offsets}.
+
+The \CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} are for
+recursive splits, described in the following section.  For a single
+invocation of \CFunc{icetSparseImageSplit} for an image,
+\CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} should be set
+to $0$ and the same value as \CArg{num\_partitions}, respectively.
+
+\label{manpage:icetSparseImageSplitPartitionNumPixels}
+Before calling \CFunc{icetSparseImageSplit}, it is important to allocate
+images with enough pixel space.  To allocate these images, you first need
+to know how big each partition will be.
+\CFunc{icetSparseImageSplitPartitionNumPixels} returns the maximum size of
+each partition in pixels.  Do not assume that a partition size will be the
+total number of pixels divided by the number of partitions.  This assumption
+is wrong when the number of pixels in the original image does not divide by
+the number of partitions.
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSparseImageSplitPartitionNumPixels}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{IceTSizeType}&\CArg{input\_num\_pixels}\textC{,}\\
+  &\textC{IceTInt}&\CArg{num\_partitions}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\quad\textC{);}
+\end{Table}
+
+Because the number of partitions may be large or unknown at compile time,
+it can be problematic to fill the array of output images to
+\CFunc{icetSparseImageSplit} with images created with
+\CFunc{icetGetStateBufferSparseImage} due to the limited number of
+available state variables.  In this case, it is prudent to create a large
+enough buffer with \CFunc{icetGetStateBuffer} and break it up into pieces
+to make sparse image objects with \CFunc{icetSparseImageAssignBuffer}.  The
+following code gives an example of using \CFunc{icetSparseImageSplit}.
+This example uses copy-in-place for the first partition, but a trivial
+change makes a copy to this buffer.
+
+\index{icetSparseImageGetNumPixels}
+\index{icetSparseImageSplitPartitionNumPixels}
+\index{icetSparseImageBufferSize}
+\index{icetGetStateBuffer}
+\index{icetSparseImageAssignBuffer}
+\index{icetSparseImageSplit}
+\begin{code}
+#define NUM_SPLITS 8
+
+/* original_image is image to be split. */
+
+original_num_pixels = icetSparseImageGetNumPixels(original_pixels);
+partition_num_pixels
+    = icetSparseImageSplitPartitionNumPixels(original_num_pixels,
+                                             NUM_SPLITS,
+                                             NUM_SPLITS);
+partition_buffer_size = icetSparseImageBufferSize(partition_num_pixels, 1);
+
+split_image_buffer = icetGetStateBuffer(MYCOMPOSITE_SPLIT_IMAGE_BUFFER,
+                                        (NUM_SPLITS-1)*partition_buffer_size);
+
+out_images[0] = original_image;
+for (i = 1; i < NUM_SPLITS; i++) {
+    out_images[i] = icetSparseImageAssignBuffer(split_image_buffer,
+                                                partition_num_pixels, 1);
+    split_image_buffer += partition_buffer_size;
+}
+
+icetSparseImageSplit(original_image,
+                     0,
+                     NUM_SPLITS,
+                     NUM_SPLITS,
+                     out_images,
+                     offsets);
+
+for (i = 0; i < NUM_SPLITS; i++) {
+    DoSomething(out_images[i], offsets[i]);
+}
+\end{code}
+
+\subsubsection{Recursive Sparse Image Split}
+
+Some image compositing algorithms, such as binary swap and radix-k,
+recursively split their images in subsequent rounds.  It is also sometimes
+the case, such as when telescoping, that different processes will split
+images with different factors.  For example, one process might split its
+image into eight pieces with three recursive calls of two partitions while
+another process creates the same partition with one split of two partitions
+and another split of four partitions while yet another makes one split of
+eight partitions.
+
+Regardless of how the image is split, it is often necessary for the final
+partitions to match exactly with respect to offset and size.
+Unfortunately, if the size of the original image is not evenly divisible by
+the eventual number of partitions, different recursive partitions could
+lead to different image pieces.
+
+To get around this problem, \CFunc{icetSparseImageSplit} has the
+\CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} arguments.
+The \CArg{in\_image\_offset} declares that the \CArg{in\_image} came from a
+previous call to \CFunc{icetSparseImageSplit} with the given offset.  The
+\CArg{eventual\_num\_partitions} argument declares the total number of
+partitions that will be made with this call to \CFunc{icetSparseImageSplit}
+and all subsequent calls to \CFunc{icetSparseImageSplit}.  Obviously,
+\CArg{num\_partitions} must be a factor of
+\CArg{eventual\_num\_partitions}, or otherwise
+\CArg{eventual\_num\_partitions} could never be created.  As long as the
+recursive calls to \CFunc{icetSparseImageSplit} are consistent with the
+\CArg{in\_image\_offset} and \CArg{eventual\_num\_partitions} arguments,
+the partitions will match up exactly.
+
+The following code example will result in the exact same image partitions
+as those in the previous example, but does it with two recursive calls.
+
+\index{icetSparseImageGetNumPixels}
+\index{icetSparseImageSplitPartitionNumPixels}
+\index{icetSparseImageBufferSize}
+\index{icetGetStateBuffer}
+\index{icetSparseImageAssignBuffer}
+\index{icetSparseImageSplit}
+\begin{code}
+#define FIRST_NUM_SPLITS 2
+#define SECOND_NUM_SPLITS 4
+#define TOTAL_NUM_SPLITS (FIRST_NUM_SPLITS * SECOND_NUM_SPLITS)
+
+/* original_image is image to be split. */
+
+/* Perform first level image split. */
+original_num_pixels = icetSparseImageGetNumPixels(original_pixels);
+partition_num_pixels
+    = icetSparseImageSplitPartitionNumPixels(original_num_pixels,
+                                             FIRST_NUM_SPLITS,
+                                             TOTAL_NUM_SPLITS);
+partition_buffer_size = icetSparseImageBufferSize(partition_num_pixels, 1);
+
+split_image_buffer = icetGetStateBuffer(
+                                    MYCOMPOSITE_FIRST_SPLIT_IMAGE_BUFFER,
+                                    (FIRST_NUM_SPLITS-1)*partition_buffer_size);
+
+intermediate_images[0] = original_image;
+for (i = 1; i < FIRST_NUM_SPLITS; i++) {
+    intermediate_images[i] = icetSparseImageAssignBuffer(split_image_buffer,
+                                                         partition_num_pixels,
+                                                         1);
+    split_image_buffer += partition_buffer_size;
+}
+
+icetSparseImageSplit(original_image,
+                     0,
+                     FIRST_NUM_SPLITS,
+                     TOTAL_NUM_SPLITS,
+                     intermediate_images,
+                     interpediate_offsets);
+
+/* Perform second level image split. */
+for (j = 0; j < FIRST_NUM_SPLITS; j++) {
+    intermediate_num_pixels = icetSparseImageGetNumPixels(original_pixels);
+
+    partition_num_pixels = icetSparseImageSplitPartitionNumPixels(
+                                             original_num_pixels,
+                                             SECOND_NUM_SPLITS,
+                                             TOTAL_NUM_SPLITS/FIRST_NUM_SPLITS);
+    partition_buffer_size = icetSparseImageBufferSize(partition_num_pixels, 1);
+
+    split_image_buffer = icetGetStateBuffer(
+                                   MYCOMPOSITE_FIRST_SPLIT_IMAGE_BUFFER,
+                                   (SECOND_NUM_SPLITS-1)*partition_buffer_size);
+
+    out_images[0] = original_image;
+    for (i = 1; i < SECOND_NUM_SPLITS; i++) {
+        out_images[i] = icetSparseImageAssignBuffer(split_image_buffer,
+                                                    partition_num_pixels, 1);
+        split_image_buffer += partition_buffer_size;
+    }
+
+    icetSparseImageSplit(intermediate_images[j],
+                         intermediate_offsets[j],
+                         FIRST_NUM_SPLITS,
+                         TOTAL_NUM_SPLITS/FIRST_NUM_SPLITS,
+                         out_images,
+                         out_offsets);
+
+    for (i = 0; i < SECOND_NUM_SPLITS; i++) {
+        DoSomething(out_images[i], out_offsets[i]);
+    }
+}
+\end{code}
+
+This example is artificial in that the recursive splits are unlikely to be
+done on all partitions.  Typical operation is to split an image and then
+send all images but one to other processes.  Generally, images of the kept
+partition are also collected from other processes and blended.  The
+recursive split then happens only on that one partition kept.
+
+\subsubsection{Interlacing Images}
+
+\index{image!interlace|(}
+
+Strategies that use \CFunc{icetSparseImageSplit} should consider honoring
+the \CType{ICET\_INTERLACE\_IMAGES} option.  Image interlacing is described
+in Chapter~\ref{chap:Customizing_Compositing} starting on
+page~\pageref{sec:Customizing_Compositing:Interlaced_Images}.  \IceT
+provides a pair of functions, \CFunc{icetSparseImageInterlace} and
+\CFunc{icetGetInterlaceOffset}, to simplify this.
+
+\label{manpage:icetSparseImageInterlace}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSparseImageInterlace}\textC{(}
+  }\\
+  \makebox[1.5in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{in\_image}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{scratch\_state\_buffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{out\_image}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetSparseImageInterlace} copies all the pixels from
+\CArg{in\_image} to \CArg{out\_image}, but shuffling the pixels around.
+The pixel shuffling is done in such a way that if you subsequently split
+the image with one or more calls to \CFunc{icetSparseImageSplit} to create
+\CArg{eventual\_num\_partitions} (using the appropriate recursive calling
+described previously as necessary), then all the resulting image partitions
+will contain a continuous array of pixels.
+\CFunc{icetSparseImageInterlace} requires a temporary buffer during its
+operation.  It thus requires an identifier to a state variable for a buffer
+not being used.
+
+\label{manpage:icetGetInterlaceOffset}
+Once an interlaced image is completely split, no further pixel shuffling is
+necessary.  However, because the partitions have been shuffled, the offsets
+that are reported by \CFunc{icetSparseImageInterlace} are incorrect.  The
+correct offset is retrieved with \CFunc{icetGetInterlaceOffset}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{IceTSizeType }\CFunc{icetGetInterlaceOffset}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{IceTInt}&\CArg{partition\_index}\textC{,}\\
+  &\textC{IceTInt}&\CArg{eventual\_num\_partitions}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{original\_image\_size}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetGetInterlaceOffset} gets information about the original image
+and a particular partition and returns the actual offset of that partition.
+\CArg{partition\_index} is the index of the partition (the same as those
+used by a call to \CFunc{icetSparseImageSplit} that was called
+non-recursively).  \CArg{eventual\_num\_partitions} is the same as that in
+the call to \CFunc{icetSparseImageInterlace} and the first call to
+\CFunc{icetSparseImageSplit}.  \CArg{original\_image\_size} is the number
+of pixels in the starting image before it was split.
+
+The following code is boilerplate for implementing image interlacing in a
+single image strategy.
+
+\index{icetSparseImageGetNumPixels}
+\index{icetIsEnabled}
+\index{icetGetStateBufferSparseImage}
+\index{icetSparseImageInterlace}
+\index{icetGetInterlaceOffset}
+\begin{code}
+#define MY_COMPOSE_INTERLACE_IMAGE      ICET_SI_STRATEGY_BUFFER_0
+#define MY_COMPOSE_DUMMY_ARRAY          ICET_SI_STRATEGY_BUFFER_1
+/*...*/
+
+void icetMySingleImageCompose(IceTInt *compose_group,
+                              IceTInt group_size,
+                              IceTInt image_dest,
+                              IceTSparseImage input_image,
+                              IceTSparseImage *result_image,
+                              IceTSizeType *piece_offset)
+{
+    IceTSizeType original_image_size;
+    IceTInt eventual_num_partitions;
+    IceTBoolean use_interlace;
+    IceTSparseImage working_image;
+    IceTSparseImage final_image;
+    IceTInt my_piece_index;
+    IceTInt my_piece_offset;
+
+    original_image_size = icetSparseImageGetNumPixels(input_image);
+    eventual_num_partitions = /* Num total partitions to be created. */;
+
+    use_interlace  = icetIsEnabled(ICET_INTERLACE_IMAGES);
+    use_interlace &= (eventual_num_partitions > 2);
+    if (use_interlace) {
+        working_image = icetGetStateBufferSparseImage(
+                                         MY_COMPOSE_INTERLACE_IMAGE,
+                                         icetSparseImageGetWidth(input_image),
+                                         icetSparseImageGetHeight(input_image));
+        icetSparseImageInterlace(input_image,
+                                 eventual_num_partitions,
+                                 MY_COMPOSE_DUMMY_ARRAY,
+                                 working_image);
+    } else {
+        working_image = input_image;
+    }
+
+    /* Do image compositing.  Set final_image to my piece to be returned.
+       Set my_piece_index to the index of the partition in final_image.
+       Set my_piece_offset to the appropriate offest returned from
+       icetSparseImageSplit. */
+
+    *result_image = final_image;
+    if (use_interlace) {
+        *piece_offset = icetGetInterlaceOffset(my_piece_index,
+                                               eventual_num_partitions,
+                                               original_image_size);
+    } else {
+        *piece_offset = my_piece_offset;
+    }
+}
+\end{code}
+
+\index{image!interlace|)}
+
+\subsection{Compressing Images}
+
+\label{manpage:icetCompressImage}
+\CFunc{icetCompressImage} converts a full \CType{IceTImage} into to more
+compact \CType{IceTSparseImage}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCompressImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image},\\
+  &\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{);}
+\end{Table}
+
+\label{manpage:icetCompressSubImage}
+Sometimes it is convenient to break up an image into pieces, and compress
+each piece.  This is common when dividing up an image to be divvied amongst
+some amount of processes.  This can be most easily achieved by using the
+\CFunc{icetCompressSubImage}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCompressSubImage}\textC{(}&\textC{const }\CType{IceTImage}&\CArg{image},\\
+  &\textC{IceTSizeType}&\CArg{offset},\\
+  &\textC{IceTSizeType}&\CArg{pixels},\\
+  &\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{ );}
+\end{Table}
+
+\CFunc{icetCompressSubImage} compresses a region of contiguous pixels.  The
+block of pixels starts \CArg{offset} pixels past the beginning of the image
+and is \CArg{pixels} long.  \CArg{icetCompressImage} is almost equivalent
+to calling \CArg{icetCompressSubImage} with \CArg{offset} set to $0$ and
+\CArg{pixels} set to the result of \icetImageGetNumPixels.  When
+compressing an image with \CFunc{icetCompressSubImage}, the output
+\CType{IceTSparseImage} has its width set to the \CArg{pixels} argument and
+its height set to 1.
+
+A sparse image can be returned to its uncompressed form with
+\CFunc{icetDecompressImage} or \CFunc{icetDecompressSubImage}.
+
+\label{manpage:icetDecompressImage}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressImage}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetDecompressSubImage}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressSubImage}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{offset},\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\subsection{Rendering Images}
+
+\label{manpage:icetGetTileImage}
+\label{manpage:icetGetCompressedTileImage}
+A multi-tile compositing strategy is responsible for rendering images on
+demand as well as compositing.  To render and retrieve the image for a
+particular tile in the display, use either \CFunc{icetGetTileImage} or
+\CFunc{icetGetCompressedTileImage}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetGetTileImage}\textC{(}&\textC{IceTInt}&\CArg{tile},\\
+    &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetGetCompressedTileImage}\textC{(}&\textC{IceTInt}&\CArg{tile},\\
+    &\CType{IceTSparseImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+Both functions will invoke a rendering for that tile (performing the
+appropriate projection transformations) as necessary, read back the frame
+buffers and store the results in an image buffer you specify.  The
+difference, of course, is that \CFunc{icetGetTileImage} fills the buffer
+with raw data whereas \CFunc{icetGetCompressedTileImage} will compress the
+image data with \index{active-pixel~encoding}active-pixel encoding.
+
+Although it is roughly equivalent to calling \CFunc{icetGetTileImage} and
+then \CFunc{icetCompressImage}, \CFunc{icetGetCompressedTileImage} can be
+much more efficient.
+
+\subsection{Image Compositing}
+
+The \IceT library contains multiple functions to locally composite two images
+together.  These functions handle the complexities of dealing with
+different image formats and compositing operations.
+
+\label{manpage:icetComposite}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetComposite}\textC{(}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{const }\CType{IceTImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetComposite} takes the images stored in \CArg{destBuffer} and
+\CArg{srcBuffer}, composites them together, and stores the result in
+\CArg{destBuffer}.  The compositing operation is determined by the
+\CEnum{ICET\_COMPOSITE\_MODE} state variable. (See the discussion on
+Compositing Operations in
+Chapter~\ref{sec:Customizing_Compositing:Compositing_Operation} for
+information on how the compositing operation is determined.)  If the
+compositing operation is order dependent, then the Boolean argument
+\CArg{srcOnTop} determines whether \CArg{srcBuffer} or \CArg{destBuffer} is
+on top.
+
+If one of your images is compressed (stored in an \CType{IceTSparseImage},
+it is faster to perform the compositing operation on the compressed image
+rather than decompressing first.  In fact, it is faster to composite a
+compressed image than two full images because the
+\index{active-pixel~encoding}active-pixel encoding allows the composite
+algorithm to skip over groups of background pixels.  This gives you the
+double win of faster image transfer and faster compositing.
+
+\label{manpage:icetCompressedComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedComposite}\textC{(}}\\
+  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetCompressedComposite} behaves just like \CFunc{icetComposite}
+except that \CArg{srcBuffer} is a compressed image rather than a full
+image.  The images in \CArg{destBuffer} and \CArg{srcBuffer} are composited
+together, and the results are stored in \CArg{destBuffer}.
+
+Many parallel compositing algorithms break images into pieces, distribute
+amongst processes, and composite the pieces.  To facilitate the compositing
+image pieces, \IceT provides \CFunc{icetCompressedSubComposite}.
+
+\label{manpage:icetCompressedSubComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCompressedSubComposite}\textC{(}}\\
+  \makebox[2.5in]{}&\CType{IceTImage}&\CArg{destBuffer}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{offset}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{srcBuffer}\textC{,}\\
+  &\textC{int}&\CArg{srcOnTop}\textC{);}
+\end{Table}
+
+The \CArg{destBuffer}, \CArg{srcBuffer} and \CArg{srcOnTop} arguments are
+the same as those in \CFunc{icetCompressedComposite}.  The \CArg{offset}
+argument and the number of pixels in \CArg{srcBuffer} specify a region of
+contiguous pixels in \CArg{destBuffer} to perform the compositing in.
+
+Because single image strategies accept a sparse image as its input and
+return a sparse image as its output, their most common compositing
+operation is to composite two sparse images together.  Compositing together
+two sparse images allows the composition to skip over inactive pixels in
+both images.  However, because the compositing cannot be done in place, the
+results must be written to a third sparse image, which results in extra
+memory allocation and copying.
+
+\label{manpage:icetCompressedCompressedComposite}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetCompressedCompressedComposite}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{front\_buffer}\textC{,}\\
+  &\textC{const }\CType{IceTSparseImage}&\CArg{back\_buffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{dest\_buffer}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetCompressedCompressedComposite} takes two images, composites
+them, and places the results in \CArg{dest\_buffer}.  Unlike the previously
+mentioned forms of compositing, the blending order is not determined by a
+flag.  Rather, the first image argument, \CArg{front\_buffer}, is the image
+always considered closer to the viewer.
+
+\section{Communications}
+
+\IceT provides an abstract communication layer, which is described in
+detail in Chapter~\ref{chap:Communicators}.  A handle to a communicator is
+stored in the current context.  To make using the communicator easier, a
+set of convenience functions described next is available in the
+\index{IceTDevCommunication.h}\textC{IceTDevCommunication.h} include file.
+All of these functions are based off of those found in the \MPI standard.
+For documentation, see that for the corresponding \MPI function.  Data
+types, however, are specified as one of the following \IceT data types:
+\CEnum{ICET\_BOOLEAN}, \CEnum{ICET\_BYTE}, \CEnum{ICET\_SHORT},
+\CEnum{ICET\_INT}, \CEnum{ICET\_SIZE\_TYPE}, \CEnum{ICET\_FLOAT}, or
+\CEnum{ICET\_DOUBLE}.  There is also an \CEnum{ICET\_IN\_PLACE\_COLLECT}
+identifier that takes the place of \CEnum{MPI\_IN\_PLACE} for the gather
+functions (\CFunc{icetCommGather}, \CFunc{icetCommGatherv}, and
+\CFunc{icetCommAllgather}).
+
+Note that each function is missing an argument specifying the communicator.
+These functions just grab the current context's communicator.  Also unlike
+\MPI, these functions do not return error codes.  It is assumed that errors
+are fatal.  Some functions, like \CFunc{icetCommSize},
+\CFunc{icetCommRank}, and \CFunc{icetCommWaitany} use the function return
+value instead of passing a value back in a pointer argument.
+
+\label{manpage:icetCommDuplicate}
+\begin{Table}{3}
+  \textC{struct }\CType{IceTCommunicatorStruct}\textC{ *}\CFunc{icetCommDuplicate}\textC{(void);}
+\end{Table}
+
+\label{manpage:icetCommBarrier}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommBarrier}\textC{(void);}
+\end{Table}
+
+\label{manpage:icetCommSend}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommSend}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{dest},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommRecv}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommRecv}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{src},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommSendrecv}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommSendrecv}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{sendtype}\textC{,}\\
+  &\textC{int}&\CArg{dest}\textC{,}\\
+  &\textC{int}&\CArg{sendtag}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\textC{,}\\
+  &\textC{int}&\CArg{recvcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{recvtype}\textC{,}\\
+  &\textC{int}&\CArg{src}\textC{,}\\
+  &\textC{int}&\CArg{recvtag}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommGather}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommGather}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{datatype}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\textC{,}\\
+  &\textC{int}&\CArg{root}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommGatherv}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommGatherv}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{datatype}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\textC{,}\\
+  &\textC{const IceTSizeType *}&\CArg{recvcounts}\textC{,}\\
+  &\textC{const IceTSizeType *}&\CArg{recvoffsets}\textC{,}\\
+  &\textC{int}&\CArg{root}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommAllgather}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommAllgather}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{type}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommAlltoall}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommAlltoall}\textC{(}&\textC{const void *}&\CArg{sendbuf}\textC{,}\\
+  &\textC{int}&\CArg{sendcount}\textC{,}\\
+  &\textC{IceTEnum}&\CArg{type}\textC{,}\\
+  &\textC{void *}&\CArg{recvbuf}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommIsend}
+\begin{Table}{3}
+  \CType{IceTCommRequest}\textC{ }\CFunc{icetCommIsend}\textC{(}&\textC{const void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{dest},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommIrecv}
+\begin{Table}{3}
+  \CType{IceTCommRequest}\textC{ }\CFunc{icetCommIrecv}\textC{(}&\textC{void *}&\CArg{buf}\textC{,}\\
+  &\textC{int}&\CArg{count},\\
+  &\textC{IceTEnum}&\CArg{datatype},\\
+  &\textC{int}&\CArg{src},\\
+  &\textC{int}&\CArg{tag}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommWait}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetCommWait}\textC{(}&\CType{IceTCommRequest}\textC{ *}&\CArg{request}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommWaitany}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetCommWaitany}\textC{(}}\\
+  \makebox[1.8in]{}&\textC{int}&\CArg{count},\\
+  &\CType{IceTCommRequest}\textC{ *}&\CArg{array\_of\_requests}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetCommSize}
+\begin{Table}{3}
+  \textC{int }\CFunc{icetCommSize}\textC{(void);}
+\end{Table}
+
+\label{manpage:icetCommRank}
+\begin{Table}{3}
+  \textC{int }\CFunc{icetCommRank}\textC{(void);}
+\end{Table}
+
+In addition to these \MPI-like functions, \textC{IceTDevCommunication.h}
+provides a couple of helper functions for finding ranks in process groups.
+A group in \IceT is simply represented by an integer array that maps (via
+the index) the rank in the group to the rank of the same process in the
+current context's communicator.  An example of such a group is passed to
+the single image strategy compose function as demonstrated at the beginning
+of this chapter.
+
+\label{manpage:icetFindRankInGroup}
+\begin{Table}{3}
+  \textC{int }\CFunc{icetFindRankInGroup}\textC{(}&\textC{const int *}&\CArg{group}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{group\_size}\textC{,}\\
+  &\textC{int}&\CArg{rank\_to\_find}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetFindMyRankInGroup}
+\begin{Table}{3}
+  \textC{int }\CFunc{icetFindMyRankInGroup}\textC{(}&\textC{const int *}&\CArg{group}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{group\_size}\quad\textC{);}
+\end{Table}
+
+These functions provide the reverse mapping of a rank from the context's
+communicator to a rank in the group.  The first form,
+\CFunc{icetFindRankInGroup}, takes a \CArg{group} (and its
+\CArg{group\_size}) and a \CArg{rank} and returns the index in \CArg{group}
+that contains \CArg{rank}.  If \CArg{rank} is not in \CArg{group}, -1 is
+returned.  \CFunc{icetFindMyRankInGroup} is similar except that it returns
+the index for the local rank.  Calling \CFunc{icetFindMyRankInGroup} is
+equivalent to calling \CFunc{icetFindRankInGroup} with \CArg{rank} set to
+the value in the state variable \CEnum{ICET\_RANK}.
+
+\subsection{Transferring Images}
+\label{sec:New_Strategies:Communications:Transferring_Images}
+
+Although the \CType{IceTImage} and \CType{IceTSparseImage} types are
+opaque, \IceT provides a mechanism to transfer the data.  A pair of
+functions allow you to package the data into a buffer (provided for you)
+and then unpackage a buffer back into an image object.  The first of these
+functions is \CFunc{icetImagePackageForSend} for \CType{IceTImage} or
+\CFunc{icetSparseImagePackageForSend} for \CType{IceTSparseImage}.
+
+\label{manpage:icetImagePackageForSend}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImagePackageForSend}\textC{(}&\CType{IceTImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTVoid **}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{size}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImagePackageForSend}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSparseImagePackageForSend}\textC{(}&\CType{IceTSparseImage}&\CArg{image}\textC{,} \\
+  &\textC{IceTVoid **}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{size}\quad\textC{);}
+\end{Table}
+
+Both of these functions behave identically.  They return a pointer in
+\CArg{buffer} to a block of raw data that can be sent opaquely via the
+communications functions.  The length of this buffer in bytes is returned
+in \CArg{size}.  When sending this data, send it as \CEnum{ICET\_BYTE} type
+data of \CArg{size} length.  In the following example, an \textC{image} is
+compressed and then its data is sent to another process.
+
+\index{icetGetStateBufferSparseImage}
+\index{icetSparseImagePackageForSend}
+\index{icetCommSend}
+\begin{code}
+IceTSparseImage src_sparse_image;
+IceTVoid *package_buffer;
+IceTSizeType package_size;
+
+src_sparse_image = icetGetStateBufferSparseImage(MYCOMPOSITE_SRC_SPARSE_IMAGE,
+                                                 max_width, max_height);
+icetSparseImagePackageForSend(src_sparse_image, &package_buffer, &package_size);
+icetCommSend(package_buffer, package_size, ICET_BYTE, dest_rank,
+             MYCOMPOSITE_FOO_TAG);
+\end{code}
+
+The companion to each package function is the unpackage function.  These
+are \CFunc{icetImageUnpackageFromReceive} for \CType{IceTImage} and
+\CFunc{icetSparseImageUnpackageFromReceive} for \CType{IceTSparseImage}.
+
+\label{manpage:icetImageUnpackageFromReceive}
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetImageUnpackageFromReceive}\textC{(}&\textC{IceTVoid *}&\CArg{buffer}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetSparseImageUnpackageFromReceive}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \CType{IceTSparseImage}\textC{ }\CFunc{icetSparseImageUnpackageFromReceive}\textC{(}
+  } \\
+  \makebox[4in]{}
+  &\textC{IceTVoid *}&\CArg{buffer}\quad\textC{);}
+\end{Table}
+
+These functions take a buffer containing the same data provided by a
+package command, create an image object, and return that object.  Note that
+the buffer provided becomes part of the image.  If that buffer is destroyed
+the image reverts to an undefined state.
+
+This leads to a minor complication when receiving images.  The receiver
+must allocate a raw buffer of the appropriate size and then leave it
+available while the image is still in use.  This is best done by creating a
+\index{state~buffer}state buffer (described in the Memory Management
+section starting on page~\pageref{sec:New_Strategies:Memory_Management}).
+The size necessary for these buffers is determined with the buffer size
+functions, repeated here for reference.
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \textC{IceTSizeType }\CFunc{icetSparseImageBufferSize}\textC{(}&\textC{IceTSizeType}&\CArg{width}\textC{,} \\
+  &\textC{IceTSizeType}&\CArg{height}\quad\textC{);}
+\end{Table}
+
+As a companion to the previous example, here a sparse image is received
+from another process and then composited into a locally held
+\textC{image}.
+
+\index{icetSparseImageBufferSize}
+\index{icetGetStateBuffer}
+\index{icetCommRecv}
+\index{icetSparseImageUnpackageFromReceive}
+\index{icetCompressedComposite}
+\begin{code}
+IceTSparseImage dest_sparse_image;
+IceTVoid *package_buffer;
+IceTSizeType max_package_size;
+
+max_package_size = icetSparseImageBufferSize(max_width, max_height);
+package_buffer = icetGetStateBuffer(MYCOMPOSITE_DEST_SPARSE_IMAGE,
+                                    max_package_size);
+icetCommRecv(package_buffer, max_package_size, ICET_BYTE, src_rank,
+             MYCOMPOSITE_FOO_TAG);
+dest_sparse_image = icetSparseImageUnpackageFromReceive(package_buffer);
+icetCompressedComposite(image, dest_sparse_image, ICET_FALSE);
+\end{code}
+
+\subsection{Helper Communication Functions}
+
+\index{common.h}\textC{common.h} (found in the strategies directory)
+contains some helper functions that implement common communication
+patterns.  They may be helpful in implementing your strategy.
+
+\label{manpage:icetRenderTransferFullImages}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetRenderTransferFullImages}\textC{(}}\\
+  \makebox[2in]{}
+  &\CType{IceTImage}&\CArg{image}\textC{,}\\
+  &\textC{IceTVoid *}&\CArg{inSparseImageBuffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{outSparseImage}\textC{,}\\
+  &\textC{IceTInt *}&\CArg{tile\_image\_dest}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetRenderTransferFullImages} renders all the tiles that are
+specified in the \CEnum{ICET\_CONTAINED\_TILES\_LIST} state array and sends
+them to the processors with ranks specified in \CArg{tile\_image\_dest}.
+This function is guaranteed not to deadlock so long as all processes call
+it.  The function uses only memory given with the buffer arguments, and
+will make its best efforts to get the graphics and network hardware to run
+in parallel.
+
+\CArg{image} is an image object big enough to hold color and/or depth
+values that is \CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$
+\CEnum{ICET\_TILE\_MAX\_HEIGHT} big.  \CArg{outSparseImage} is likewise a
+sparse image that big.  \CArg{inSparseImageBuffer} is a buffer big enough
+to hold sparse color and depth information for an image that is
+\CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT}
+big.  The size for \CArg{inSparseImageBuffer} can be determined with the
+\CFunc{icetSparseImageBufferSize} function in
+\index{IceTDevImage.h}\textC{IceTDevImage.h}.  \CArg{tile\_image\_dest} is
+an array where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES\_LIST}, then
+the rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
+
+\textC{common.h} also contains a similar function that does the same thing
+except that images are read back and returned as sparse images.
+
+\label{manpage:icetRenderTransferSparseImages}
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetRenderTransferSparseImages}\textC{(}}\\
+  \makebox[2in]{}
+  &\CType{IceTSparseImage}&\CArg{compositeImage1}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{compositeImage2}\textC{,}\\
+  &\textC{IceTVoid *}&\CArg{inSparseImageBuffer}\textC{,}\\
+  &\CType{IceTSparseImage}&\CArg{outSparseImage}\textC{,}\\
+  &\textC{IceTInt *}&\CArg{tile\_image\_dest}\textC{,}\\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{resultImage}\quad\textC{);}
+\end{Table}
+
+\CArg{compositeImage1}, \CArg{compositeImage2}, and \CArg{outSparseImage}
+are sparse image objects big enough to hold color and/or depth values that
+is \CEnum{ICET\_TILE\_MAX\_WIDTH} $\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT}
+big.  \CArg{inImageBuffer} is a buffer big enough to hold sparse color and
+depth information for an image that is \CEnum{ICET\_TILE\_MAX\_WIDTH}
+$\times$ \CEnum{ICET\_TILE\_MAX\_HEIGHT} as determined by
+\CFunc{icetSparseImageBufferSize}.  \CArg{tile\_image\_dest} is an array
+where if tile $t$ is in \CEnum{ICET\_CONTAINED\_TILES\_LIST}, then the
+rendered image for tile $t$ is sent to $\CArg{tile\_image\_dest}[t]$.
+\CArg{resultImage} will be set to the image with the final results.  It
+will point to either compositeImage1 or compositeImage2 depending on which
+buffer the result happened to end in.
+
+There is also a more general form for transferring images or other large
+data blocks.
+
+\label{manpage:icetSendRecvLargeMessages}
+\begin{Table}{3}
+  \textC{typedef IceTVoid *(*}\CType{IceTGenerateData}\textC{)(}&\textC{IceTInt}&\CArg{id}\textC{,} \\
+  &\textC{IceTInt}&\CArg{dest}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{size}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \textC{typedef void (*}\CType{IceTHandleData}\textC{)(}&\textC{void *}&\CArg{buffer}\textC{,} \\
+  &\textC{IceTInt}&\CArg{src}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSendRecvLargeMessages}\textC{(}
+  }\\
+  \makebox[2in]{}
+  &\textC{IceTInt}&\CArg{numMessagesSending}\textC{,}\\
+  &\textC{const IceTInt *}&\CArg{messageDestinations}\textC{,}\\
+  &\textC{IceTBoolean}&\CArg{messagesInOrder}\textC{,}\\
+  &\CType{IceTGenerateData}&\CArg{generateDataFunc}\textC{,}\\
+  &\CType{IceTHandleData}&\CArg{handleDataFunc}\textC{,}\\
+  &\textC{IceTVoid *}&\CArg{incomingBuffer}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{bufferSize}\textC{);}
+\end{Table}
+
+\CFunc{icetSendRecvLargeMessages} is similar to
+\CFunc{icetRenderTransferFullImages} except that it works with generic
+data, data generators, and data handlers.  It takes a count of a number of
+messages to be sent and an array of ranks to send to.  Two callbacks are
+required.  One generates the data (so large data may be generated JIT to
+save memory) and the other handles incoming data.  The generate callback is
+run right before the data it returns is sent to a particular destination.
+This callback will not be called again until the memory it returned is no
+longer in use, so the memory may be reused.  As large messages come in, the
+handle callback is called.  As an optimization, if a process sends to
+itself, then that will be the first message created.  This gives the
+callback an opportunity to build its local data while waiting for incoming
+data.
+
+\CArg{numMessagesSending} is a count of the number of large messages this
+processor is sending out.  \CArg{messageDestinations} is an array of size
+\CArg{numMessagesSending} that contains the ranks of message destinations.
+\CArg{generateDataFunc} is a callback function that generates messages.
+The function is given the index in \CArg{messageDestinations} and the rank
+of the destination as arguments.  The data of the message and the size of
+the message (in bytes) are returned.  The \CArg{generateDataFunc} will not
+be called again until the returned data is no longer in use.  Thus the data
+may be reused.  \CArg{handleDataFunc} is a callback function that processes
+messages.  The function is given the data buffer and the rank of the
+process that sent it.  The callback should completely finish its use of the
+buffer before returning.  \CArg{incomingBuffer} is a buffer to use for
+incoming messages.  \CArg{bufferSize} is the maximum size of a message.
+
+\section{Invoking Single-Image Compositing}
+
+Some of the existing \IceT strategies internally use a more traditional
+single-image strategy to perform some of their work.  Your multi-tile
+strategy might also benefit from leveraging these algorithms.  To perform
+the composite of a single image amongst a group of processes, use the
+\CFunc{icetSingleImageCompose} function defined in
+\index{common.h}\textC{common.h} in the strategies directory of \IceT
+source code.
+
+\label{manpage:icetSingleImageCompose}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetSingleImageCompose}\textC{(}&\textC{const IceTInt *}&\CArg{compose\_group}\textC{,} \\
+  &\textC{IceTInt}&\CArg{group\_size}\textC{,} \\
+  &\textC{IceTInt}&\CArg{image\_dest}\textC{,} \\
+  &\CType{IceTSparseImage}&\CArg{input\_image}\textC{,} \\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{result\_image}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{piece\_offset}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetSingleImageCompose} performs an image composition using the
+single-image strategy set by \CFunc{icetSingleImageStrategy}.  Rather than
+perform the composition on all the processes in the communicator, it
+performs them on a subset with arbitrary ordering. (Note that ordering
+matters when doing alpha blending as opposed to the z-buffer operation.)
+\CArg{compose\_group} is the mapping of processes from the communicator
+ranks to the ``group'' ranks.  The size of the groups (and the length of
+the \CArg{compose\_group} array) is specified by \CArg{group\_size}.
+
+The \CArg{image\_dest} argument provides a hint to the single image
+compositing algorithm where you plan to collect the resulting image data
+(usually with the \CFunc{icetSingleImageCollect} function described next).
+The composed image evenutally will end up in the processor with rank
+$\CArg{compose\_group}[\CArg{image\_dest}]$.  The compositing algorithm may
+use this hint to favor moving pixels to the indicated process.
+
+\CArg{input\_image} should contain the partial input image to be
+composited. (Of course, each process should have its own partial image.
+All processes should provide images of identical dimensions.)  The contents
+of this buffer may be changed.  \CArg{result\_image} will be set to point
+to a composited image.  In general, this is a partial image, so its size
+will likely be smaller than the original \CArg{input\_image}.  The location
+of the resulting piece is returned in \CArg{piece\_offset}.
+
+\CFunc{icetSingleImageCompose} will generally return with the composited
+image partitioned amongst the processes in the group.  If the
+\CEnum{ICET\_COLLECT\_IMAGES} is on, then these peices must be collected to
+the display process.  This is most easily done with the
+\CFunc{icetSingleImageCollect} function.
+
+\label{manpage:icetSingleImageCollect}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{void }\CFunc{icetSingleImageCollect}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const }\CType{IceTSparseImage}&\CArg{input\_image}\textC{,} \\
+  &\textC{IceTInt}&\CArg{dest}\textC{,} \\
+  &\textC{IceTSizeType *}&\CArg{piece\_offset}\textC{,} \\
+  &\CType{IceTSparseImage}\textC{ *}&\CArg{result\_image}\quad\textC{);}
+\end{Table}
+
+\CFunc{icetSingleImageCollect} collects image partitions distributed
+amongst processes.  It is particularly useful after a call to
+\CFunc{icetSingleImageCompose}.  Unlike \CFunc{icetSingleImageCompose},
+however, this function must be called on all processes, not just those in a
+group.  Processes that have no piece of the image should pass 0 for
+\CArg{piece\_offset} and a null or other zero-size image for
+\CArg{input\_image}.
+
+The argument \CArg{input\_image} contains the composited image partition
+returned from \CFunc{icetSingleImageCompose}.  \CArg{dest} is the rank of
+the process to where the image should be collected.  Be aware that this is
+generally a different value than the \CArg{image\_dest} parameter of
+\CFunc{icetSingleImageCompose}.  \CArg{piece\_offset} is the offset to the
+start of the valid pixels.  This is the same value as that returned from
+\CFunc{icetSingleImageCompose}.  \CArg{result\_image} is an allocated image
+in which to place the uncompressed results of the collection.
+
+If the \CEnum{ICET\_COLLECT\_IMAGES} option is off, then the image
+collection, which can be one of the most time consuming parts of image
+compositing, can be skipped.  If the image collection is skipped, then each
+process should set the values of \CEnum{ICET\_VALID\_PIXELS\_TILE},
+\CEnum{ICET\_VALID\_PIXELS\_OFFSET}, and \CEnum{ICET\_VALID\_PIXELS\_NUM}
+to the tile, offset, and size, respectively, of the image piece returned by
+the local process.  Setting these variables is unnecessary when images are
+collected to the display processes.  It is valid to collect images even
+when \CEnum{ICET\_COLLECT\_IMAGES} is off, but an error to not collect the
+images when this option is on.
+
+The following is a very simple example of compositing the image on tile 0
+and providing the result on the process displaying that tile.  If ordered
+compositing is enabled, then the order is respected.  This is similar to
+the \index{strategy!sequential}sequential strategy except that only the
+first tile is composited.
+
+\index{ICET\_NUM\_TILES}
+\index{ICET\_TILE\_MAX\_WIDTH}
+\index{ICET\_TILE\_MAX\_HEIGHT}
+\index{ICET\_RANK}
+\index{ICET\_NUM\_PROCESSES}
+\index{icetUnsafeStateGet}
+\index{icetGetStateBufferImage}
+\index{icetGetStateBuffer}
+\index{ICET\_COMPOSITE\_ORDER}
+\index{icetFindRankInGroup}
+\index{icetRaiseError}
+\index{icetGetCompressedTileImage}
+\index{icetSingleImageCompose}
+\index{icetSingleImageCollect}
+\index{ICET\_COLLECT\_IMAGES}
+\index{ICET\_VALID\_PIXELS\_TILE}
+\index{ICET\_VALID\_PIXELS\_OFFSET}
+\index{ICET\_VALID\_PIXELS\_NUM}
+\index{icetSparseImageGetNumPixels}
+\index{ICET\_NEED\_BACKGROUND\_CORRECTION}
+\index{icetDecompressSubImageCorrectBackground}
+\begin{code}
+#define COMPOSE_TILE_0_INPUT_IMAGE_BUFFER       ICET_STRATEGY_BUFFER_0
+#define COMPOSE_TILE_0_OUTPUT_IMAGE_BUFFER      ICET_STRATEGY_BUFFER_1
+#define COMPOSE_TILE_0_COMPOSE_GROUP            ICET_STRATEGY_BUFFER_2
+
+IceTImage ComposeTile0(void)
+{
+  IceTInt max_width;
+  IceTInt max_height;
+  IceTInt rank;
+  IceTInt num_proc;
+  const IceTInt *display_nodes;
+  IceTInt image_dest;
+  IceTBoolean ordered_composite;
+  IceTSparseImage input_image;
+  IceTSparseImage composited_image;
+  IceTInt piece_offset;
+  IceTInt *compose_group;
+
+  icetGetIntegerv(ICET_NUM_TILES, &num_tiles);
+  icetGetIntegerv(ICET_TILE_MAX_WIDTH, &max_width);
+  icetGetIntegerv(ICET_TILE_MAX_HEIGHT, &max_height);
+  icetGetIntegerv(ICET_RANK, &rank);
+  icetGetIntegerv(ICET_NUM_PROCESSES, &num_proc);
+  display_nodes = icetUnsafeStateGetInteger(ICET_DISPLAY_NODES);
+  ordered_composite = icetIsEnabled(ICET_ORDERED_COMPOSITE);
+
+  input_image = icetGetStateBufferSparseImage(COMPOSE_TILE_0_INPUT_IMAGE_BUFFER,
+                                              max_width, max_height);
+  output_image = icetGetStateBufferImage(COMPOSE_TILE_0_OUTPUT_IMAGE_BUFFER,
+                                         max_width, max_height);
+  compose_group = icetGetStateBuffer(COMPOSE_TILE_0_COMPOSE_GROUP,
+                                     sizeof(IceTInt)*num_proc);
+
+  if (ordered_composite) {
+    icetGetIntegerv(ICET_COMPOSITE_ORDER, compose_group);
+  } else {
+    int i;
+    for (i = 0; i < num_proc; i++) {
+      compose_group[i] = i;
+    }
+  }
+
+  /* Determine which node in compose_group is displaying tile 0. */
+  image_dest = icetFindRankInGroup(compose_group, num_proc, display_nodes[0]);
+  if (image_dest < 0) {
+    icetRaiseError("Could not find display node in composite order.",
+                   ICET_SANITY_CHECK_FAIL);
+  }
+
+  icetGetCompressedTileImage(0, input_image);
+  icetSingleImageCompose(compose_group,
+                         num_proc,
+                         image_dest,
+                         input_image,
+                         &composited_image,
+                         &piece_offset);
+
+  if (icetIsEnabled(ICET_COLLECT_IMAGES)) {
+    icetSingleImageCollect(composited_image,
+                           display_nodes[0],
+                           piece_offset,
+                           output_image);
+  } else {
+    IceTSizeType piece_size = icetSparseImageGetNumPixels(composited_image);
+    if (piece_size > 0) {
+      /* If the image is not collected, then the background of the piece
+         should be corrected if ICET_NEED_BACKGROUND_CORRECTION is true.
+         The icetDecompressSubImageCorrectBackground takes care of all this
+         during decompression for you.  See the following section on
+         background collection for more information. */
+      icetDecompressSubImageCorrectBackground(composited_image,
+                                              piece_offset,
+                                              output_image);
+      icetStateSetInteger(ICET_VALID_PIXELS_TILE, 0);
+      icetStateSetInteger(ICET_VALID_PIXELS_OFFSET, piece_offset);
+      icetStateSetInteger(ICET_VALID_PIXELS_NUM, piece_size);
+    } else {
+      output_image = icetImageNull();
+      icetStateSetInteger(ICET_VALID_PIXELS_TILE, -1);
+      icetStateSetInteger(ICET_VALID_PIXELS_OFFSET, 0);
+      icetStateSetInteger(ICET_VALID_PIXELS_NUM, 0);
+    }
+  }
+
+  return output_image;
+}
+\end{code}
+
+
+\section{Background Correction}
+
+As described in the volume/transparent rendering section of
+Chapter~\ref{sec:Customizing_Compositing:Volume_Rendering} (starting on
+page~\pageref{sec:Customizing_Compositing:Volume_Rendering}), it is
+sometimes necessary for \IceT to correct the background of composited
+images by blending the final image over the background color.  This
+responsibility falls on the compositing strategy (the multi-tile version,
+not the single-tile substrategy).  The rational is that most efficient
+compositing strategies partition images and distribute for concurrent
+blending, and so the strategy can most efficiently correct the background
+by blending the pieces in parallel before it is collected.
+
+Thus, if you are writing a new strategy, you should make sure that the
+background is always corrected when necessary.  When your strategy function
+is called, the state variable \CEnum{ICET\_NEED\_BACKGROUND\_CORRECTION}
+will be set to true if the background needs to be corrected
+(i.e. \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} is true,
+\CFunc{icetCompositeMode} is set to \CEnum{ICET\_COMPOSITE\_MODE\_BLEND},
+and the background color is not $[0, 0, 0, 0]$).  The actual background
+color to mix is stored in \CEnum{ICET\_TRUE\_BACKGROUND\_COLOR} and
+\CEnum{ICET\_TRUE\_BACKGROUND\_COLOR\_WORD}.  These background colors can
+be blended on a per-pixel bases using the \CEnum{ICET\_BLEND\_FLOAT} or
+\CEnum{ICET\_BLEND\_UBYTE} macros defined in
+\index{IceTDevImage.h}\textC{IceTDevImage.h}.
+
+That said, there is generally no any cause for a strategy to directly query
+these state variables.  \IceT provides several helper functions that
+automatically handle the background correction for you.
+
+First, if your strategy is using the \CFunc{icetSingleImageCollect}
+function, described in the previous section on invoking a single-image
+strategy, this function will automatically correct the background for you.
+No further works needs to be done.
+
+\label{manpage:icetDecompressImageCorrectBackground}
+\label{manpage:icetDecompressSubImageCorrectBackground}
+\index{IceTDevImage.h}\textC{IceTDevImage.h} also provides several
+functions specifically to correct background data.  First are
+\CFunc{icetDecompressImageCorrectBackground} and
+\CFunc{icetDecompressSubImageCorrectBackground}.  These are analagous to
+the \CFunc{icetDecompressImage} and \CFunc{icetDecompressSubImage}
+functions except that they perform background correction if necessary.
+Since strategies often read images as compressed images and must decompress
+them before returning, this is often the most convienient way to correct
+the background.  An example of using one is given in the previous section
+on invoking a single-image strategy for the case when image collection is
+not necessary.
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressImageCorrectBackground}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{\textC{void }\CFunc{icetDecompressSubImageCorrectBackground}\textC{(}}\\
+  \makebox[2in]{}
+  &\textC{const }\CType{IceTSparseImage}&\CArg{compressed\_image}\textC{,}\\
+  &\textC{IceTSizeType}&\CArg{offset},\\
+  &\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetImageCorrectBackground}
+If your strategy has already decompressed its image, it can correct the
+background by simply passing it to the \CFunc{icetImageCorrectBackground}
+function.  If no background correction is necessary, the function does
+nothing.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetImageCorrectBackground}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetClearImageTrueBackground}
+Some compositing strategies will do no work for tiles with no geometry
+projected into them.  In this case, the strategy must still return an image
+filled with the background color.  The best way to create such an image is
+to use \CFunc{icetClearImageTrueBackground}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetClearImageTrueBackground}\textC{(}&\CType{IceTImage}&\CArg{image}\quad\textC{);}
+\end{Table}
+
+
+\section{Matrix Operations}
+\label{sec:New_Strategies:Matrix_Operations}
+
+\index{matrix~operations|(}
+\index{IceTDevMatrix.h|(}
+
+\IceT uses $4 \times 4$ homogeneous transformation matrices to represent
+projections from object space to world and clipping space.  These matrices
+are stored in \textC{IceTDouble} arrays with $16$ values and have a layout
+conforming with matrices in \OpenGL.  To simplify the common operations on
+these matrices, \IceT consolidates several useful matrix functions
+identified by the prototypes in \textC{IceTDevMatrix.h}.
+
+First is macro named \index{ICET\_MATRIX}\textC{ICET\_MATRIX}.  This macro
+takes a pointer to a matrix array and row and column indices and resolves
+to the appropriate value in the matrix.  The \textC{ICET\_MATRIX} macro
+ensures that row-column indices are properly converted to array indices.
+The following example use prints the values of a matrix.
+
+\begin{code}
+IceTDouble matrix[16];
+IceTInt row;
+IceTInt column;
+
+/* Do stuff that fills matrix. */
+
+for (row = 0; row < 4; row++) {
+  for (column = 0; column < 4; column++) {
+    printf("%8.2lf", ICET_MATRIX(matrix, row, column);
+  }
+  printf("\n");
+}
+\end{code}
+
+\label{manpage:icetMatrixMultiply}
+\textC{IceTDevMatrix.h} contains a couple of matrix multiply functions.
+The first form, takes two matrices and stores the result into a third.
+The following computes \CArg{A} $\times$ \CArg{B} and stores the result in
+\CArg{C}.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiply}\textC{(}&\textC{IceTDouble *}&\CArg{C}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{A}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{B}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixPostMultiply}
+The second form as performs \CArg{A} $\times$ \CArg{B}, but stores the
+result back into matrix \CArg{A} rather than in a third matrix.  This
+operation is similar to the \CFuncExternal{glMultMatrix} function.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixPostMultiply}\textC{(}&\textC{IceTDouble *}&\CArg{A}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{B}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixVectorMultiply}
+The \CFunc{icetMatrixVectorMultiply} function multiplies $4 \times 4$
+matrix \CArg{A} with four-component column vector \CArg{v} and stores the
+result in array \CArg{out} (which of course must be allocated to hold 4
+values).
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixVectorMultiply}\textC{(}&\textC{IceTDouble *}&\CArg{out}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{A}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{v}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetDot3}
+\label{manpage:icetDot4}
+\textC{IceTDevMatrix.h} also contains two functions for performing the dot
+product of vectors.  One performs the dot product for 3-component vectors,
+the other for 4-component vectors.
+
+\begin{Table}{3}
+  \textC{IceTDouble }\CFunc{icetDot3}\textC{(}&\textC{const IceTDouble *}&\CArg{v1}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{v2}\quad\textC{);}\\
+  \textC{IceTDouble }\CFunc{icetDot4}\textC{(}&\textC{const IceTDouble *}&\CArg{v1}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{v2}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixCopy}
+The \CFunc{icetMatrixCopy} function provides a simple way to copy the data
+from one matrix array to another.
+
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixCopy}\textC{(}&\textC{IceTDouble *}&\CArg{matrix\_dest}\textC{,}\\
+  &\textC{const IceTDouble *}&\CArg{matrix\_src}\quad\textC{);}
+\end{Table}
+
+\textC{IceTDevMatrix.h} contains functions to quickly build standard
+transformation matrices: identity, scale, translate, rotate, orthographic
+projection, and frustum projection.  These functions have the same calling
+specifications as the \OpenGL counterparts, \CFuncExternal{glLoadIdentity},
+\CFuncExternal{glScale}, \CFuncExternal{glTranslate},
+\CFuncExternal{glRotate}, \CFuncExternal{glOrtho}, and
+\CFuncExternal{glFrustum}, respectively, except that they all have a
+\CArg{mat\_out} argument to store the resulting matrix.
+
+\label{manpage:icetMatrixIdentity}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixIdentity}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixScale}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixScale}\textC{(}&\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixTranslate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixTranslate}\textC{(}&\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixRotate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixRotate}\textC{(}&\textC{IceTDouble}&\CArg{angle}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixOrtho}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixOrtho}\textC{(}&\textC{IceTDouble}&\CArg{left}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{right}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{bottom}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{top}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{znear}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{zfar}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixFrustum}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixFrustum}\textC{(}&\textC{IceTDouble}&\CArg{left}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{right}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{bottom}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{top}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{znear}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{zfar}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{mat\_out}\quad\textC{);}
+\end{Table}
+
+In addition, \textC{IceTDevMatrix.h} also provides other forms for the
+scale, translate, and rotate functions that apply (i.e. multiply) the
+transformation to an existing matrix.  Again, the transformation is post
+multiplied in the same manner as \OpenGL.
+
+\label{manpage:icetMatrixMultiplyScale}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiplyScale}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixMultiplyTranslate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiplyTranslate}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixMultiplyRotate}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixMultiplyRotate}\textC{(}&\textC{IceTDouble *}&\CArg{mat\_out}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{angle}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{x}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{y}\textC{,}\\
+  &\textC{IceTDouble}&\CArg{z}\quad\textC{);}
+\end{Table}
+
+Finally, \textC{IceTDevMatrix.h} provides functions for computing the
+inverse, transpose, and inverse transpose of a matrix.  The functions
+that perform an inverse return an \textC{IceTBoolean} that is
+\CEnum{ICET\_TRUE} if the operation was successful or \CEnum{ICET\_FALSE}
+if the input matrix has no inverse.
+
+\label{manpage:icetMatrixInverse}
+\begin{Table}{3}
+  \textC{IceTBoolean }\CFunc{icetMatrixInverse}\textC{(}&\textC{const IceTDouble *}&\CArg{matrix\_in}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{matrix\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixTranspose}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetMatrixTranspose}\textC{(}&\textC{const IceTDouble *}&\CArg{matrix\_in}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{matrix\_out}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetMatrixInverseTranspose}
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \textC{IceTBoolean }\CFunc{icetMatrixInverseTranspose}\textC{(}
+  }\\
+  \makebox[2.5in]{}
+  &\textC{const IceTDouble *}&\CArg{matrix\_in}\textC{,}\\
+  &\textC{IceTDouble *}&\CArg{matrix\_out}\quad\textC{);}
+\end{Table}
+
+\index{IceTDevMatrix.h|)}
+\index{matrix~operations|)}
+
+\section{Raising Diagnostics}
+
+\index{diagnostics|(}
+
+\IceT's diagnostics system, described in
+Chapter~\ref{sec:Basic_Usage:Diagnostics} starting on
+page~\pageref{sec:Basic_Usage:Diagnostics}, alerts the user of anomalous
+conditions.  Your compositing strategies should also alert the user through
+this diagnostic mechanism.
+
+\index{error}Error and \index{warning}warning diagnostics can be raised
+with the \CFunc{icetRaiseError} and \CFunc{icetRaiseWarning} functions,
+respectively.  These functions are defined in the
+\index{IceTDevDiagnostics.h}\textC{IceTDevDiagnostics.h} header file.
+
+\label{manpage:icetRaiseError}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseError}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &\textC{IceTEnum}&\CArg{type}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetRaiseWarning}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseWarning}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &\textC{IceTEnum}&\CArg{type}\quad\textC{);}
+\end{Table}
+
+The \CArg{message} argument contains a descriptive string that will be
+presented to the user describing the error or warning condition.  The
+\CArg{type} argument gives the class of the error or warning.  It must be
+one of the following with the given meanings.
+
+\begin{Description}[ICET\_INVALID\_OPERATION]
+\item[\CEnum{ICET\_INVALID\_VALUE}] An inappropriate value has been passed
+  to a function.
+\item[\CEnum{ICET\_INVALID\_OPERATION}] An inappropriate function has been
+  called.
+\item[\CEnum{ICET\_OUT\_OF\_MEMORY}] \IceT has ran out of memory for buffer
+  space.
+\item[\CEnum{ICET\_BAD\_CAST}] A function has been passed a value of the
+  wrong type.
+\item[\CEnum{ICET\_INVALID\_ENUM}] A function has been passed an invalid
+  constant.
+\item[\CEnum{ICET\_SANITY\_CHECK\_FAIL}] An internal error (or warning) has
+  occurred.
+\end{Description}
+
+Your strategy also has the option of raising \index{debug}debug statements.
+Unlike an error or warning, debug statements are often raised during normal
+operation.  These messages are \emph{not} intended for the end user.
+Rather, they are status messages that might help you track problems while
+debugging.  The debug messages are only created when \IceT is compiled in
+``Debug'' mode (the \CEnum{CMAKE\_BUILD\_TYPE} \index{CMake}CMake variable
+is set to \textC{Debug} when building \IceT) and the
+\CEnum{ICET\_DIAG\_DEBUG} flag is given to \CFunc{icetDiagnostics}.  With
+these two conditions met, basic debug status messages can be raised with
+the \CFunc{icetRaiseDebug} function.
+
+\label{manpage:icetRaiseDebug}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug}\textC{(}&\textC{const char *}&\CArg{message}\quad\textC{);}
+\end{Table}
+
+Unlike \CFunc{icetRaiseError} and \CFunc{icetRaiseWarning},
+\CFunc{icetRaiseDebug} does not accept a type because no anomalous
+condition is being reported.
+
+It is common to want to use debug messages to report the state of
+variables.  To help you with this, \IceT provides three convenience
+functions that accept a printf-formatted message and a number of
+arguments.  The message and arguments are passed to the C \textC{sprintf}
+function.
+
+\label{manpage:icetRaiseDebug1}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug1}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &&\CArg{arg1}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetRaiseDebug2}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug2}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &&\CArg{arg1}\textC{,} \\
+  &&\CArg{arg2}\quad\textC{);}
+\end{Table}
+
+\label{manpage:icetRaiseDebug4}
+\begin{Table}{3}
+  \textC{void }\CFunc{icetRaiseDebug4}\textC{(}&\textC{const char *}&\CArg{message}\textC{,} \\
+  &&\CArg{arg1}\textC{,} \\
+  &&\CArg{arg2}\textC{,} \\
+  &&\CArg{arg3}\textC{,} \\
+  &&\CArg{arg4}\quad\textC{);}
+\end{Table}
+
+In the documentation for these functions here, the type for \CArg{arg$i$}
+is left out.  The type of these arguments is determined by the
+printf-formatted \CArg{message}.  (As you have probably guessed, these
+functions are actually macros that pass the arguments to sprintf.)
+
+\index{diagnostics|)}

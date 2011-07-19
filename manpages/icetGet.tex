@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{November 30, 2010}
+\setDate{July 11, 2011}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetGet}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGet} -- get an \IceT state parameter}
 
@@ -86,7 +86,11 @@
     \CFunc{icetDrawFrame}.  Stored as a double.
   \item[\CEnum{ICET\_BYTES\_SENT}] The total number of bytes sent by the
     calling process for transferring image data during the last call to
-    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  Stored as an integer.
+    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  Stored as an
+    integer.
+  \item[\CEnum{ICET\_COLLECT\_TIME}] The total time spent in collecting
+    image fragments to display processes during the last call to
+    \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
   \item[\CEnum{ICET\_COLOR\_FORMAT}] The color format of images to be
     created by the rendering subsystem and composited by \IceT.  Use
     \CFunc{icetSetColorFormat} to set the color format.  Use
@@ -151,6 +155,10 @@
     \rangle$.  $x$ and $y$ are placed at the leftmost and lowest position
     of all the tiles, and $width$ and $height$ are just big enough for the
     viewport to cover all tiles.
+  \item[\CEnum{ICET\_MAGIC\_K}] The target $k$ value used when compositing
+    with the radix-k single image strategy.
+  \item[\CEnum{ICET\_MAX\_IMAGE\_SPLIT}] The target number of maximum image
+    splits to be performed by compositing strategies.
   \item[\CEnum{ICET\_NUM\_BOUNDING\_VERTS}] The number of bounding vertices
     listed in the \CEnum{ICET\_GEOMETRY\_BOUNDS} parameter.
   \item[\CEnum{ICET\_NUM\_TILES}] The number of tiles in the defined
@@ -208,6 +216,45 @@
     \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  This includes all
     the time to render, read back, compress, and composite images.  Stored
     as a double.
+  \item[\CEnum{ICET\_VALID\_PIXELS\_NUM}] In conjunction with
+    \CEnum{ICET\_VALID\_PIXELS\_OFFSET}, gives the range of valid pixels
+    for the last image returned from \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame}.  Given the arrays of pixels returned with the
+    \CFunc{icetImageGetColor} and \CFunc{icetImageGetDepth} functions, the
+    valid pixels start at the pixel indexed by
+    \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
+    \CEnum{ICET\_VALID\_PIXELS\_NUM}.  The tile to which these pixels
+    belong are captured in the \CEnum{ICET\_VALID\_PIXELS\_TILE} state
+    variable.  If the last call to \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame} did not return pixels for the local process,
+    \CEnum{ICET\_VALID\_PIXELS\_NUM} is set to $0$.  This state variable is
+    only useful when \CEnum{ICET\_COLLECT\_IMAGES} is off.  If on, it can
+    be assumed that all display processes contain all pixels in the image
+    (\CEnum{ICET\_VALID\_PIXELS\_NUM} is the number of pixels in the
+    image), and all other processes have no pixel data.
+  \item[\CEnum{ICET\_VALID\_PIXELS\_OFFSET}] In conjunction with
+    \CEnum{ICET\_VALID\_PIXELS\_NUM}, gives the range of valid pixels for
+    the last image returned from \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame}.  Given the arrays of pixels returned with the
+    \CFunc{icetImageGetColor} and \CFunc{icetImageGetDepth} functions, the
+    valid pixels start at the pixel indexed by
+    \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
+    \CEnum{ICET\_VALID\_PIXELS\_NUM}.  The tile to which these pixels
+    belong are captured in the \CEnum{ICET\_VALID\_PIXELS\_TILE} state
+    variable.  This state variable is only useful when
+    \CEnum{ICET\_COLLECT\_IMAGES} is off.  If on, it can be assumed that
+    all display processes contain all pixels in the image
+    (\CEnum{ICET\_VALID\_PIXELS\_OFFSET} is $0$), and all other processes
+    have no pixel data.
+  \item[\CEnum{ICET\_VALID\_PIXELS\_TILE}] Gives the tile for which the
+    last image returned from \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame} contains pixels.  Each process has its own
+    value.  If the last call to \CFunc{icetDrawFrame} or
+    \CFunc{icetGLDrawFrame} did not return pixels for the local process,
+    then this state variable is set to $-1$.  This state variable is only
+    useful when \CEnum{ICET\_COLLECT\_IMAGES} is off.  If on, it can be
+    assumed that all display processes have valid pixels for their
+    respective display tiles, and all other processes have no pixel data.
   \end{Description}
 
   In addition, if you are using the \OpenGL layer (i.e., have called

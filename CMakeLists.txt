@@ -5,7 +5,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 INCLUDE(UseLATEX.cmake)
 
 SET(TITLE "IceT Users' Guide and Reference")
-SET(VERSION "2.0")
+SET(VERSION "2.1")
 
 SET(CHAPTERS
   Introduction.tex
@@ -13,6 +13,7 @@ SET(CHAPTERS
   BasicUsage.tex
   CustomizingCompositing.tex
   Strategies.tex
+  NewStrategies.tex
   Communicators.tex
   Transitioning.tex
   )

@@ -459,6 +459,79 @@ process.  There is currently no way to turn it off.
 
 \index{active-pixel~encoding|)}
 
+\section{Interlaced Images}
+\label{sec:Customizing_Compositing:Interlaced_Images}
+
+\index{image!interlace|(}
+\index{interlace|see{image, interlace}}
+
+Although active pixel encoding almost always improves the performance of
+compositing, it does introduce an issue of load balancing.  As images are
+partitioned, some regions will have more active pixels than others.  By
+balancing the active pixels assigned to regions, the parallel compositing
+becomes better load balanced and performance can improve even further.
+
+The most straightforward way of balancing active pixels is to
+\keyterm{interlace} the images.  An image is interlaced by rearranging
+pixels in a different order.  This reordering of pixels is designed such
+that when the images are later partitioned, each partition gets pixels from
+all over the images.  Consequently, regions with many active pixels are
+distributed to all the partitions.
+
+Although image interlacing can provide a significant performance increase,
+it also incurs an overhead caused by shuffling pixels around.  This
+overhead can potentially happen in two places during parallel compositing.
+The first overhead is the shuffling of pixels before any compositing or
+message transfers take place.  This overhead tends to be low because it
+occurs when images are their most sparse and the work is distributed
+amongst all the processes.  The second overhead is the reshuffling after
+compositing completes to restore the proper order of the pixels.  This
+second shuffling is substantial as it happens when images are at their most
+full and the maximum amount of pixels must be copied.  Furthermore, because
+pixels must be shuffled over the entire image, this reshuffling must happen
+after image data is collected on a single process.  Thus, the reshuffling
+happens on a single process while all others remain idle.
+
+\index{partitioning!image}
+\index{image!partitioning}
+Classical implementation of image interlacing shuffle pixels in regions,
+but the regions chosen are usually arbitrary (scanlines is a common region
+to pick).  However, the image interlacing algorithm in \IceT chooses
+regions that completely avoid the need for the second, and most time
+consuming, pixel reshuffling.  The algorithm is based on the simple
+observation that at the completion of many parallel compositing algorithms,
+the final image is partitioned and distributed among all the processes in
+contiguous pieces.  If we arrange our initial shuffling such that each of
+the partitions remain a contiguous set of pixels, then we do not need the
+final reshuffling at all.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.8\textwidth]{images/InterlaceDiagram}
+  \caption{Pixel shuffling in \IceT's image interlacing.}
+  \label{fig:Interlacing}
+\end{figure}
+
+\IceT's minimal-copy image interlacing is demonstrated in
+Figure~\ref{fig:Interlacing}.  Rather than picking arbitrary partitions,
+such as scan lines, to interlace, \IceT's interlacing uses the partitions
+that the composite will create anyway.  The image with the interlaced block
+is composited as normal.  Each resulting image partition is already intact,
+it is only the implicit offsets that need to be adjusted.
+
+Image interlacing is always on by default.  It can be turned off by calling
+\CFunc{icetDisable} with \CEnum{ICET\_INTERLACE\_IMAGES}.  Image
+interlacing is only a hint, and compositing strategies are not obligated to
+follow it.  In any case, the observable behavior between interlaced and
+non-interlaced images is the same except for in compositing times.  In
+situations where each process renders to a small portion of an image, the
+overhead for image interlacing is low but its benefits are high.  However,
+in cases where every process renders geometry over the entire view
+(indicative of a poor distribution of geometry), then the overhead for
+image interlacing becomes higher but the benefit becomes lower.
+
+\index{image!interlace|)}
+
 \section{Data Replication}
 \label{sec:Customizing_Compositing:Data_Replication}
 \index{data~replication|(}
@@ -545,6 +618,134 @@ local process.
 
 \index{data~replication|)}
 
+\section{Compositing Network Hints}
+\label{sec:Customizing_Compositing:Compositing_Network_Hints}
+\index{compositing!network|(}
+
+By its nature, image compositing requires a significant amount of
+communication amongst processes in a parallel computer.  Each compositing
+algorithm contained in \IceT follows a particular pattern of communication,
+referred to as its \keyterm{compositing network}.  These algorithms and
+their compositing networks are described in Chapter~\ref{chap:Strategies}.
+
+Most compositing networks are fixed although a few have some possible
+variability.  Any variations in the compositing networks are automatically
+chosen, but it is possible to provide hints.  Because the relative
+efficiency of different compositing networks is effected more by the
+underlying hardware than in the application and data running it, these hints
+are specified by either build options or by environment variables.
+
+Build options are specified as \index{CMake}CMake variables.  These CMake
+variables are set using the CMake program at the beginning of the build as
+described in Chapter~\ref{chap:Tutorial}.  These variables are listed as
+``advanced,'' so you will need to turn on advanced variables in the CMake
+to see them.
+
+For each one of these CMake build variables, \IceT also recognizes a
+corresponding environment variable with the same name at run time.  If the
+environment variable is defined, it will be used in place of the option set
+at run time.  The environment variables are read when the \IceT context is
+first created, so subsequent changes to the environment variables will have
+no effect.
+
+The following CMake and environment variable hints are available.
+
+\begin{Description}[xxxxxxxx]
+\item[\CEnum{ICET\_MAGIC\_K}] The radix-k single image strategy described
+  in Chapter~\ref{chap:Strategies} starting on
+  page~\pageref{sec:Strategies:Radix-k} operates by communicating within
+  groups of processes of size $k$.  \IceT's implementation of radix-k
+  automatically determines $k$, but does so by selecting values that are as
+  close as possible to a \index{magic~k}\keyterm{magic k} value.  This
+  magic k value is set with the \CEnum{ICET\_MAGIC\_K} CMake build variable
+  or environment variable.
+\item[\CEnum{ICET\_MAX\_IMAGE\_SPLIT}] The parallel image compositing
+  algorithms in \IceT maintain load balancing by dividing images amongst
+  processes to allow the processes to concurrently composite pixels in
+  independent partitions of the image.  Typically, \IceT subsequently
+  collects the images to the display nodes.  This collection can be one of
+  the longest operations during the compositing, particularly when there
+  are many processes.  It is possible to speed up the collection at the
+  expense of the compositing by limiting the maximum number of times an
+  image may be split.  This limit is set with the
+  \CEnum{ICET\_MAX\_IMAGE\_SPLIT} CMake build variable or environment
+  variable.  Be advised that this option is only a suggestion to
+  compositing.  It is still possible for images to be split beyond this
+  limit.  \IceT will still behave correctly either way.
+\end{Description}
+
+These values may be queried (but not set) at runtime using \CFunc{icetGet}
+with a state variable identifier of the same name.
+
+\index{compositing!network|)}
+
+\section{Image Partition Collection}
+\label{sec:Customizing_Compositing:Image_Collection}
+\index{collection|(}
+\index{image!collection|(}
+\index{partitioning!image|(}
+\index{image!partitioning|(}
+
+Many parallel compositing algorithms, including several in \IceT, function
+by partitioning images and distributing the pieces.  These algorithms,
+described in more detail in Chapter~\ref{chap:Strategies}, eventually have
+a composited image partitioned and distributed among most or all of the
+processes involved in the operation.
+
+For most practical purposes, such as displaying the images, the image
+partitions must be collected, and by default \IceT collects each image to
+its associated display process.  However, there exist some use cases where
+this collection may not be necessary.  For example, if the images are only
+to be written to a parallel file system, then it may be as efficient or
+more efficient to collectively write partitions from multiple processes.
+
+The collection of image data to the display process may take a significant
+portion of the overall compositing time, but it is usually necessary.  When
+it is not necessary, it can be disabled by calling \CFunc{icetDisable} with
+\CEnum{ICET\_COLLECT\_IMAGES}.  When this option is turned off, the
+strategy has the option of leaving images partitioned among processes.  Each
+process containing part of a tile's image will return the entire buffer
+from \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} in an
+\CType{IceTImage} object.  However, only certain pixels will be valid.  The
+state variables \CEnum{ICET\_VALID\_PIXELS\_TILE},
+\CEnum{ICET\_VALID\_PIXELS\_OFFSET}, and \CEnum{ICET\_VALID\_PIXELS\_NUM}
+give which tile the pixels belong to and what range of pixels are valid.
+
+The \CEnum{ICET\_VALID\_PIXELS\_TILE} state variable gives the tile for
+which the last image returned from \CFunc{icetDrawFrame} or
+\CFunc{icetGLDrawFrame} contains pixels.  Each process has its own value.
+If the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} did
+not return pixels for the local process, then this state variable is set to
+$-1$.
+
+The \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and
+\CEnum{ICET\_VALID\_PIXELS\_NUM} give the range of valid pixels for the
+last image returned from \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+Given the arrays of pixels returned with the \CFunc{icetImageGetColor} and
+\CFunc{icetImageGetDepth} functions, the valid pixels start at the pixel
+indexed by \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
+\CEnum{ICET\_VALID\_PIXELS\_NUM}.  The tile to which these pixels belong
+are captured in the \CEnum{ICET\_VALID\_PIXELS\_TILE} state variable.  If
+the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} did not
+return pixels for the local process, \CEnum{ICET\_VALID\_PIXELS\_NUM} is
+set to $0$.
+
+The \CEnum{ICET\_VALID\_PIXELS\_TILE}, \CEnum{ICET\_VALID\_PIXELS\_OFFSET},
+and \CEnum{ICET\_VALID\_PIXELS\_NUM} are only really useful when
+\CEnum{ICET\_COLLECT\_IMAGES} is disabled.  When
+\CEnum{ICET\_COLLECT\_IMAGES} is enabled, it is always the case that each
+display process has the entire image (\CEnum{ICET\_VALID\_PIXELS\_TILE} set
+to the tile, \CEnum{ICET\_VALID\_PIXELS\_OFFSET} set to $0$ and
+\CEnum{ICET\_VALID\_PIXELS\_NUM} set to the total image size), and it is
+always the case that each process not displaying a tile has no image
+(\CEnum{ICET\_VALID\_PIXELS\_TILE} set to $-1$ and
+\CEnum{ICET\_VALID\_PIXELS\_NUM} set to $0$).
+
+\index{image!partitioning|)}
+\index{partitioning!image|)}
+\index{image!collection|)}
+\index{collection|)}
+
 \section{Timing (and Other Metrics)}
 \label{sec:Customizing_Compositing:Timing}
 \index{timing|(}
@@ -572,6 +773,9 @@ timing metrics (in seconds) are as follows.
   spent in performing Z comparisons or color blending of images during the
   last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  These two
   variables always return the same value.
+\item[\CEnum{ICET\_COLLECT\_TIME}] The total time spent in collecting image
+  fragments to display processes during the last call to
+  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_TOTAL\_DRAW\_TIME}] The total time spent in the last
   call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  This includes
   all the time to render, read back, compress, and composite images.
