@@ -618,6 +618,57 @@ local process.
 
 \index{data~replication|)}
 
+\section{Drawing Callback Order}
+\label{sec:Customizing_Compositing:Drawing_Callback_Order}
+\index{drawing~callback|(}
+
+The most important reason \IceT relies on a drawing callback, described in
+Chapter~\ref{chap:Basic_Usage} starting on
+page~\pageref{sec:Basic_Usage:Drawing_Callback}, is to allow \IceT's
+compositing algorithms to minimize the number of times a render must occur
+(ideally less than once per tile) and the number of pixels produced.  Thus,
+\IceT will often avoid invoking the drawing callback.
+
+Because if this, it is difficult to predict how often, if at all, the
+drawing callback will be invoked on each process.  It is also difficult to
+predict the order in which tiles are drawn or if the drawings will even be
+aligned with the tiles.
+
+Under most circumstances, each process can independently draw their portion
+of the data, which is one of the advantages of sort-last rendering.
+However, this could be problematic for some more advanced rendering
+techniques that will require communication among processes.  One such
+example could be a ray tracer that must communicate to find global effects
+like shadows.  Another example could be a dynamically built texture like a
+surface line integral convolution (or simply surface
+LIC)\index{surface~LIC}.
+
+This communication can be very difficult to implement in a draw function
+that is only called on a subset of processes.  Thus some applications might
+wish to force \IceT to synchronize the drawing callbacks for each tile.
+This can be done by using the sequential
+strategy\index{strategy!sequential}, turning off floating
+viewports\index{floating~viewport}, and turning on the option to render
+empty images (even though the result will be ignored).  The following code
+performs all these actions.
+
+\index{icetStrategy}
+\index{ICET\_STRATEGY\_SEQUENTIAL}
+\index{ICET\_FLOATING\_VIEWPORT}
+\index{ICET\_RENDER\_EMPTY\_IMAGES}
+\begin{code}
+icetStrategy(ICET_STRATEGY_SEQUENTIAL);
+icetDisable(ICET_FLOATING_VIEWPORT);
+icetEnable(ICET_RENDER_EMPTY_IMAGES);
+\end{code}
+
+Keep in mind that all of these options are turning off many of the
+optimizations \IceT uses during compositing.  If rendering a single tile,
+the effect is likely negligible, but the cost rises steeply as more tiles
+are added to the display.
+
+\index{drawing~callback|)}
+
 \section{Compositing Network Hints}
 \label{sec:Customizing_Compositing:Compositing_Network_Hints}
 \index{compositing!network|(}

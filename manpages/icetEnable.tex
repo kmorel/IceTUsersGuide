@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{July 11, 2011}
+\setDate{July  2, 2013}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetEnable}{Kenneth Moreland}{\IceT Reference}{\icetEnable, \icetDisable --  enable/disable an \IceT feature.}
 
@@ -46,10 +46,10 @@
     this flag will internally cause the color to be reset to black and then
     cause the color to be blended back into the resulting images.  This
     flag is disabled by default.
-  \item[\CEnum{ICET\_FLOATING\_VIEWPORT}] If enabled, the projection will
-    be shifted such that the geometry will be rendered in one shot whenever
-    possible, even if the geometry straddles up to four tiles.  This flag
-    is enabled by default.
+  \item[\CEnum{ICET\_FLOATING\_VIEWPORT}] \index{floating~viewport} If
+    enabled, the projection will be shifted such that the geometry will be
+    rendered in one shot whenever possible, even if the geometry straddles
+    up to four tiles.  This flag is enabled by default.
   \item[\CEnum{ICET\_INTERLACE\_IMAGES}] If enabled, pixels in images
     (might be) shuffled to better load balance the compositing work.  This
     flag is enabled by default.
@@ -62,6 +62,18 @@
     enabled, you should call \CFunc{icetCompositeOrder} between each frame
     to update the image order as camera angles change.  This flag is
     disabled by default.
+  \item[\CEnum{ICET\_RENDER\_EMPTY\_IMAGES}] If disabled, \IceT will never
+    invoke the drawing callback\index{drawing~callback} if all geometry is
+    outside the clipping planes of the current projection.  If enabled,
+    \IceT will still invoke the drawing callback \emph{if} the compositing
+    strategy has requested the tile.  However, most compositing strategies
+    do not request images for all tiles.  The floating viewport can also
+    consolidate up to four renderings into one.  To ensure that the drawing
+    callback is invoked for all tiles on all processes, enable
+    \CEnum{ICET\_RENDER\_EMPTY\_IMAGES}, disable
+    \CEnum{ICET\_FLOATING\_VIEWPORT}, and set the strategy (using
+    \CFunc{icetStrategy}) to \CEnum{ICET\_STRATEGY\_SEQUENTIAL}.  This flag
+    is disabled by default.
   \end{Description}
 
   In addition, if you are using the \OpenGL layer (i.e., have called
