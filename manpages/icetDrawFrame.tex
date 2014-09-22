@@ -44,13 +44,26 @@
   pass the desired \CArg{projection\_matrix} to \CFunc{icetDrawFrame} and
   then use the version passed to the drawing callback.
 
+  The \CArg{background\_color} argument specifies the desired background
+  color for the image. It is given as an array of 4 floating point values
+  specifying, in order, the red, green, blue, and alpha channels of the
+  color in the range from $0.0$ to $1.0$.
+
+  When rendering using a depth buffer, the background color is used to fill
+  in empty regions of images. When rendering using color blending, the
+  background color is changed to transparent black during rendering to
+  prevent the background from being blended multiple times from different
+  renderings. If the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} feature is
+  enabled, this background color is blended back into the final composited
+  image.
+
 
   \mansection{Return Value}
 
   On each \index{display~process}display process (as defined by
-  \CFunc{icetAddTile}, \CFunc{icetDrawFrame} returns an image of the fully
-  composited image.  The contents of the image are undefined for any
-  non-display process.
+  \CFunc{icetAddTile}), \CFunc{icetDrawFrame} returns the fully composited
+  image in an \CType{IceTImage} object. The contents of the image are
+  undefined for any non-display process.
 
   If the \CEnum{ICET\_COMPOSITE\_ONE\_BUFFER} option is on and both a color
   and depth buffer is specified with \icetSetColorFormat and
@@ -62,8 +75,9 @@
   stage of compositing.
 
   The returned image uses memory buffers that will be reclaimed the next
-  time \IceT renders a frame.  Do not use this image after the next call to
-  \CFunc{icetDrawFrame} (unless you have changed the \IceT context).
+  time \IceT renders or composites a frame.  Do not use this image after
+  the next call to \CFunc{icetDrawFrame} (unless you have changed the \IceT
+  context).
 
 
   \mansection{Errors}
@@ -93,7 +107,7 @@
   black background instead of the \CArg{background\_color} requested.  This
   can be corrected by blending the returned image over the desired
   background.  This will be done for you if the
-  \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} is on.
+  \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} feature is enabled.
 
 
   \mansection{Copyright}
@@ -106,6 +120,7 @@
   \CFuncSeeAlso{icetAddTile},
   \CFuncSeeAlso{icetBoundingBox},
   \CFuncSeeAlso{icetBoundingVertices},
+  \CFuncSeeAlso{icetCompositeImage},
   \CFuncSeeAlso{icetDrawCallback},
   \CFuncSeeAlso{icetGLDrawFrame},
   \CFuncSeeAlso{icetSingleImageStrategy},

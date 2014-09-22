@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{August  9, 2010}
+\setDate{September 22, 2014}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetSetColorFormat}{Kenneth Moreland}{\IceT Reference}{\icetSetColorFormat, \icetSetDepthFormat -- specifies the buffer formats for \IceT to use when creating images }
 
@@ -25,7 +25,8 @@
   of images passed to drawing callbacks (specified by
   \CFunc{icetDrawCallback} or \CFunc{icetGLDrawCallback}) and of images
   returned from frame drawing functions (\CFunc{icetDrawFrame} or
-  \CFunc{icetGLDrawFrame}).
+  \CFunc{icetGLDrawFrame}). It is also the format expected for image
+  buffers passed to \CFunc{icetCompositeImage}.
 
   The following \CArg{color\_format}s are valid for use in
   \icetSetColorFormat.
@@ -70,9 +71,10 @@
   change the format of any existing images.  It only changes any
   subsequently created images.
 
-  The color format must be set before calling either \CFunc{icetDrawFrame}
-  or \CFunc{icetGLDrawFrame}.  Doing otherwise would create inconsistencies
-  in the images created and composed together.
+  The color format must be set before calling \CFunc{icetDrawFrame},
+  \CFunc{icetGLDrawFrame}, or \CFunc{icetCompositeImage}.  Doing otherwise
+  would create inconsistencies in the images created and composited
+  together.
 
 
   \mansection{Copyright}

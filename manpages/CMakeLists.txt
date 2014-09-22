@@ -8,6 +8,7 @@ SET(man3pages
   icetAddTile
   icetBoundingBox
   icetBoundingVertices
+  icetCompositeImage
   icetCompositeMode
   icetCompositeOrder
   icetCopyState
