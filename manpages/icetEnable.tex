@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{July  2, 2013}
+\setDate{September 26, 2014}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetEnable}{Kenneth Moreland}{\IceT Reference}{\icetEnable, \icetDisable --  enable/disable an \IceT feature.}
 
@@ -29,12 +29,13 @@
     images partitions are always collected to display processes.  When this
     option is turned off, the strategy has the option of leaving images
     partitioned among processes.  Each process containing part of a tile's
-    image will return the entire buffer from \CFunc{icetDrawFrame} or
-    \CFunc{icetGLDrawFrame} in an \CType{IceTImage} object.  However, only
-    certain pixels will be valid.  The state variables
-    \CEnum{ICET\_VALID\_PIXELS\_TILE}, \CEnum{ICET\_VALID\_PIXELS\_OFFSET},
-    and \CEnum{ICET\_VALID\_PIXELS\_NUM} give which tile the pixels belong
-    to and what range of pixels are valid.
+    image will return the entire buffer from \CFunc{icetDrawFrame},
+    \CFunc{icetGLDrawFrame}, or \CFunc{icetCompositeImage} in an
+    \CType{IceTImage} object.  However, only certain pixels will be valid.
+    The state variables \CEnum{ICET\_VALID\_PIXELS\_TILE},
+    \CEnum{ICET\_VALID\_PIXELS\_OFFSET}, and
+    \CEnum{ICET\_VALID\_PIXELS\_NUM} give which tile the pixels belong to
+    and what range of pixels are valid.
   \item[\CEnum{ICET\_COMPOSITE\_ONE\_BUFFER}] Turn this option on when
     performing z-buffer compositing of a color image and the only result
     you need is the color image itself (not the depth buffer).  This is

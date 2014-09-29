@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{August  9, 2010}
+\setDate{September 26, 2014}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetCompositeMode}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetCompositeMode} -- set the type of operation used for compositing}
 
@@ -68,10 +68,10 @@
 
   \CFunc{icetCompositeMode} will let you set a mode even if it is
   incompatible with other current settings.  Some settings will be checked
-  during a call to \CFunc{icetDrawFrame}.  For example, if the image
-  format (specified with \icetSetColorFormat and \icetSetDepthFormat) does
-  not support the composite mode picked, you will get an error during the
-  call to \CFunc{icetDrawFrame}.
+  during a call to \CFunc{icetDrawFrame} or \CFunc{icetCompositeImage}.
+  For example, if the image format (specified with \icetSetColorFormat and
+  \icetSetDepthFormat) does not support the composite mode picked, you will
+  get an error during the call to \CFunc{icetDrawFrame}.
 
   Other incompatibilities are also not checked.  For example, if the
   composite mode is set to \CEnum{ICET\_COMPOSITE\_MODE\_BLEND}, \IceT will
