@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{September 22, 2014}
+\setDate{October  9, 2014}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetCompositeImage}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetCompositeImage} -- composites a pre-rendered image}
 
@@ -17,6 +17,7 @@
     %@% IF notlatex2man %@%
     } \\
     \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+    %@% END-IF %@%
     &\textC{const IceTVoid *}&\CArg{color\_buffer}\textC{,} \\
     &\textC{const IceTVoid *}&\CArg{depth\_buffer}\textC{,} \\
     &\textC{const IceTInt *}&\CArg{valid\_pixels\_viewport}\textC{,} \\
@@ -113,6 +114,8 @@
   \IceT with further information on local image projections. If the given
   matrices are not the same used in the rendering or the given bounds do
   not contain the geometry, \IceT may clip the geometry in surprising ways.
+  If these arguments are set to \textC{NULL}, then geometry projection will
+  not be considered when determining what parts of images are valid.
 
   The \CArg{background\_color} argument specifies the desired background
   color for the image. It is given as an array of 4 floating point values

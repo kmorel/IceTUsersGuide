@@ -522,18 +522,18 @@ You can get a human-readable name using the
 
 \index{drawing~callback|(}
 
-Most compositing engines will simply take a group of images and combine them
-together.  This approach, however, is unreasonable when compositing the
-high resolution images on a large tiled display.  It is problematic for an
-application to create images larger than any color buffer the rendering
-hardware can create, and holding many of these large images can lead to a
-large memory profile.
+Most compositing engines will simply take a group of images and combine
+them together.  This approach, however, can be unreasonable when
+compositing the high resolution images on a large tiled display. Although
+\IceT can accept a single rendered image when that is convenient, \IceT can
+also manage rendering when it is problematic to create display-sized images
+that are larger than any buffer rendering hardware can directly produce.
 
-Instead, the \IceT algorithms deal with pieces of the overall image.  The
-image pieces are created on demand.  As such, \IceT may require the same
-geometry to be rendered multiple times in a single frame.  \IceT provides
-the application with the most flexible way to define the rendering process:
-with a \keyterm{drawing callback}.
+To manage these problematic cases, the \IceT algorithms deal with pieces of
+the overall image.  The image pieces are created on demand.  As such, \IceT
+may require the same geometry to be rendered multiple times in a single
+frame.  \IceT provides the application with the most flexible way to define
+the rendering process: with a \keyterm{drawing callback}.
 
 A drawing callback is simply a function that your application provides
 \IceT.  When \IceT needs an image, it will provide the drawing callback
@@ -550,6 +550,10 @@ count how many times a render occurs).  The drawing callback should also
 leave the rendering system in a state such that it will be correct for a
 subsequent run of the drawing callback.  Any state that is assumed to be
 true on entrance to the drawing callback should also be true on return.
+
+It is also possible to use \IceT without callbacks, which is sometimes more
+convenient for applications. Rendering without callbacks is discussed in
+the following section on rendering.
 
 \subsection{Generic Drawing Callback}
 \label{sec:Basic_Usage:Drawing_Callback:Generic}
@@ -959,6 +963,125 @@ Chapter~\ref{sec:Customizing_Compositing:Image_Inflation}.
 Regardless of whether it writes the fully composited image back to the
 display, \CFunc{icetGLDrawFrame} returns an \CType{IceTImage} containing
 the composited image displayed on this process.  If the process is not
+displaying a tile, then the contents of the image is undefined.
+
+
+\subsection{Rendering Without Callbacks}
+\label{sec:Basic_Usage:Rendering:Without_Callbacks}
+
+Sometimes it is inconvenient to structure an application such that it can
+render images from within an \IceT callback. For this case, \IceT supports
+a mechanism that allows rendering images completely independent of the
+compositing done within the \IceT library. This is done by first rendering
+images and then calling \CFunc{icetCompositeImage}.
+
+\begin{Table}{3}
+  \multicolumn{3}{l}{
+    \CType{IceTImage}\textC{ }\CFunc{icetCompositeImage}\textC{(}
+  } \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad
+  &\textC{const IceTVoid *}&\CArg{color\_buffer}\textC{,} \\
+  &\textC{const IceTVoid *}&\CArg{depth\_buffer}\textC{,} \\
+  &\textC{const IceTInt *}&\CArg{valid\_pixels\_viewport}\textC{,} \\
+  &\textC{const IceTDouble *}&\CArg{projection\_matrix}\textC{,} \\
+  &\textC{const IceTDouble *}&\CArg{modelview\_matrix}\textC{,} \\
+  &\textC{const IceTFloat *}&\CArg{background\_color}\quad\textC{);}
+\end{Table}
+
+The \CFunc{icetCompositeImage} function takes image buffer data and
+composites it to a single image. This function behaves similarly to
+\CFunc{icetDrawFrame} except that instead of using callback functions to
+render and retrieve image data, the images are pre-rendered and passed
+directly to \CFunc{icetCompositeImage}.
+
+The \CArg{color\_buffer} and \CArg{depth\_buffer} arguments point to
+memory buffers that contain the image data. The image data is always
+stored in densely packed arrays in row-major order (a.k.a. x-major order
+or by scan-lines). The first horizontal scan-line is at the bottom of the
+image with subsequent scan-lines moving up. The size of each image buffer
+is expected to be the width and the height of the global viewport (which
+is set indirectly with \CFunc{icetAddTile}). The global viewport is
+stored in the \CEnum{ICET\_GLOBAL\_VIEWPORT} state variable. If only one
+tile is specified, then the width and height of the global viewport will
+be the same as this one tile.
+
+The format for \CArg{color\_buffer} is expected to be the same as what is
+set with \icetSetColorFormat. The following formats and their
+interpretations with respect to \CArg{color\_buffer} are as follows.
+
+\input{enumerations/image_color}
+
+Likewise, the format for \CArg{depth\_buffer} is expected to be the same
+as what is set with \icetSetDepthFormat. The following formats and
+their interpretations with respect to \CArg{depth\_buffer} are as
+follows.
+
+\input{enumerations/image_depth}
+
+If the current format does not have a color or depth, then the respective
+buffer argument should be set to \textC{NULL}.
+
+Care should be taken to make sure that the color and depth buffer formats
+are consistent to the formats expected by \IceT. Mismatched formats will
+result in garbage images and possible memory faults.
+
+Another very important consideration to note is that when compositing with
+color blending (\CFunc{icetCompositeMode} is set to
+\CEnum{ICET\_COMPOSITE\_MODE\_BLEND}), the color buffer must be rendered
+with a black background in order for the composite to complete correctly. A
+colored background can later be added using the \CArg{background\_color} as
+described below.
+
+\CArg{valid\_pixels\_viewport} is an optional argument that makes it
+possible to specify a subset of pixels that are valid. In parallel
+rendering it is common for a single process to render geometry in only a
+small portion of the image, and \IceT can take advantage of this
+information. If the rendering system identifies such a region, it can be
+specified with \CArg{valid\_pixels\_viewport}.
+
+Like all viewports in \IceT, \CArg{valid\_pixels\_viewport} is an array
+of 4 integers in the form $\langle x, y, width, height \rangle$. This
+viewport is given in relation to the image passed in the
+\CArg{color\_buffer} and \CArg{depth\_buffer} arguments. Everything
+outside of this rectangular region will be ignored. For example, if the
+\CArg{valid\_pixels\_viewport} $\langle 10, 20, 150, 100 \rangle$ is
+given, then \CFunc{icetCompositeImage} will ignore all pixels in the
+bottom $10$ rows, the left $20$ columns, anything above the
+$160^\mathrm{th}$ ($10+150$) row, and anything to the right of the
+$120^\mathrm{th}$ ($20+100$) column.
+
+If \CArg{valid\_pixels\_viewport} is \textC{NULL}, then all pixels in the
+input image are assumed to be valid.
+
+\CArg{projection\_matrix} and \CArg{modelview\_matrix} are optional
+arguments that specify the projection that was used during rendering. They
+have the same meaning as the like arguments to \CFunc{icetDrawFrame}.
+When applied to the geometry bounds information given with
+\CFunc{icetBoundingBox} or \CFunc{icetBoundingVertices}, this provides
+\IceT with further information on local image projections. If the given
+matrices are not the same used in the rendering or the given bounds do
+not contain the geometry, \IceT may clip the geometry in surprising ways.
+If these arguments are set to \textC{NULL}, then geometry projection will
+not be considered when determining what parts of images are valid.
+
+The \CArg{background\_color} argument specifies the desired background
+color for the image. It is given as an array of 4 floating point values
+specifying, in order, the red, green, blue, and alpha channels of the
+color in the range from $0.0$ to $1.0$.
+
+When rendering using a depth buffer, the background color is used to fill
+in empty regions of images. When rendering using color blending, the
+background color is used to correct colored backgrounds.
+
+As stated previously, color blended compositing only works correctly if
+the images are rendered with a clear black background. Otherwise the
+background color will be added multiple times by each process that
+contains geometry in that pixel. If the
+\CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} feature is enabled, this
+background color is blended back into the final composited image.
+
+\CFunc{icetCompositeImage} returns an \CType{IceTImage} containing the
+composited image displayed on this process.  If the process is not
 displaying a tile, then the contents of the image is undefined.
 
 

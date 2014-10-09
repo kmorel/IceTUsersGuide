@@ -162,12 +162,12 @@ state variables generally should be read from, not written to.
   local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORT}
   for more details.
 \item[\CEnum{ICET\_IS\_DRAWING\_FRAME}] (boolean, 1) Set to true while in a
-  call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} and set to false
-  otherwise.  This should always be set to true while the compose function
-  is being executed.
+  call to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+  \CFunc{icetGLDrawFrame} and set to false otherwise.  This should always
+  be set to true while the compose function is being executed.
 \item[\CEnum{ICET\_MODELVIEW\_MATRIX}] (double, 16) The current modelview
-  matrix as passed to \CFunc{icetDrawFrame} or read from \OpenGL at the
-  invocation of \CFunc{icetGLDrawFrame}.
+  matrix as passed to \CFunc{icetDrawFrame} or \CFunc{icetCompositeImage}
+  or read from \OpenGL at the invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_NEAR\_DEPTH}] (double, 1) The minimum depth value of the
   local geometry after projection.  See \CEnum{ICET\_CONTAINED\_VIEWPORT}
   for more details.
@@ -180,8 +180,8 @@ state variables generally should be read from, not written to.
   into which the local geometry projects.  This is the length of the
   \CEnum{ICET\_CONTAINED\_TILES\_LIST} variable.
 \item[\CEnum{ICET\_PROJECTION\_MATRIX}] (double, 16) The current projection
-  matrix as passed to \CFunc{icetDrawFrame} or read from \OpenGL at the
-  invocation of \CFunc{icetGLDrawFrame}.
+  matrix as passed to \CFunc{icetDrawFrame} or \CFunc{icetCompositeImage}
+  or read from \OpenGL at the invocation of \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_TILE\_CONTRIB\_COUNTS}] (integer,
   \CEnum{ICET\_NUM\_TILES}) For each tile, provides the number of processes
   that will produce a non-empty image for that tile.  This state variable

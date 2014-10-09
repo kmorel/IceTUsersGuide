@@ -222,7 +222,8 @@ icetEnable(ICET_ORDERED_COMPOSITE);
 Once ordered compositing is enabled, it is very important to use
 \CFunc{icetCompositeOrder} to specify the visibility order of the geometry
 associated with each process.  This must generally be done before each call
-to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+\CFunc{icetGLDrawFrame}.
 \begin{Table}{1}
   \textC{void }\CFunc{icetCompositeOrder}\textC{(} \textC{const IceTInt *}
   \CArg{process\_ranks} \textC{);}
@@ -264,7 +265,11 @@ automatically.  Both \CFunc{icetDrawFrame} and \CFunc{icetGLDrawFrame} have
 the ability take a solid background color and modify it as appropriate for
 compositing.  \CFunc{icetDrawFrame} takes the background color as an
 explicit parameter whereas \CFunc{icetGLDrawFrame} implicitly gets the
-background color from the \OpenGL clear color.
+background color from the \OpenGL clear color. When using
+\CFunc{icetCompositeImage}, you must handle colored backgrounds
+yourself. That is, render with the colored background when performing
+z-buffer compositing and render with a clear black background when color
+blending.
 
 When the \CEnum{ICET\_CORRECT\_COLORED\_BACKGROUND} feature is enabled and
 blended compositing is on, \IceT will change the background to $\langle 0,
@@ -754,32 +759,34 @@ The collection of image data to the display process may take a significant
 portion of the overall compositing time, but it is usually necessary.  When
 it is not necessary, it can be disabled by calling \CFunc{icetDisable} with
 \CEnum{ICET\_COLLECT\_IMAGES}.  When this option is turned off, the
-strategy has the option of leaving images partitioned among processes.  Each
-process containing part of a tile's image will return the entire buffer
-from \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} in an
-\CType{IceTImage} object.  However, only certain pixels will be valid.  The
-state variables \CEnum{ICET\_VALID\_PIXELS\_TILE},
-\CEnum{ICET\_VALID\_PIXELS\_OFFSET}, and \CEnum{ICET\_VALID\_PIXELS\_NUM}
-give which tile the pixels belong to and what range of pixels are valid.
+strategy has the option of leaving images partitioned among processes.
+Each process containing part of a tile's image will return the entire
+buffer from \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+\CFunc{icetGLDrawFrame} in an \CType{IceTImage} object.  However, only
+certain pixels will be valid.  The state variables
+\CEnum{ICET\_VALID\_PIXELS\_TILE}, \CEnum{ICET\_VALID\_PIXELS\_OFFSET}, and
+\CEnum{ICET\_VALID\_PIXELS\_NUM} give which tile the pixels belong to and
+what range of pixels are valid.
 
 The \CEnum{ICET\_VALID\_PIXELS\_TILE} state variable gives the tile for
-which the last image returned from \CFunc{icetDrawFrame} or
-\CFunc{icetGLDrawFrame} contains pixels.  Each process has its own value.
-If the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} did
-not return pixels for the local process, then this state variable is set to
-$-1$.
+which the last image returned from \CFunc{icetDrawFrame},
+\CFunc{icetCompositeImage}, or \CFunc{icetGLDrawFrame} contains pixels.
+Each process has its own value.  If the last call to \CFunc{icetDrawFrame},
+\CFunc{icetCompositeImage}, or \CFunc{icetGLDrawFrame} did not return
+pixels for the local process, then this state variable is set to $-1$.
 
 The \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and
 \CEnum{ICET\_VALID\_PIXELS\_NUM} give the range of valid pixels for the
-last image returned from \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
-Given the arrays of pixels returned with the \CFunc{icetImageGetColor} and
-\CFunc{icetImageGetDepth} functions, the valid pixels start at the pixel
-indexed by \CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
+last image returned from \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage},
+or \CFunc{icetGLDrawFrame}.  Given the arrays of pixels returned with the
+\CFunc{icetImageGetColor} and \CFunc{icetImageGetDepth} functions, the
+valid pixels start at the pixel indexed by
+\CEnum{ICET\_VALID\_PIXELS\_OFFSET} and continue for
 \CEnum{ICET\_VALID\_PIXELS\_NUM}.  The tile to which these pixels belong
 are captured in the \CEnum{ICET\_VALID\_PIXELS\_TILE} state variable.  If
-the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} did not
-return pixels for the local process, \CEnum{ICET\_VALID\_PIXELS\_NUM} is
-set to $0$.
+the last call to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+\CFunc{icetGLDrawFrame} did not return pixels for the local process,
+\CEnum{ICET\_VALID\_PIXELS\_NUM} is set to $0$.
 
 The \CEnum{ICET\_VALID\_PIXELS\_TILE}, \CEnum{ICET\_VALID\_PIXELS\_OFFSET},
 and \CEnum{ICET\_VALID\_PIXELS\_NUM} are only really useful when
@@ -801,38 +808,47 @@ always the case that each process not displaying a tile has no image
 \label{sec:Customizing_Compositing:Timing}
 \index{timing|(}
 
-Whenever \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame} is called, \IceT
-measures the amount of time spent in the various tasks required for
-parallel rendering.  These timings are stored in the \IceT state and can be
-retrieved with \CFunc{icetGet}.  The state variables containing these
-timing metrics (in seconds) are as follows.
+Whenever \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+\CFunc{icetGLDrawFrame} is called, \IceT measures the amount of time spent
+in the various tasks required for parallel rendering.  These timings are
+stored in the \IceT state and can be retrieved with \CFunc{icetGet}.  The
+state variables containing these timing metrics (in seconds) are as
+follows.
 
 \begin{Description}[xxxxxxxx]
 \item[\CEnum{ICET\_RENDER\_TIME}] The total time spent in the drawing
   callback during the last call to \CFunc{icetDrawFrame} or
-  \CFunc{icetGLDrawFrame}.
+  \CFunc{icetGLDrawFrame}. Always set to 0.0 after a call to
+    \CFunc{icetCompositeImage}.
 \item[\CEnum{ICET\_BUFFER\_READ\_TIME}] The total time spent copying buffer
   data and reading from \OpenGL buffers during the last call to
-  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+  \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+  \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_BUFFER\_WRITE\_TIME}] The total time spent writing to
   OpenGL buffers during the last call to \CFunc{icetGLDrawFrame}.  Always
-  set to 0.0 after a call to \CFunc{icetDrawFrame}.
+  set to 0.0 after a call to \CFunc{icetDrawFrame} or
+  \CFunc{icetCompositeImage}.
 \item[\CEnum{ICET\_COMPRESS\_TIME}] The total time spent in compressing
   image data using active pixel encoding during the last call to
-  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+  \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+  \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_BLEND\_TIME}]/\CEnum{ICET\_COMPARE\_TIME} The total time
   spent in performing Z comparisons or color blending of images during the
-  last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  These two
-  variables always return the same value.
+  last call to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+  \CFunc{icetGLDrawFrame}.  These two variables always return the same
+  value.
 \item[\CEnum{ICET\_COLLECT\_TIME}] The total time spent in collecting image
   fragments to display processes during the last call to
-  \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
+  \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+  \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_TOTAL\_DRAW\_TIME}] The total time spent in the last
-  call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.  This includes
-  all the time to render, read back, compress, and composite images.
+  call to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+  \CFunc{icetGLDrawFrame}.  This includes all the time to render, read
+  back, compress, and composite images.
 \item[\CEnum{ICET\_COMPOSITE\_TIME}] The total time spent in compositing
-  during the last call to \CFunc{icetDrawFrame} or \CFunc{icetGLDrawFrame}.
-  Equal to $\CEnum{ICET\_TOTAL\_DRAW\_TIME} - \CEnum{ICET\_RENDER\_TIME} -
+  during the last call to \CFunc{icetDrawFrame},
+  \CFunc{icetCompositeImage}, or \CFunc{icetGLDrawFrame}.  Equal to
+  $\CEnum{ICET\_TOTAL\_DRAW\_TIME} - \CEnum{ICET\_RENDER\_TIME} -
   \CEnum{ICET\_BUFFER\_READ\_TIME} - \CEnum{ICET\_BUFFER\_WRITE\_TIME}$.
 \end{Description}
 
@@ -840,11 +856,12 @@ In addition to timing how long rendering and compositing takes, \IceT also
 keeps track of how much data is transmitted during compositing.  The state
 variable \CEnum{ICET\_BYTES\_SENT} stores the total number of bytes sent by
 the calling process for transferring image data during the last call to
-\CFunc{icetDrawFrame}.  Obviously, each process could have a different
+\CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+\CFunc{icetGLDrawFrame}.  Obviously, each process could have a different
 value for \CEnum{ICET\_BYTES\_SENT}.
 
-\IceT also keeps track of the number of times \CFunc{icetDrawFrame} or
-\CFunc{icetGLDrawFrame} has been called.  This number is stored in
-\CEnum{ICET\_FRAME\_COUNT}.
+\IceT also keeps track of the number of times \CFunc{icetDrawFrame},
+\CFunc{icetCompositeImage}, or \CFunc{icetGLDrawFrame} has been called.
+This number is stored in \CEnum{ICET\_FRAME\_COUNT}.
 
 \index{timing|)}
