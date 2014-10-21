@@ -403,6 +403,21 @@ outSparseImage       = icetGetStateBufferSparseImage(
                                               max_width, max_height);
 \end{code}
 
+\label{manpage:icetRetrieveStateImage}
+Most of the time after creating an image from a buffer with
+\CFunc{icetGetStateBufferImage}, you just keep a reference to the
+\CType{IceTImage} object returned and pass that object around as
+necessary. Occasionally, the image will need to be used by two different
+functions that do not directly communicate. Instead, they can share an
+image through a state variable. This can be done by first creating the
+image with \CFunc{icetGetStateBufferImage} and then later retrieving the
+image with \CFunc{icetRetrieveStateImage} using the same state
+\CArg{pname}.
+
+\begin{Table}{3}
+  \CType{IceTImage}\textC{ }\CFunc{icetRetrieveStateImage}\textC{(}&\textC{IceTEnum}&\CArg{pname}\quad\textC{);}
+\end{Table}
+
 \label{manpage:icetImageSetDimensions}
 \label{manpage:icetSparseImageSetDimensions}
 After an image is allocated, it is possible to resize the image, but only
