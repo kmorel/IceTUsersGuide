@@ -1341,7 +1341,13 @@ value instead of passing a value back in a pointer argument.
 
 \label{manpage:icetCommDuplicate}
 \begin{Table}{3}
-  \textC{struct }\CType{IceTCommunicatorStruct}\textC{ *}\CFunc{icetCommDuplicate}\textC{(void);}
+  \CType{IceTCommunicator}\textC{ }\CFunc{icetCommDuplicate}\textC{(void);}
+\end{Table}
+
+\label{manpage:icetCommSubset}
+\begin{Table}{3}
+  \textC{IceTCommunicator}\textC{ }\CFunc{icetCommSubset}\textC{(}&\textC{int }\CArg{count}\textC{,}\\
+  &\textC{const IceTInt32 *}\CArg{ranks}\quad\textC{);}
 \end{Table}
 
 \label{manpage:icetCommBarrier}

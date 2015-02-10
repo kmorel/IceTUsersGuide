@@ -117,6 +117,10 @@ struct IceTCommunicatorStruct {
     struct IceTCommunicatorStruct *
          (*Duplicate)(struct IceTCommunicatorStruct *self);
     void (*Destroy)(struct IceTCommunicatorStruct *self);
+    struct IceTCommunicatorStruct *
+         (*Subset)(struct IceTCommunicatorStruct *self,
+                   int count,
+                   const IceTInt32 *ranks);
     void (*Barrier)(struct IceTCommunicatorStruct *self);
     void (*Send)(struct IceTCommunicatorStruct *self,
                  const void *buf,
