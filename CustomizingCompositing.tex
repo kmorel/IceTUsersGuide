@@ -832,6 +832,10 @@ follows.
   image data using active pixel encoding during the last call to
   \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
   \CFunc{icetGLDrawFrame}.
+\item[\CEnum{ICET\_INTERLACE\_TIME}] The total time spent in copying
+  pixels to interlace images for better load balancing during the last
+  call to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+  \CFunc{icetGLDrawFrame}.
 \item[\CEnum{ICET\_BLEND\_TIME}]/\CEnum{ICET\_COMPARE\_TIME} The total time
   spent in performing Z comparisons or color blending of images during the
   last call to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or

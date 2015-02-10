@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{July 11, 2011}
+\setDate{February 10, 2015}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetWallTime}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetWallTime} -- timer function}
 
@@ -16,18 +16,19 @@
   
   \mansection{Description}
 
-  Retrieves the current time, in seconds.  The returned values of
-  \CFunc{icetWallTime} are only valid in relation to each other.  That is,
+  Retrieves the current time, in seconds. The returned values of
+  \CFunc{icetWallTime} are only valid in relation to each other. That is,
   the time may or may not have anything to do with the current date or
-  time.  However, the difference of values between two calls to
+  time. However, the difference of values between two calls to
   \CFunc{icetWallTime} is the elapsed time in seconds between the two
-  calls.  Thus, \CFunc{icetWallTime} is handy for determining the running
-  time of various subprocesses.  \CFunc{icetWallTime} is used internally
-  for determining the values for the state variables
+  calls. Thus, \CFunc{icetWallTime} is handy for determining the running
+  time of various subprocesses. \CFunc{icetWallTime} is used internally for
+  determining the values for the state variables
   \CEnum{ICET\_BUFFER\_READ\_TIME}, \CEnum{ICET\_BUFFER\_WRITE\_TIME},
   \CEnum{ICET\_COLLECT\_TIME}, \CEnum{ICET\_COMPARE\_TIME},
   \CEnum{ICET\_COMPOSITE\_TIME}, \CEnum{ICET\_COMPRESS\_TIME},
-  \CEnum{ICET\_RENDER\_TIME}, and \CEnum{ICET\_TOTAL\_DRAW\_TIME}.
+  \CEnum{ICET\_INTERLACE\_TIME}, \CEnum{ICET\_RENDER\_TIME}, and
+  \CEnum{ICET\_TOTAL\_DRAW\_TIME}.
 
 
   \mansection{Return Value}

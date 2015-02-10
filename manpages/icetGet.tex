@@ -1,7 +1,7 @@
 % -*- latex -*-
 
 
-\setDate{September 26, 2014}
+\setDate{February 10, 2015}
 % The following must all be on one line for latex2man to work.
 \begin{Name}{3}{icetGet}{Kenneth Moreland}{\IceT Reference}{\CFunc{icetGet} -- get an \IceT state parameter}
 
@@ -162,6 +162,10 @@
     \rangle$.  $x$ and $y$ are placed at the leftmost and lowest position
     of all the tiles, and $width$ and $height$ are just big enough for the
     viewport to cover all tiles.
+  \item[\CEnum{ICET\_INTERLACE\_TIME}] The total time, in seconds, spent in
+    copying pixels to interlace images for better load balancing during the
+    last call to \CFunc{icetDrawFrame}, \CFunc{icetCompositeImage}, or
+    \CFunc{icetGLDrawFrame}. Stored as a double.
   \item[\CEnum{ICET\_MAGIC\_K}] The target $k$ value used when compositing
     with the radix-k single image strategy.
   \item[\CEnum{ICET\_MAX\_IMAGE\_SPLIT}] The target number of maximum image
