@@ -82,8 +82,8 @@ FOREACH(page ${man3pages})
     @ONLY)
   SET(man3page ${MAN3DIR}/${page}.3)
   ADD_CUSTOM_COMMAND(OUTPUT ${man3page}
-    COMMAND ${PERL_EXECUTABLE}
-    ARGS ${LATEX2MAN} ${LATEX2MAN_ARGS} ${page}.tex ${man3page}
+    COMMAND ${PERL_EXECUTABLE} ${LATEX2MAN} ${LATEX2MAN_ARGS} ${page}.tex ${man3page}
+    COMMAND ${CMAKE_COMMAND} -D FILENAME=${man3page} -P ${CMAKE_CURRENT_SOURCE_DIR}/RemoveTrailingWhitespace.cmake
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${page}.tex icet.trans
     )
   SET(man3files ${man3files} ${man3page})
