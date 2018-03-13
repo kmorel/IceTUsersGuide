@@ -9,6 +9,10 @@
   \item[\CEnum{ICET\_IMAGE\_COLOR\_RGBA\_FLOAT}] Each entry is an RGBA
     color tuple.  Each component is in the range from $0.0$ to $1.0$ and is
     stored as a 32-bit float.
+  \item[\CEnum{ICET\_IMAGE\_COLOR\_RGB\_FLOAT}] Each entry is an RGB color
+    triple. Each component is in the range from $0.0$ to $1.0$ and is
+    stored as a 32-bit float. Note that there is no alpha channel, so the
+    color blending composite mode will not work with this color format.
   \item[\CEnum{ICET\_IMAGE\_COLOR\_NONE}] No color values are stored in the
     image.
   \end{Description}
