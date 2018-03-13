@@ -1,37 +1,30 @@
-PROJECT(IceTExamples C)
+project(IceTExamples C)
 
-SET(Examples
+set(Examples
   Tutorial
   )
 
-FIND_PACKAGE(IceT REQUIRED)
+find_package(IceT REQUIRED)
 
-FIND_PACKAGE(OpenGL REQUIRED)
-FIND_PACKAGE(GLUT REQUIRED)
-FIND_PACKAGE(MPI REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
+find_package(MPI REQUIRED)
 
-MARK_AS_ADVANCED(CLEAR
-  MPI_INCLUDE_PATH
-  MPI_LIBRARY
-  MPI_EXTRA_LIBRARY
-  )
-
-INCLUDE_DIRECTORIES(
-  ${OPENGL_INCLUDE_DIR}
-  ${MPI_INCLUDE_PATH}
-  ${GLUT_INCLUDE_DIR}
-  ${ICET_INCLUDE_DIRS}
-  )
-
-FOREACH (example ${Examples})
-  ADD_EXECUTABLE(${example} ${example}.c)
-  TARGET_LINK_LIBRARIES(${example}
+foreach (example ${Examples})
+  add_executable(${example} ${example}.c)
+  target_compile_options(${example} PRIVATE ${MPI_C_COMPILE_FLAGS})
+  target_include_directories(${example} PRIVATE
+    ${OPENGL_INCLUDE_DIR}
+    ${MPI_C_INCLUDE_PATH}
+    ${GLUT_INCLUDE_DIR}
+    ${ICET_INCLUDE_DIRS}
+    )
+  target_link_libraries(${example} PRIVATE
     ${OPENGL_LIBRARIES}
     ${GLUT_LIBRARIES}
-    ${MPI_LIBRARY}
-    ${MPI_EXTRA_LIBRARY}
+    ${MPI_C_LIBRARIES}
     ${ICET_CORE_LIBS}
     ${ICET_GL_LIBS}
     ${ICET_MPI_LIBS}
     )
-ENDFOREACH (example ${Examples})
+endforeach (example)
